@@ -16,7 +16,7 @@ def google_command_organizer(root_path):
         df[c.TARGET_FIELD] = df.path.str.split("/").str[0].astype("category")
         df[c.PATH_FIELD] = f"{root_path}/" + df[c.PATH_FIELD]
 
-        return df
+        return df  # To check memory consumption of df remember to use deep=True!
 
     root_path = Path(root_path)
     splits = {}

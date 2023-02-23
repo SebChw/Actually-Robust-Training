@@ -2,10 +2,14 @@ import torch.nn as nn
 from torch.nn import functional as F
 import torch
 
+###########################################################################################
+############### ADD NEW NETWORK IFF IT IS NOT AVAILABLE ON HUGGING FACE#####################
+###########################################################################################
+
 
 class M5(nn.Module):
     # https://arxiv.org/pdf/1610.00087.pdf
-    def __init__(self, sampling_rate=16000, n_classes=35, n_channels=32):
+    def __init__(self, sampling_rate=16000, n_classes=36, n_channels=32):
         super().__init__()
 
         first_conv_size = sampling_rate // 100  # 10ms

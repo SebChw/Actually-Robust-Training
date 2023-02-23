@@ -130,4 +130,5 @@ dmypy.json
 
 # custom
 List_of*
-testing.ipynb
+*.ipynb
+lightning_logs
