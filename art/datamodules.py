@@ -17,8 +17,12 @@ def dummy_classification_generator(n_samples=64, shape=(1, 16000), label=0):
 
 
 def create_waveform_collate(normalize=None, max_length=16000):
-    #!Operating on audio directly instead of using predefined feature extractor in case
-    #!Of raw waveform is much more efficient as hf doesn't support float16
+    """Use this collator factory if you don't want to use feature_extractor that will create
+    cache file 2x bigger than original dataset due to float32 instead of float16
+    Args:
+        normalize (_type_, optional): _description_. Defaults to None.
+        max_length (int, optional): _description_. Defaults to 16000.
+    """
     def waveform_collate_fn(batch):
         X, labels = [], []
         for item in batch:
