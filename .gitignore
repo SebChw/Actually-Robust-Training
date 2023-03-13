@@ -132,3 +132,4 @@ dmypy.json
 List_of*
 *.ipynb
 lightning_logs
+.neptune
