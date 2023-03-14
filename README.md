@@ -8,16 +8,17 @@ To get started, at first clone the repo
 git clone https://github.com/SebChw/audio-research-toolkit.git
 ```
 
-Then install all requirments (ideally create separate virtual environment)
+Install audio-research-toolkit in editable mode, also you need to download extras for development if you want to contribute see `[dev]`
 
 ```
-pip install -r requirments.txt
+pip install -e .[dev]
 ```
 
-Install audio-research-toolkit in editable mode
+Start coding 😎
+
+If you are to push your code please use
 
 ```
-pip install -e .
+tox
 ```
-
-Start coding :D 
+to make sure every check passes

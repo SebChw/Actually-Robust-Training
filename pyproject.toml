@@ -17,6 +17,34 @@ classifiers = [
     "Operating System :: OS Independent",
 ]
 
+dependencies = [
+  "datasets==2.9.0",
+  "numpy==1.23.5",
+  "pytorch_lightning==1.8.6",
+  "torchaudio==0.13.1",
+  "torchmetrics==0.11.0",
+  "torch==1.13.1",
+]
+
+[project.optional-dependencies]
+dev = [
+  "flake8==6.0.0",
+  "tox==4.4.7",
+  "pytest==7.2.2",
+  "pytest-cov==4.0.0",
+  "mypy==1.1.1",
+  "black==23.1.0"
+]
+
 [project.urls]
 "Homepage" = "https://github.com/pypa/audioresearchtoolkit"
 "Bug Tracker" = "https://github.com/pypa/audioresearchtoolkit/issues"
+
+[tool.pytest.ini_options]
+addopts = "--cov=art"
+testpaths = [
+  "tests",
+]
+
+[tool.mypy]
+mypy_path="art"
