@@ -1,5 +1,7 @@
 # audio-research-toolkit
 
+![Tests]https://github.com/SebChw/audio-research-toolkit/actions/workflows/tests.yml/badge.svg
+
 To know how to contribute check [presentation](https://docs.google.com/presentation/d/12EcVPMwKMvAPDnoJXFJKGcikRDtYDJXjNjQc8LRh0kg/edit#slide=id.g21a4e2bd36e_1_5)
 
 To get started, at first clone the repo 
