@@ -3,17 +3,20 @@ import pytorch_lightning as pl
 
 import torch
 import datasets
+import typing
 
 
 def dummy_classification_sample(shape=(1, 16000), label=0):
     return {"data": torch.randn(shape), "label": label}
 
 
-def dummy_source_separation_sample(shape=(2, 44100), instruments=["bass", "drums", "vocals", "other"]):
+def dummy_source_separation_sample(
+    shape=(2, 44100), instruments=["bass", "drums", "vocals", "other"]
+):
     return {name: {"array": torch.randn(shape)} for name in instruments}
 
 
-def dummy_generator(sample_gen: callable, n_samples=64, **kwargs):
+def dummy_generator(sample_gen: typing.Callable, n_samples=64, **kwargs):
     def generator():
         for _ in range(n_samples):
             yield sample_gen(**kwargs)
@@ -28,16 +31,14 @@ class SanityCheckDataModule(pl.LightningDataModule):
         self.collate = collate
 
     def prepare_data(self):
-        #!If you don't write anything here Lightning will try to use prepare_data_per_node
+        # If you don't write anything here Lightning will try to use prepare_data_per_node
         print("Nothing to download")
 
     def setup(self, stage):
-        #! be aware of caching.
-        self.dataset = datasets.Dataset.from_generator(
-            self.dataset_generator)
+        # be aware of caching.
+        self.dataset = datasets.Dataset.from_generator(self.dataset_generator)
 
-        device = torch.device(
-            "cuda" if torch.cuda.is_available() else "cpu")
+        device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         self.dataset = self.dataset.with_format("torch", device=device)
 
     def _get_loader(self):
