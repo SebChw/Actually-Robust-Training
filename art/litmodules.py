@@ -1,9 +1,9 @@
-from torchaudio.models import HDemucs
 import pytorch_lightning as pl
 import torch
 import torch.nn.functional as F
 import torch.nn as nn
 import torchmetrics
+import numpy as np
 
 
 class LitAudioClassifier(pl.LightningModule):
@@ -12,7 +12,8 @@ class LitAudioClassifier(pl.LightningModule):
         self.model = model
 
         self.accuracy = torchmetrics.Accuracy(
-            task="multiclass", num_classes=num_classes)
+            task="multiclass", num_classes=num_classes
+        )
 
     def forward(self, x):
         return self.model(x)
@@ -28,7 +29,7 @@ class LitAudioClassifier(pl.LightningModule):
         self.log(f"{prompt}_loss", loss)
 
         self.accuracy(logits, y)
-        self.log(f'{prompt}_acc', self.accuracy, on_step=True, on_epoch=True)
+        self.log(f"{prompt}_acc", self.accuracy, on_step=True, on_epoch=True)
 
         return loss
 
@@ -48,9 +49,10 @@ class LitAudioSourceSeparator(pl.LightningModule):
 
         self.sources = sources
         self.model = model
-        #! one may use MetricCollection wrapper but not in this case
-        self.sdr = nn.ModuleDict({source: torchmetrics.SignalDistortionRatio()
-                                  for source in sources})
+        # !one may use MetricCollection wrapper but not in this case
+        self.sdr = nn.ModuleDict(
+            {source: torchmetrics.SignalDistortionRatio() for source in sources}
+        )
 
     def forward(self, X):
         # Here we can make it more like inference step and return dict with sources
@@ -61,7 +63,7 @@ class LitAudioSourceSeparator(pl.LightningModule):
         return optimizer
 
     def processing_step(self, batch, prompt):
-        X = batch['mixture']
+        X = batch["mixture"]
         target = batch["target"]
 
         predictions = self.model(X)
@@ -70,11 +72,11 @@ class LitAudioSourceSeparator(pl.LightningModule):
         self.log(f"{prompt}_loss", loss)
 
         try:
+            # !If some target is entirely 0 then this sdr calculation fails :( flattening could help but then I get memory errors
             for i, (source, sdr) in enumerate(self.sdr.items()):
                 sdr(predictions[:, i, ...], target[:, i, ...])
-                self.log(f"{prompt}_{source}_sdr", sdr,
-                         on_step=True, on_epoch=True)
-        except:
+                self.log(f"{prompt}_{source}_sdr", sdr, on_step=True, on_epoch=True)
+        except np.linalg.LinAlgError:
             print("SINGULARITY IN SDR!")
 
         return loss
