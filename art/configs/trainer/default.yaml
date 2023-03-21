@@ -1,0 +1,5 @@
+_target_: lightning.Trainer
+
+accelerator: cpu
+devices: 1
+max_epochs: 2

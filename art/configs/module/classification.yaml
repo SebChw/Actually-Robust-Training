@@ -1,0 +1,4 @@
+_target_: art.litmodules.LitAudioClassifier
+num_classes: 36
+model:
+  _target_: art.networks.M5

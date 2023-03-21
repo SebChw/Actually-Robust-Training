@@ -4,12 +4,13 @@ import torch.nn.functional as F
 import torch.nn as nn
 import torchmetrics
 import numpy as np
+import hydra
 
 
 class LitAudioClassifier(L.LightningModule):
     def __init__(self, model, num_classes):
         super().__init__()
-        self.model = model
+        self.model = hydra.utils.instantiate(model)
 
         self.accuracy = torchmetrics.Accuracy(
             task="multiclass", num_classes=num_classes
