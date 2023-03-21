@@ -1,5 +1,5 @@
 from torch.utils.data import DataLoader
-import pytorch_lightning as pl
+import lightning as L
 
 import torch
 import datasets
@@ -24,7 +24,7 @@ def dummy_generator(sample_gen: typing.Callable, n_samples=64, **kwargs):
     return generator
 
 
-class SanityCheckDataModule(pl.LightningDataModule):
+class SanityCheckDataModule(L.LightningDataModule):
     def __init__(self, dataset_generator, collate):
         super().__init__()
         self.dataset_generator = dataset_generator
