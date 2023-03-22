@@ -1,5 +1,5 @@
 from torch.utils.data import DataLoader
-import pytorch_lightning as pl
+import lightning as L
 
 import torch
 import datasets
@@ -9,7 +9,7 @@ from torch.utils.data.sampler import BatchSampler, RandomSampler
 from art.data.collate import create_waveform_collate, create_sourceseparation_collate
 
 
-class GoogleCommandDataModule(pl.LightningDataModule):
+class GoogleCommandDataModule(L.LightningDataModule):
     def __init__(self, batch_size=64, spectrogram=False):
         super().__init__()
 
@@ -58,7 +58,7 @@ class GoogleCommandDataModule(pl.LightningDataModule):
         return self.dataloader_batch_sampler(self.dataset["test"], self.batch_size)
 
 
-class SounDemixingChallengeDataModule(pl.LightningDataModule):
+class SounDemixingChallengeDataModule(L.LightningDataModule):
     def __init__(self, zip_path, batch_size=64, spectrogram=False, type_="labelnoise"):
         super().__init__()
 
