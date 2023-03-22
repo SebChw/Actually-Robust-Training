@@ -46,6 +46,3 @@ addopts = "--cov=art"
 testpaths = [
   "tests",
 ]
-
-[tool.mypy]
-mypy_path="art"

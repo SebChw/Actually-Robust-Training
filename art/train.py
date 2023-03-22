@@ -1,5 +1,5 @@
 from lightning import seed_everything
-from utils.loggers import get_pylogger
+from art.utils.loggers import get_pylogger
 import hydra
 from omegaconf import DictConfig
 import torch
