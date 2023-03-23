@@ -1,12 +1,12 @@
 defaults:
   - _self_
-  - datamodule: google_commands.yaml
-  - module: classification.yaml
+  - datamodule: musdb18.yaml
+  - module: source_separation.yaml
   - trainer: default.yaml
   - logger: neptune.yaml
 
 # task name, determines output directory path
-task_name: "wake_voice_detection"
+task_name: "source_separation"
 
 # set False to skip model training
 train: True
