@@ -66,7 +66,7 @@ class LitAudioSourceSeparator(L.LightningModule):
         super().__init__()
 
         self.sources = sources
-        self.model = model
+        self.model = hydra.utils.instantiate(model)
         # !one may use MetricCollection wrapper but not in this case
         self.sdr = nn.ModuleDict(
             {source: torchmetrics.SignalDistortionRatio() for source in sources}
@@ -87,10 +87,11 @@ class LitAudioSourceSeparator(L.LightningModule):
         predictions = self.model(X)
 
         loss = F.l1_loss(predictions, target)
-        self.log(f"{prompt}_loss", loss)
+        self.log(f"{prompt}_loss", loss, on_step=True, on_epoch=True)
 
         try:
             # !If some target is entirely 0 then this sdr calculation fails :( flattening could help but then I get memory errors
+            # But as we always subtract mean this is no longer the case?
             for i, (source, sdr) in enumerate(self.sdr.items()):
                 sdr(predictions[:, i, ...], target[:, i, ...])
                 self.log(

@@ -1,0 +1,9 @@
+_target_: art.data.datamodules.SourceSeparationDataModule
+batch_size: 4
+train_size: 3722 # This is approximatelly 80% of data and also no overlap between train and test set. Given 10s window size!
+dataset_kwargs:
+  {
+    "path": "sebchw/sebchw/sound_demixing_challenge",
+    "zip_path": "sdxdb23_labelnoise_v1.0_rc1.zip",
+    "type_": "labelnoise",
+  }
