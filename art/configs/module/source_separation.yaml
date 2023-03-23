@@ -1,0 +1,6 @@
+_target_: art.litmodules.LitAudioSourceSeparator
+model:
+  _target_: torchaudio.models.HDemucs
+  sources: ["bass", "vocals", "drums", "other"]
+
+sources: ["bass", "vocals", "drums", "other"] # Interpolation doesn't work :(

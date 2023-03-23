@@ -37,12 +37,15 @@ def create_waveform_collate(normalize=None, max_length=16000):
 
 
 def create_sourceseparation_collate(
-    normalize=False, length=44100, instruments=["bass", "vocals", "drums", "other"]
+    length=44100, instruments=["bass", "vocals", "drums", "other"]
 ):
     def waveform_collate_fn(batch):
         X = defaultdict(lambda: [])
-
+        means = []
+        stds = []
         for item in batch:
+            means.append(item["mean"])
+            stds.append(item["std"])
             instruments_wavs = {name: item[name]["array"] for name in instruments}
 
             random_offset = random.randint(
@@ -54,18 +57,19 @@ def create_sourceseparation_collate(
                 for name, wav in instruments_wavs.items()
             }
 
-            instruments_wavs["mixture"] = torch.stack(
-                list(instruments_wavs.values()), 0
-            ).sum(axis=0)
-
             for name, waveform in instruments_wavs.items():
                 X[name].append(waveform)
 
         separations = [torch.stack(X[instrument]) for instrument in instruments]
+        separations = torch.stack(separations, axis=1)
+
+        separations = (
+            separations - torch.tensor(means).to(separations)[:, None, None, None]
+        ) / torch.tensor(stds).to(separations)[:, None, None, None]
 
         return {
-            "mixture": torch.stack(X["mixture"]),
-            "target": torch.stack(separations, dim=1),
+            "mixture": torch.sum(separations, axis=1),
+            "target": separations,
         }
 
     return waveform_collate_fn

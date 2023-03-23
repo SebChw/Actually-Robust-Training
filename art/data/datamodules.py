@@ -62,19 +62,14 @@ class GoogleCommandDataModule(L.LightningDataModule):
         )
 
 
-class SounDemixingChallengeDataModule(L.LightningDataModule):
-    def __init__(self, zip_path, batch_size=64, spectrogram=False, type_="labelnoise"):
+class SourceSeparationDataModule(L.LightningDataModule):
+    def __init__(self, dataset_kwargs, batch_size=64, train_size=None):
         super().__init__()
 
-        self.zip_path = zip_path
-        self.type_ = type_
-
-        if self.type_ == "labelnoise":
-            # This is approximatelly 80% of data and also no overlap between train and test set. Given 10s window size!
-            self.train_size = 3722
+        self.train_size = train_size
+        self.dataset_kwargs = dataset_kwargs
 
         self.batch_size = batch_size
-        self.spectrogram = spectrogram
 
         self.collate = create_sourceseparation_collate()
 
@@ -85,17 +80,13 @@ class SounDemixingChallengeDataModule(L.LightningDataModule):
 
     def setup(self, stage):
         if self.dataset is None:
-            self.dataset = datasets.load_dataset(
-                "sebchw/sound_demixing_challenge",
-                self.type_,
-                zip_path=self.zip_path,
-                split="train",
-            )
+            self.dataset = datasets.load_dataset(**self.dataset_kwargs)
 
             # We don't shuffle not to mix up song between sets
-            self.dataset = self.dataset.train_test_split(
-                train_size=self.train_size, shuffle=False
-            )
+            if self.train_size:
+                self.dataset = self.dataset.train_test_split(
+                    train_size=self.train_size, shuffle=False
+                )
 
             device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
             self.dataset = self.dataset.with_format("torch", device=device)
