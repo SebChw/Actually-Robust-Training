@@ -2,10 +2,6 @@ import torch.nn as nn
 from torch.nn import functional as F
 import torch
 
-###########################################################################################
-############### ADD NEW NETWORK IFF IT IS NOT AVAILABLE ON HUGGING FACE#####################
-###########################################################################################
-
 
 class M5(nn.Module):
     # https://arxiv.org/pdf/1610.00087.pdf
@@ -20,10 +16,12 @@ class M5(nn.Module):
         channels_dim = [n_channels * (2**i) for i in range(N_CONV_LAYERS)]
 
         self.first_block = self.get_1d_block(
-            1, channels_dim[0], first_conv_size, first_stride)
+            1, channels_dim[0], first_conv_size, first_stride
+        )
         self.conv_blocks = nn.ModuleList(
             [
-                self.get_1d_block(channels_dim[i-1], channels_dim[i], 3) for i in range(1, N_CONV_LAYERS)
+                self.get_1d_block(channels_dim[i - 1], channels_dim[i], 3)
+                for i in range(1, N_CONV_LAYERS)
             ]
         )
 
@@ -32,10 +30,11 @@ class M5(nn.Module):
     def get_1d_block(self, in_channels, out_channels, kernel_size, stride=1):
         return nn.Sequential(
             nn.Conv1d(
-                in_channels, out_channels, kernel_size=kernel_size, stride=stride),
+                in_channels, out_channels, kernel_size=kernel_size, stride=stride
+            ),
             nn.ReLU(),
             nn.BatchNorm1d(out_channels),
-            nn.MaxPool1d(4)  # equivalent to 2x2 for images
+            nn.MaxPool1d(4),  # equivalent to 2x2 for images
         )
 
     def forward(self, X):
@@ -48,7 +47,7 @@ class M5(nn.Module):
         return self.classification_head(X)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     model = M5()
     X = model(torch.randn((1, 1, 16000)))
     print(X.shape)

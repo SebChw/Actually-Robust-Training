@@ -1,0 +1,26 @@
+defaults:
+  - _self_
+  - datamodule: google_commands.yaml
+  - module: classification.yaml
+  - trainer: default.yaml
+  - logger: neptune.yaml
+
+# task name, determines output directory path
+task_name: "wake_voice_detection"
+
+# set False to skip model training
+train: True
+
+# evaluate on test set, using best model weights achieved during training
+# lightning chooses best weights based on the metric specified in checkpoint callback
+test: True
+save_state_dict: True
+
+# simply provide checkpoint path to resume training
+ckpt_path: null
+
+# seed for random number generators in pytorch, numpy and python.random
+seed: 42
+
+#Whether to use torch 2.0 compile function
+compile: False
