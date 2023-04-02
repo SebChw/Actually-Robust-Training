@@ -133,3 +133,8 @@ List_of*
 *.ipynb
 lightning_logs
 .neptune
+.vscode
+outputs
+
+Efficient_word_net
+WakeWordDetection
