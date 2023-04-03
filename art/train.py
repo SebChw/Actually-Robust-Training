@@ -25,9 +25,7 @@ def train(cfg: DictConfig):
     log.info(f"Instantiating logger <{cfg.logger._target_}>")
     logger = hydra.utils.instantiate(cfg.logger, _recursive_=False)
 
-    # Push metadata
-    hydra_dir = Path(hydra.core.hydra_config.HydraConfig.get()["runtime"]["output_dir"])
-    logger.experiment["logs"].track_files("file://" + str(hydra_dir / "train.log"))
+    # push configuration
     logger.experiment["configuration"] = stringify_unsupported(
         OmegaConf.to_container(cfg, resolve=True)
     )
@@ -75,6 +73,10 @@ def train(cfg: DictConfig):
             ckpt_path = None
         trainer.test(model=model, datamodule=datamodule, ckpt_path=ckpt_path)
         log.info(f"Best ckpt path: {ckpt_path}")
+
+    # Upload logs
+    hydra_dir = Path(hydra.core.hydra_config.HydraConfig.get()["runtime"]["output_dir"])
+    logger.experiment["logs"].upload("file://" + str(hydra_dir / "train.log"))
 
     # Save best checkpoint to the hub
     if cfg.upload_best_model:
