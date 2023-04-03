@@ -1,8 +1,11 @@
 from lightning import seed_everything
 from art.utils.loggers import get_pylogger
 import hydra
-from omegaconf import DictConfig
+from pathlib import Path
+from omegaconf import DictConfig, OmegaConf
+from neptune.utils import stringify_unsupported
 import torch
+
 
 _HYDRA_PARAMS = {
     "version_base": "1.3",
@@ -18,6 +21,16 @@ def train(cfg: DictConfig):
     if cfg.get("seed"):
         log.info(f"Seed everything with <{cfg.seed}>")
         seed_everything(cfg.seed, workers=True)
+
+    log.info(f"Instantiating logger <{cfg.logger._target_}>")
+    logger = hydra.utils.instantiate(cfg.logger, _recursive_=False)
+
+    # Push metadata
+    hydra_dir = Path(hydra.core.hydra_config.HydraConfig.get()["runtime"]["output_dir"])
+    logger.experiment["logs"].track_files("file://" + str(hydra_dir / "train.log"))
+    logger.experiment["configuration"] = stringify_unsupported(
+        OmegaConf.to_container(cfg, resolve=True)
+    )
 
     # Init lightning datamodule
     log.info(f"Instantiating datamodule <{cfg.datamodule._target_}>")
@@ -63,9 +76,11 @@ def train(cfg: DictConfig):
         trainer.test(model=model, datamodule=datamodule, ckpt_path=ckpt_path)
         log.info(f"Best ckpt path: {ckpt_path}")
 
-    # Save state dicts for best and last checkpoints
-    if cfg.get("save_state_dict"):
-        log.info("Starting saving state dicts!")
+    # Save best checkpoint to the hub
+    if cfg.upload_best_model:
+        logger.experiment["model_checkpoints/best_model"].upload(
+            trainer.checkpoint_callback.best_model_path
+        )
 
 
 @hydra.main(**_HYDRA_PARAMS)
