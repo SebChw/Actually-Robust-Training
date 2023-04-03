@@ -76,7 +76,7 @@ def train(cfg: DictConfig):
 
     # Upload logs
     hydra_dir = Path(hydra.core.hydra_config.HydraConfig.get()["runtime"]["output_dir"])
-    logger.experiment["logs"].upload("file://" + str(hydra_dir / "train.log"))
+    logger.experiment["logs"].upload(str(hydra_dir / "train.log"))
 
     # Save best checkpoint to the hub
     if cfg.upload_best_model:
