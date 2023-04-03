@@ -1,5 +1,6 @@
 _target_: lightning.Trainer
 
-accelerator: cpu
+accelerator: gpu
 devices: 1
 max_epochs: 2
+precision: 16-mixed

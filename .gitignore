@@ -135,3 +135,7 @@ lightning_logs
 .neptune
 .vscode
 outputs
+
+Efficient_word_net
+WakeWordDetection
+checkpoints
