@@ -1,12 +1,15 @@
 defaults:
   - _self_
-  - datamodule: google_commands.yaml
-  - module: classification.yaml
-  - trainer: default.yaml
-  - logger: neptune.yaml
+  - datamodule: google_commands
+  - module: classification
+  - trainer: default
+  - logger: neptune
 
 # task name, determines output directory path
-task_name: "wake_voice_detection"
+task_name: "wake-word-detection"
+
+#Flag allowing sanity check -> If your implementation can't even overfit one batch, then it's probably something wrong.
+overfit_one_batch: False
 
 # set False to skip model training
 train: True
@@ -14,7 +17,6 @@ train: True
 # evaluate on test set, using best model weights achieved during training
 # lightning chooses best weights based on the metric specified in checkpoint callback
 test: True
-save_state_dict: True
 
 # simply provide checkpoint path to resume training
 ckpt_path: null
@@ -25,12 +27,13 @@ seed: 42
 #Whether to use torch 2.0 compile function
 compile: False
 
+upload_best_model: True
 
 #Lightning checkpointing definition
 checkpoints:
   _target_: lightning.pytorch.callbacks.ModelCheckpoint
   save_top_k: 1
   monitor: val_acc
-  mode: min
+  mode: max
   dirpath: checkpoints
   filename: "${task_name}-{epoch}-{val_acc:.2f}"
