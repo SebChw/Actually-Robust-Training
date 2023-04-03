@@ -31,8 +31,11 @@ def train(cfg: DictConfig):
         log.info("Compiling the model.")
         model = torch.compile(model, mode="reduce-overhead")
 
-    log.info(f"Instantiating logger <{cfg.logger._target_}>")
-    logger = hydra.utils.instantiate(cfg.logger, _recursive_=False)
+    # Overfit one batch if wanted for sanity check
+    if cfg.get("overfit_one_batch"):
+        log.info("Overfitting on one batch of the data")
+        trainer = hydra.utils.instantiate(cfg.trainer, overfit_batches=1, max_epochs=50)
+        trainer.fit(model=model, datamodule=datamodule)
 
     # Init lightning trainer
     log.info(f"Instantiating trainer <{cfg.trainer._target_}>")

@@ -3,7 +3,6 @@ import lightning as L
 
 import torch
 import datasets
-
 from torch.utils.data.sampler import BatchSampler, RandomSampler
 
 from art.data.collate import create_waveform_collate, create_sourceseparation_collate
@@ -40,22 +39,27 @@ class GoogleCommandDataModule(L.LightningDataModule):
             device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
             self.dataset = self.dataset.with_format("torch", device=device)
 
-    def dataloader_batch_sampler(self, ds, batch_size):
-        batch_sampler = BatchSampler(
-            RandomSampler(ds), batch_size=batch_size, drop_last=False
-        )
-        return DataLoader(ds, batch_sampler=batch_sampler, collate_fn=self.collate)
-
     def train_dataloader(self):
-        return self.dataloader_batch_sampler(self.dataset["train"], self.batch_size)
+        # Why  Iremoved samplers
+        # https://huggingface.co/docs/datasets/use_with_pytorch
+        return DataLoader(
+            self.dataset["train"].shuffle(),
+            shuffle=True,
+            batch_size=self.batch_size,
+            collate_fn=self.collate,
+        )
 
     def val_dataloader(self):
-        return self.dataloader_batch_sampler(
-            self.dataset["validation"], self.batch_size
+        return DataLoader(
+            self.dataset["validation"],
+            batch_size=self.batch_size,
+            collate_fn=self.collate,
         )
 
     def test_dataloader(self):
-        return self.dataloader_batch_sampler(self.dataset["test"], self.batch_size)
+        return DataLoader(
+            self.dataset["test"], batch_size=self.batch_size, collate_fn=self.collate
+        )
 
 
 class SounDemixingChallengeDataModule(L.LightningDataModule):
