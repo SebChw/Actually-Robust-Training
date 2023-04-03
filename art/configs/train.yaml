@@ -24,3 +24,5 @@ seed: 42
 
 #Whether to use torch 2.0 compile function
 compile: False
+
+  filename: "${task_name}-{epoch}-{val_acc:.2f}"
