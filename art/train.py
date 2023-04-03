@@ -39,7 +39,10 @@ def train(cfg: DictConfig):
 
     # Init lightning trainer
     log.info(f"Instantiating trainer <{cfg.trainer._target_}>")
-    trainer = hydra.utils.instantiate(cfg.trainer, logger=logger)
+    checkpoint_callback = hydra.utils.instantiate(cfg.checkpoints)
+    trainer = hydra.utils.instantiate(
+        cfg.trainer, logger=logger, callbacks=[checkpoint_callback]
+    )
 
     # Train the model
     if cfg.get("train"):
