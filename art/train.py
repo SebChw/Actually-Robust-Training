@@ -75,7 +75,7 @@ def train(cfg: DictConfig):
         log.info(f"Best ckpt path: {ckpt_path}")
 
     # Upload logs
-    hydra_dir = Path(hydra.core.hydra_config.HydraConfig.get()["runtime"]["output_dir"])
+    hydra_dir = Path(hydra.core.hydra_config.HydraConfig.get()["runtime"]["output_dir"])  # type: ignore
     logger.experiment["logs"].upload(str(hydra_dir / "train.log"))
 
     # Save best checkpoint to the hub

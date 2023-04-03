@@ -13,7 +13,7 @@ class LitAudioClassifier(L.LightningModule):
         self.model = hydra.utils.instantiate(model)
 
         # Why this is necessary in common pitfalls
-        #! https://torchmetrics.readthedocs.io/en/stable/pages/lightning.html
+        # https://torchmetrics.readthedocs.io/en/stable/pages/lightning.html
         self.accuracy = nn.ModuleList(
             [
                 torchmetrics.Accuracy(task="multiclass", num_classes=num_classes)
