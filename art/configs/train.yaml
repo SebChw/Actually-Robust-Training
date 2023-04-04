@@ -1,15 +1,12 @@
 defaults:
   - _self_
-  - datamodule: google_commands
-  - module: classification
-  - trainer: default
-  - logger: neptune
+  - datamodule: musdb18.yaml
+  - module: source_separation.yaml
+  - trainer: default.yaml
+  - logger: neptune.yaml
 
 # task name, determines output directory path
-task_name: "wake-word-detection"
-
-#Flag allowing sanity check -> If your implementation can't even overfit one batch, then it's probably something wrong.
-overfit_one_batch: False
+task_name: "source_separation"
 
 # set False to skip model training
 train: True
