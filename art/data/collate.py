@@ -37,7 +37,7 @@ def create_waveform_collate(normalize=None, max_length=16000):
 
 
 def create_sourceseparation_collate(
-    length=44100, instruments=["bass", "vocals", "drums", "other"]
+    max_length=-1, instruments=["bass", "vocals", "drums", "other"]
 ):
     def waveform_collate_fn(batch):
         X = defaultdict(lambda: [])
@@ -48,14 +48,15 @@ def create_sourceseparation_collate(
             stds.append(item["std"])
             instruments_wavs = {name: item[name]["array"] for name in instruments}
 
-            random_offset = random.randint(
-                0, instruments_wavs[instruments[0]].shape[1] - length
-            )
+            if max_length != -1:
+                random_offset = random.randint(
+                    0, instruments_wavs[instruments[0]].shape[1] - max_length
+                )
 
-            instruments_wavs = {
-                name: wav[:, random_offset : random_offset + length]
-                for name, wav in instruments_wavs.items()
-            }
+                instruments_wavs = {
+                    name: wav[:, random_offset : random_offset + max_length]
+                    for name, wav in instruments_wavs.items()
+                }
 
             for name, waveform in instruments_wavs.items():
                 X[name].append(waveform)

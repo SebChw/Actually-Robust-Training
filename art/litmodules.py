@@ -87,7 +87,7 @@ class LitAudioSourceSeparator(L.LightningModule):
         predictions = self.model(X)
 
         loss = F.l1_loss(predictions, target)
-        self.log(f"{prompt}_loss", loss, on_step=True, on_epoch=True)
+        self.log(f"{prompt}_loss", loss, on_step=True, on_epoch=True, prog_bar=True)
 
         try:
             # !If some target is entirely 0 then this sdr calculation fails :( flattening could help but then I get memory errors

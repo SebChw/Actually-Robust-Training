@@ -63,7 +63,7 @@ class GoogleCommandDataModule(L.LightningDataModule):
 
 
 class SourceSeparationDataModule(L.LightningDataModule):
-    def __init__(self, dataset_kwargs, batch_size=64, train_size=None):
+    def __init__(self, dataset_kwargs, batch_size=64, train_size=None, max_length=-1):
         super().__init__()
 
         self.train_size = train_size
@@ -71,7 +71,7 @@ class SourceSeparationDataModule(L.LightningDataModule):
 
         self.batch_size = batch_size
 
-        self.collate = create_sourceseparation_collate()
+        self.collate = create_sourceseparation_collate(max_length)
 
         self.dataset = None
 
@@ -80,7 +80,7 @@ class SourceSeparationDataModule(L.LightningDataModule):
 
     def setup(self, stage):
         if self.dataset is None:
-            self.dataset = datasets.load_dataset(**self.dataset_kwargs)
+            self.dataset = datasets.load_dataset(**self.dataset_kwargs)["train"]
 
             # We don't shuffle not to mix up song between sets
             if self.train_size:

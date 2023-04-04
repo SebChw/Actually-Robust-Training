@@ -1,12 +1,12 @@
 defaults:
   - _self_
-  - datamodule: musdb18.yaml
-  - module: source_separation.yaml
-  - trainer: default.yaml
-  - logger: neptune.yaml
+  - datamodule: sdx_labelnoise
+  - module: source_separation
+  - trainer: default
+  - logger: neptune
 
 # task name, determines output directory path
-task_name: "source_separation"
+task_name: "sourceseparation"
 
 # set False to skip model training
 train: True
@@ -30,7 +30,7 @@ upload_best_model: True
 checkpoints:
   _target_: lightning.pytorch.callbacks.ModelCheckpoint
   save_top_k: 1
-  monitor: val_acc
+  monitor: val_loss
   mode: max
   dirpath: checkpoints
-  filename: "${task_name}-{epoch}-{val_acc:.2f}"
+  filename: "${task_name}-{epoch}-{val_loss:.2f}"
