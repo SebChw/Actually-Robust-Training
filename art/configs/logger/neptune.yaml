@@ -1,5 +1,5 @@
 _target_: lightning.pytorch.loggers.NeptuneLogger
 api_key: ${oc.env:NEPTUNE_API_TOKEN} # api key is loaded from environment variable
-project: skdbmk/sourceseparation
+project: skdbmk/${task_name}
 log_model_checkpoints: True
 prefix: ""
