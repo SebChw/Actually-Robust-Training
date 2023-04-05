@@ -63,16 +63,16 @@ class GoogleCommandDataModule(L.LightningDataModule):
 
 
 class SourceSeparationDataModule(L.LightningDataModule):
-    def __init__(self, dataset_kwargs, batch_size=64, train_size=None, max_length=-1):
+    def __init__(self, dataset_kwargs, batch_size=64, train_size=None, max_length=-1, num_workers=4):
         super().__init__()
 
         self.train_size = train_size
         self.dataset_kwargs = dataset_kwargs
 
         self.batch_size = batch_size
+        self.num_workers = num_workers
 
         self.collate = create_sourceseparation_collate(max_length)
-
         self.dataset = None
 
     def prepare_data(self):
@@ -89,16 +89,19 @@ class SourceSeparationDataModule(L.LightningDataModule):
                 )
 
             device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-            self.dataset = self.dataset.with_format("torch", device=device)
+            self.dataset = self.dataset.with_format("torch", device="cpu")
 
     def dataloader_batch_sampler(self, ds, batch_size):
         batch_sampler = BatchSampler(
             RandomSampler(ds), batch_size=batch_size, drop_last=False
         )
-        return DataLoader(ds, batch_sampler=batch_sampler, collate_fn=self.collate)
+        return DataLoader(ds, batch_sampler=batch_sampler, collate_fn=self.collate, num_workers=self.num_workers)
 
     def train_dataloader(self):
         return self.dataloader_batch_sampler(self.dataset["train"], self.batch_size)
 
     def val_dataloader(self):
+        return self.dataloader_batch_sampler(self.dataset["test"], self.batch_size)
+
+    def test_dataloader(self):
         return self.dataloader_batch_sampler(self.dataset["test"], self.batch_size)
