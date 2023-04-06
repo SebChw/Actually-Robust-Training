@@ -23,7 +23,7 @@ def train(cfg: DictConfig):
         seed_everything(cfg.seed, workers=True)
 
     log.info(f"Instantiating logger <{cfg.logger._target_}>")
-    logger = hydra.utils.instantiate(cfg.logger, _recursive_=False)
+    logger = hydra.utils.instantiate(cfg.logger)
 
     # push configuration
     logger.experiment["configuration"] = stringify_unsupported(
@@ -32,11 +32,11 @@ def train(cfg: DictConfig):
 
     # Init lightning datamodule
     log.info(f"Instantiating datamodule <{cfg.datamodule._target_}>")
-    datamodule = hydra.utils.instantiate(cfg.datamodule, _recursive_=False)
+    datamodule = hydra.utils.instantiate(cfg.datamodule)
 
     # Init lightning model
     log.info(f"Instantiating lightning model <{cfg.module._target_}>")
-    model = hydra.utils.instantiate(cfg.module, _recursive_=False)
+    model = hydra.utils.instantiate(cfg.module)
 
     if cfg.compile:
         log.info("Compiling the model.")
