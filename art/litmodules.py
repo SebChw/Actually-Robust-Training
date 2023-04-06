@@ -72,15 +72,19 @@ class WrongLabelStrategy:
 
 
 class LitAudioSourceSeparator(L.LightningModule):
+        calculate_sdr=False,
         wrong_label_strategy=None,
         super().__init__()
 
         self.sources = sources
-        self.model = hydra.utils.instantiate(model)
-        # !one may use MetricCollection wrapper but not in this case
-        self.sdr = nn.ModuleDict(
-            {source: torchmetrics.SignalDistortionRatio() for source in sources}
-        )
+        self.calculate_sdr = calculate_sdr
+        self.wrong_label_strategy = wrong_label_strategy
+
+        if calculate_sdr:
+            # !one may use MetricCollection wrapper but not in this case
+            self.sdr = nn.ModuleDict(
+                {source: torchmetrics.SignalDistortionRatio() for source in sources}
+            )
 
     def forward(self, X):
         # Here we can make it more like inference step and return dict with sources
@@ -100,20 +104,19 @@ class LitAudioSourceSeparator(L.LightningModule):
             loss = self.wrong_label_strategy(loss)
         self.log(f"{prompt}_loss", loss, on_step=True, on_epoch=True, prog_bar=True)
 
-        try:
-            # !If some target is entirely 0 then this sdr calculation fails :( flattening could help but then I get memory errors
-            # But as we always subtract mean this is no longer the case?
-            for i, (source, sdr) in enumerate(self.sdr.items()):
-                sdr(predictions[:, i, ...], target[:, i, ...])
-                self.log(
-                    f"{prompt}_{source}_sdr",
-                    sdr,
-                    on_step=True,
-                    on_epoch=True,
-                    prog_bar=True,
-                )
-        except np.linalg.LinAlgError:
-            print("SINGULARITY IN SDR!")
+        if self.calculate_sdr:
+            try:
+                for i, (source, sdr) in enumerate(self.sdr.items()):
+                    sdr(predictions[:, i, ...], target[:, i, ...])
+                    self.log(
+                        f"{prompt}_{source}_sdr",
+                        sdr,
+                        on_step=True,
+                        on_epoch=True,
+                        prog_bar=True,
+                    )
+            except np.linalg.LinAlgError:
+                print("SINGULARITY IN SDR!")
 
         return loss
 
