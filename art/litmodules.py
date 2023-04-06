@@ -61,8 +61,18 @@ class LitAudioClassifier(L.LightningModule):
         self.processing_step(batch, "test")
 
 
+class WrongLabelStrategy:
+    def __init__(self, strategy="threshold", **strategy_kwargs):
+        self.strategy = strategy
+        self.strategy_kwargs = strategy_kwargs
+
+    def __call__(self, losses):
+        # TODO
+        pass
+
+
 class LitAudioSourceSeparator(L.LightningModule):
-    def __init__(self, model, sources=["bass", "vocals", "drums", "other"]):
+        wrong_label_strategy=None,
         super().__init__()
 
         self.sources = sources
@@ -86,7 +96,8 @@ class LitAudioSourceSeparator(L.LightningModule):
 
         predictions = self.model(X)
 
-        loss = F.l1_loss(predictions, target)
+        if self.wrong_label_strategy and prompt == "train":
+            loss = self.wrong_label_strategy(loss)
         self.log(f"{prompt}_loss", loss, on_step=True, on_epoch=True, prog_bar=True)
 
         try:
