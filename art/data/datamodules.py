@@ -63,7 +63,14 @@ class GoogleCommandDataModule(L.LightningDataModule):
 
 
 class SourceSeparationDataModule(L.LightningDataModule):
-    def __init__(self, dataset_kwargs, batch_size=64, train_size=None, max_length=-1, num_workers=4):
+    def __init__(
+        self,
+        dataset_kwargs,
+        batch_size=64,
+        train_size=None,
+        max_length=-1,
+        num_workers=4,
+    ):
         super().__init__()
 
         self.train_size = train_size
@@ -80,28 +87,42 @@ class SourceSeparationDataModule(L.LightningDataModule):
 
     def setup(self, stage):
         if self.dataset is None:
-            self.dataset = datasets.load_dataset(**self.dataset_kwargs)["train"]
+            self.dataset = datasets.load_dataset(**self.dataset_kwargs)
+            if self.dataset_kwargs["path"] == "sebchw/sound_demixing_challenge":
+                self.dataset_train = self.dataset["train"]
+                self.dataset_valid = datasets.load_dataset(
+                    "sebchw/musdb18", split="test"
+                )
+            else:
+                self.dataset_train = self.dataset["train"]
+                self.dataset_valid = self.dataset["test"]
 
             # We don't shuffle not to mix up song between sets
-            if self.train_size:
-                self.dataset = self.dataset.train_test_split(
-                    train_size=self.train_size, shuffle=False
-                )
+            #! It is suggested by DB to use clean set as validation
+            # if self.train_size:
+            #     self.dataset = self.dataset.train_test_split(
+            #         train_size=self.train_size, shuffle=False
+            #     )
 
-            device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-            self.dataset = self.dataset.with_format("torch", device="cpu")
+            self.dataset_train = self.dataset_train.with_format("torch", device="cpu")
+            self.dataset_valid = self.dataset_valid.with_format("torch", device="cpu")
 
     def dataloader_batch_sampler(self, ds, batch_size):
         batch_sampler = BatchSampler(
             RandomSampler(ds), batch_size=batch_size, drop_last=False
         )
-        return DataLoader(ds, batch_sampler=batch_sampler, collate_fn=self.collate, num_workers=self.num_workers)
+        return DataLoader(
+            ds,
+            batch_sampler=batch_sampler,
+            collate_fn=self.collate,
+            num_workers=self.num_workers,
+        )
 
     def train_dataloader(self):
-        return self.dataloader_batch_sampler(self.dataset["train"], self.batch_size)
+        return self.dataloader_batch_sampler(self.dataset_train, self.batch_size)
 
     def val_dataloader(self):
-        return self.dataloader_batch_sampler(self.dataset["test"], self.batch_size)
+        return self.dataloader_batch_sampler(self.dataset_valid, self.batch_size)
 
     def test_dataloader(self):
-        return self.dataloader_batch_sampler(self.dataset["test"], self.batch_size)
+        return self.dataloader_batch_sampler(self.dataset_valid, self.batch_size)
