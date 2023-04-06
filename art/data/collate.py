@@ -43,7 +43,12 @@ def create_sourceseparation_collate(
         X = defaultdict(lambda: [])
         means = []
         stds = []
+        song_names = []
+        n_windows = []
         for item in batch:
+            song_names.append(item["name"].split("/")[-1])
+            n_windows.append(item["n_window"])
+
             means.append(item["mean"])
             stds.append(item["std"])
             instruments_wavs = {name: item[name]["array"] for name in instruments}
@@ -71,6 +76,8 @@ def create_sourceseparation_collate(
         return {
             "mixture": torch.sum(separations, axis=1),
             "target": separations,
+            "name": song_names,
+            "n_window": n_windows,
         }
 
     return waveform_collate_fn
