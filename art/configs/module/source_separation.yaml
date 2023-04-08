@@ -2,5 +2,7 @@ _target_: art.litmodules.LitAudioSourceSeparator
 model:
   _target_: torchaudio.models.HDemucs
   sources: ["bass", "vocals", "drums", "other"]
+wrong_label_strategy:
+  _target_: art.utils.thresholders.SingleThresholdLabelStrategy
 
 sources: ["bass", "vocals", "drums", "other"] # Interpolation doesn't work :(
