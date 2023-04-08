@@ -70,10 +70,12 @@ class SourceSeparationDataModule(L.LightningDataModule):
         train_size=None,
         max_length=-1,
         num_workers=4,
+        dataset_path=None,
     ):
         super().__init__()
 
         self.train_size = train_size
+        self.dataset_path = dataset_path
         self.dataset_kwargs = dataset_kwargs
 
         self.batch_size = batch_size
@@ -87,25 +89,18 @@ class SourceSeparationDataModule(L.LightningDataModule):
 
     def setup(self, stage):
         if self.dataset is None:
-            self.dataset = datasets.load_dataset(**self.dataset_kwargs)
-            if self.dataset_kwargs["path"] == "sebchw/sound_demixing_challenge":
-                self.dataset_train = self.dataset["train"]
-                self.dataset_valid = datasets.load_dataset(
-                    "sebchw/musdb18", split="test"
-                )
+            if self.dataset_path is not None:
+                print(f"Loading dataset {self.dataset_path} from disk")
+                self.dataset = datasets.DatasetDict.load_from_disk(self.dataset_path)
             else:
-                self.dataset_train = self.dataset["train"]
-                self.dataset_valid = self.dataset["test"]
+                self.dataset = datasets.load_dataset(**self.dataset_kwargs)
 
-            # We don't shuffle not to mix up song between sets
-            #! It is suggested by DB to use clean set as validation
-            # if self.train_size:
-            #     self.dataset = self.dataset.train_test_split(
-            #         train_size=self.train_size, shuffle=False
-            #     )
+                if self.dataset_kwargs["path"] == "sebchw/sound_demixing_challenge":
+                    self.dataset["test"] = datasets.load_dataset(
+                        "sebchw/musdb18", split="test"
+                    )
 
-            self.dataset_train = self.dataset_train.with_format("torch", device="cpu")
-            self.dataset_valid = self.dataset_valid.with_format("torch", device="cpu")
+            self.dataset = self.dataset.with_format("torch", device="cpu")
 
     def dataloader_batch_sampler(self, ds, batch_size):
         batch_sampler = BatchSampler(
@@ -119,10 +114,10 @@ class SourceSeparationDataModule(L.LightningDataModule):
         )
 
     def train_dataloader(self):
-        return self.dataloader_batch_sampler(self.dataset_train, self.batch_size)
+        return self.dataloader_batch_sampler(self.dataset["train"], self.batch_size)
 
     def val_dataloader(self):
-        return self.dataloader_batch_sampler(self.dataset_valid, self.batch_size)
+        return self.dataloader_batch_sampler(self.dataset["test"], self.batch_size)
 
     def test_dataloader(self):
-        return self.dataloader_batch_sampler(self.dataset_valid, self.batch_size)
+        return self.dataloader_batch_sampler(self.dataset["test"], self.batch_size)
