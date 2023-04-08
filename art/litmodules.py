@@ -177,5 +177,5 @@ class LitAudioSourceSeparator(L.LightningModule):
             self.logger.experiment[title].upload(fig)
 
         self.song_losses = defaultdict(
-            lambda: {source: np.zeros(60) for source in self.sources}
+            lambda: {source: np.zeros(100) for source in self.sources}
         )
