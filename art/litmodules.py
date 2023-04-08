@@ -5,8 +5,7 @@ import torch.nn as nn
 import torchmetrics
 import numpy as np
 from collections import defaultdict
-
-from matplotlib import pyplot as plt
+import matplotlib.pyplot as plt
 
 
 class LitAudioClassifier(L.LightningModule):
@@ -133,6 +132,7 @@ class LitAudioSourceSeparator(L.LightningModule):
         self._update_song_losses(prompt, batch, loss)
         if self.wrong_label_strategy and prompt == "train":
             loss = self.wrong_label_strategy(loss)
+
         loss = loss.mean()
 
         self.log(f"{prompt}_loss", loss, on_step=True, on_epoch=True, prog_bar=True)
@@ -172,28 +172,26 @@ class LitAudioSourceSeparator(L.LightningModule):
 
     def on_validation_epoch_end(self):
         # Saving all necessary plots to the logger
-        for song, instrument_losses in self.song_losses["valid"].items():
-            fig, ax = plt.subplots(1, 4, figsize=(30, 10))
-            title = f"Epoch_{self.current_epoch}_song_{song}"
-            fig.suptitle(title, fontsize=16)
-            for i, (instrument, loss) in enumerate(instrument_losses.items()):
-                loss = np.trim_zeros(loss, "b")
-                # ax[i].bar(np.arange(len(loss)), loss)
-                ax[i].plot(loss, "bo-")
-                ax[i].set_title(instrument)
-                ax[i].set_xlabel("number of window")
-                ax[i].set_ylabel("L1")
-                ax[i].set_ylim([0, 0.25])
-
-            self.logger.experiment[
-                f"L1_losses/epoch{self.current_epoch}/{title}"
-            ].upload(fig)
-
+        for prompt_name, prompt in self.song_losses.items():
+            for song, instrument_losses in prompt.items():
+                fig, ax = plt.subplots(1, 4, figsize=(30, 10), num=1, clear=True)
+                title = f"Epoch_{self.current_epoch}_song_{song}"
+                fig.suptitle(title, fontsize=16)
+                for i, (instrument, loss) in enumerate(instrument_losses.items()):
+                    print(loss)
+                    loss = np.trim_zeros(loss, "b")
+                    # ax[i].bar(np.arange(len(loss)), loss)
+                    ax[i].plot(loss, "bo-")
+                    ax[i].set_title(instrument)
+                    ax[i].set_xlabel("number of window")
+                    ax[i].set_ylabel("L1")
+                    ax[i].set_ylim([0, 1.0])
+                self.logger.experiment[
+                    f"L1_losses/epoch{self.current_epoch}/{prompt_name}/{title}"
+                ].upload(fig)
 
     def on_train_epoch_start(self):
-        self.song_losses = defaultdict(
             lambda: defaultdict(
                 lambda: {source: np.zeros(100) for source in self.sources}
             )
-        )
 

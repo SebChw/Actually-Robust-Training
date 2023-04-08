@@ -23,7 +23,7 @@ class SingleThresholdLabelStrategy():
         }
 
     def get_figures(self):
-        fig = plt.figure()
+        fig = plt.figure(num=1, clear=True)
         ax = fig.gca()
         ax.hist(self.all_losses, bins=50)
         ax.set_title("L1 losses histogram")
