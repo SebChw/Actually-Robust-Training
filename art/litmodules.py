@@ -5,7 +5,8 @@ import torch.nn as nn
 import torchmetrics
 import numpy as np
 from collections import defaultdict
-import matplotlib.pyplot as plt
+
+from matplotlib import pyplot as plt
 
 
 class LitAudioClassifier(L.LightningModule):
@@ -90,7 +91,9 @@ class LitAudioSourceSeparator(L.LightningModule):
         # For every song and every instrument we track losses
         # Ill trim these zeros later on
         self.song_losses = defaultdict(
-            lambda: {source: np.zeros(100) for source in self.sources}
+            lambda: defaultdict(
+                lambda: {source: np.zeros(100) for source in self.sources}
+            )
         )
 
         if calculate_sdr:
@@ -114,7 +117,7 @@ class LitAudioSourceSeparator(L.LightningModule):
             zip(song_names, numbers_of_window)
         ):
             for instrument_id, instrument in enumerate(self.sources):
-                self.song_losses[prompt + song_name][instrument][num_of_win] = loss[
+                self.song_losses[prompt][song_name][instrument][num_of_win] = loss[
                     song_id
                 ][instrument_id]
 
@@ -130,7 +133,6 @@ class LitAudioSourceSeparator(L.LightningModule):
         self._update_song_losses(prompt, batch, loss)
         if self.wrong_label_strategy and prompt == "train":
             loss = self.wrong_label_strategy(loss)
-
         loss = loss.mean()
 
         self.log(f"{prompt}_loss", loss, on_step=True, on_epoch=True, prog_bar=True)
@@ -155,14 +157,22 @@ class LitAudioSourceSeparator(L.LightningModule):
         return self.processing_step(batch, "train")
 
     def validation_step(self, batch, batch_idx):
-        self.processing_step(batch, "val")
+        return self.processing_step(batch, "val")
 
     def test_step(self, batch, batch_idx):
-        self.processing_step(batch, "test")
+        return self.processing_step(batch, "test")
+
+    def on_train_epoch_end(self):
+        if self.wrong_label_strategy:
+            self.wrong_label_strategy.update(self.song_losses["train"])
+            self.logger.log_metrics(self.wrong_label_strategy.get_metrics())
+            for key, fig in self.wrong_label_strategy.get_figures().items():
+                self.logger.experiment[f"loss_thresholds/epoch{self.current_epoch}/{key}"].upload(fig)
+
 
     def on_validation_epoch_end(self):
         # Saving all necessary plots to the logger
-        for song, instrument_losses in self.song_losses.items():
+        for song, instrument_losses in self.song_losses["valid"].items():
             fig, ax = plt.subplots(1, 4, figsize=(30, 10))
             title = f"Epoch_{self.current_epoch}_song_{song}"
             fig.suptitle(title, fontsize=16)
@@ -179,6 +189,11 @@ class LitAudioSourceSeparator(L.LightningModule):
                 f"L1_losses/epoch{self.current_epoch}/{title}"
             ].upload(fig)
 
+
+    def on_train_epoch_start(self):
         self.song_losses = defaultdict(
-            lambda: {source: np.zeros(100) for source in self.sources}
+            lambda: defaultdict(
+                lambda: {source: np.zeros(100) for source in self.sources}
+            )
         )
+
