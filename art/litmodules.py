@@ -173,7 +173,7 @@ class LitAudioSourceSeparator(L.LightningModule):
                 ax[i].set_title(instrument)
                 ax[i].set_xlabel("number of window")
                 ax[i].set_ylabel("L1")
-                ax[i].set_ylim([0, 2.5])
+                ax[i].set_ylim([0, 0.25])
 
             self.logger.experiment[
                 f"L1_losses/epoch{self.current_epoch}/{title}"
