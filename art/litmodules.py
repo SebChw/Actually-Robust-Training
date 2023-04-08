@@ -114,9 +114,9 @@ class LitAudioSourceSeparator(L.LightningModule):
             zip(song_names, numbers_of_window)
         ):
             for instrument_id, instrument in enumerate(self.sources):
-                self.song_losses[prompt + song_name][instrument][num_of_win] = loss[
-                    song_id
-                ][instrument_id]
+                self.song_losses[prompt + "_" + song_name][instrument][
+                    num_of_win
+                ] = loss[song_id][instrument_id]
 
     def processing_step(self, batch, prompt):
         X = batch["mixture"]
@@ -163,7 +163,7 @@ class LitAudioSourceSeparator(L.LightningModule):
     def on_validation_epoch_end(self):
         # Saving all necessary plots to the logger
         for song, instrument_losses in self.song_losses.items():
-            fig, ax = plt.subplots(1, 4, figsize=(30, 10))
+            fig, ax = plt.subplots(1, 4, figsize=(30, 10), num=1, clear=True)
             title = f"Epoch_{self.current_epoch}_song_{song}"
             fig.suptitle(title, fontsize=16)
             for i, (instrument, loss) in enumerate(instrument_losses.items()):
@@ -176,7 +176,7 @@ class LitAudioSourceSeparator(L.LightningModule):
                 ax[i].set_ylim([0, 0.25])
 
             self.logger.experiment[
-                f"L1_losses/epoch{self.current_epoch}/{title}"
+                f"L1_losses/epoch{self.current_epoch}/{song.split('_')[0]}/{song}"
             ].upload(fig)
 
         self.song_losses = defaultdict(
