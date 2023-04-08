@@ -90,7 +90,7 @@ class LitAudioSourceSeparator(L.LightningModule):
         # For every song and every instrument we track losses
         # Ill trim these zeros later on
         self.song_losses = defaultdict(
-            lambda: {source: np.zeros(60) for source in self.sources}
+            lambda: {source: np.zeros(100) for source in self.sources}
         )
 
         if calculate_sdr:
