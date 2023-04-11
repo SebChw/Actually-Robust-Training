@@ -34,10 +34,11 @@ def dummy_generator(sample_gen: typing.Callable, n_samples=32):
 
 
 class SanityCheckDataModule(L.LightningDataModule):
-    def __init__(self, dataset_generator, collate):
+    def __init__(self, dataset_generator, collate, num_workers=1):
         super().__init__()
         self.dataset_generator = dataset_generator
         self.collate = collate
+        self.num_workers= num_workers
 
     def prepare_data(self):
         # If you don't write anything here Lightning will try to use prepare_data_per_node
@@ -50,7 +51,7 @@ class SanityCheckDataModule(L.LightningDataModule):
         self.dataset = self.dataset.with_format("torch", device="cpu")
 
     def _get_loader(self):
-        return DataLoader(self.dataset, batch_size=4, collate_fn=self.collate)
+        return DataLoader(self.dataset, batch_size=4, collate_fn=self.collate, num_workers=self.num_workers)
 
     def train_dataloader(self):
         return self._get_loader()

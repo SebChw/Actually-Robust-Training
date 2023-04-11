@@ -36,10 +36,12 @@ def create_waveform_collate(normalize=None, max_length=16000):
     return waveform_collate_fn
 
 
-def create_sourceseparation_collate(
-    max_length=-1, instruments=["bass", "vocals", "drums", "other"]
-):
-    def waveform_collate_fn(batch):
+class SourceSeparationCollate:
+    def __init__(self, max_length=-1, instruments=["bass", "vocals", "drums", "other"]):
+        self.max_length = max_length
+        self.instruments = instruments
+
+    def __call__(self, batch):
         X = defaultdict(lambda: [])
         means = []
         stds = []
@@ -51,22 +53,22 @@ def create_sourceseparation_collate(
 
             means.append(item["mean"])
             stds.append(item["std"])
-            instruments_wavs = {name: item[name]["array"] for name in instruments}
+            instruments_wavs = {name: item[name]["array"] for name in self.instruments}
 
-            if max_length != -1:
+            if self.max_length != -1:
                 random_offset = random.randint(
-                    0, instruments_wavs[instruments[0]].shape[1] - max_length
+                    0, instruments_wavs[self.instruments[0]].shape[1] - self.max_length
                 )
 
                 instruments_wavs = {
-                    name: wav[:, random_offset : random_offset + max_length]
+                    name: wav[:, random_offset : random_offset + self.max_length]
                     for name, wav in instruments_wavs.items()
                 }
 
             for name, waveform in instruments_wavs.items():
                 X[name].append(waveform)
 
-        separations = [torch.stack(X[instrument]) for instrument in instruments]
+        separations = [torch.stack(X[instrument]) for instrument in self.instruments]
         separations = torch.stack(separations, axis=1)
 
         separations = (
@@ -79,5 +81,3 @@ def create_sourceseparation_collate(
             "name": song_names,
             "n_window": n_windows,
         }
-
-    return waveform_collate_fn

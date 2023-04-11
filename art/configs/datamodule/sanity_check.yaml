@@ -5,4 +5,4 @@ dataset_generator:
     _target_: art.data.utils.dummy_source_separation_sample
 
 collate:
-  _target_: art.data.collate.create_sourceseparation_collate
+  _target_: art.data.collate.SourceSeparationCollate
