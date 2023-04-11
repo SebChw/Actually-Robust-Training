@@ -5,7 +5,7 @@ import torch
 import datasets
 from torch.utils.data.sampler import BatchSampler, RandomSampler
 
-from art.data.collate import create_waveform_collate, create_sourceseparation_collate
+from art.data.collate import create_waveform_collate, SourceSeparationCollate
 
 
 class GoogleCommandDataModule(L.LightningDataModule):
@@ -81,7 +81,7 @@ class SourceSeparationDataModule(L.LightningDataModule):
         self.batch_size = batch_size
         self.num_workers = num_workers
 
-        self.collate = create_sourceseparation_collate(max_length)
+        self.collate = SourceSeparationCollate(max_length)
         self.dataset = None
 
     def prepare_data(self):

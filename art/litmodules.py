@@ -117,7 +117,14 @@ class LitAudioSourceSeparator(L.LightningModule):
             loss = self.wrong_label_strategy(loss)
         loss = loss.mean()
 
-        self.log(f"{prompt}_loss", loss, on_step=True, on_epoch=True, prog_bar=True)
+        self.log(
+            f"{prompt}_loss",
+            loss,
+            on_step=True,
+            on_epoch=True,
+            prog_bar=True,
+            batch_size=X.shape[0],
+        )
 
         if self.calculate_sdr:
             try:
