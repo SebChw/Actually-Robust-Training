@@ -28,7 +28,7 @@ dependencies = [
   "neptune-client~=1.1.1",
   "soundfile~=0.12.1",
   "stempeg~=0.2.3",
-  "matplotlib~=3.71",
+  "matplotlib~=3.7.1",
   "librosa~=0.10.0",
 ]
 
