@@ -31,6 +31,6 @@ checkpoints:
   _target_: lightning.pytorch.callbacks.ModelCheckpoint
   save_top_k: 1
   monitor: val_loss
-  mode: max
+  mode: min
   dirpath: checkpoints
   filename: "${task_name}-{epoch}-{val_loss:.2f}"
