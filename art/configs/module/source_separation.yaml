@@ -4,5 +4,7 @@ model:
   sources: ["bass", "vocals", "drums", "other"]
 wrong_label_strategy:
   _target_: art.utils.thresholders.SingleThresholdLabelStrategy
+plotter:
+  _target_: art.utils.plotters.SourceSepPlotter
 
 sources: ["bass", "vocals", "drums", "other"] # Interpolation doesn't work :(

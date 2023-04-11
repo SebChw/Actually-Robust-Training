@@ -90,7 +90,7 @@ class SourceSeparationDataModule(L.LightningDataModule):
     def setup(self, stage):
         if self.dataset is None:
             if self.dataset_path is not None:
-                print(f"Loading dataset {self.dataset_path} from disk")
+                print(f"Loading dataset {self.dataset_path} from")
                 self.dataset = datasets.DatasetDict.load_from_disk(self.dataset_path)
             else:
                 self.dataset = datasets.load_dataset(**self.dataset_kwargs)
