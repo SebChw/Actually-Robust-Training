@@ -5,7 +5,7 @@ import torch.nn as nn
 import torchmetrics
 import numpy as np
 from collections import defaultdict
-import matplotlib.pyplot as plt
+from art.utils.plotters import SourceSepPlotter
 
 
 class LitAudioClassifier(L.LightningModule):
@@ -62,16 +62,6 @@ class LitAudioClassifier(L.LightningModule):
         self.processing_step(batch, "test")
 
 
-class WrongLabelStrategy:
-    def __init__(self, strategy="threshold", **strategy_kwargs):
-        self.strategy = strategy
-        self.strategy_kwargs = strategy_kwargs
-
-    def __call__(self, losses):
-        # TODO
-        pass
-
-
 class LitAudioSourceSeparator(L.LightningModule):
     def __init__(
         self,
@@ -79,21 +69,14 @@ class LitAudioSourceSeparator(L.LightningModule):
         sources=["bass", "vocals", "drums", "other"],
         calculate_sdr=False,
         wrong_label_strategy=None,
+        plotter=SourceSepPlotter(),
     ):
         super().__init__()
-
         self.sources = sources
         self.model = model
         self.calculate_sdr = calculate_sdr
         self.wrong_label_strategy = wrong_label_strategy
-
-        # For every song and every instrument we track losses
-        # Ill trim these zeros later on
-        self.song_losses = defaultdict(
-            lambda: defaultdict(
-                lambda: {source: np.zeros(100) for source in self.sources}
-            )
-        )
+        self.plotter = plotter
 
         if calculate_sdr:
             # !one may use MetricCollection wrapper but not in this case
@@ -128,7 +111,7 @@ class LitAudioSourceSeparator(L.LightningModule):
 
         loss = F.l1_loss(predictions, target, reduction="none").mean(dim=(-1, -2))
 
-        #! At this point loss has shape (n_songs, n_instruments)
+        # At this point loss has shape (n_songs, n_instruments)
         self._update_song_losses(prompt, batch, loss)
         if self.wrong_label_strategy and prompt == "train":
             loss = self.wrong_label_strategy(loss)
@@ -167,31 +150,19 @@ class LitAudioSourceSeparator(L.LightningModule):
             self.wrong_label_strategy.update(self.song_losses["train"])
             self.logger.log_metrics(self.wrong_label_strategy.get_metrics())
             for key, fig in self.wrong_label_strategy.get_figures().items():
-                self.logger.experiment[f"loss_thresholds/epoch{self.current_epoch}/{key}"].upload(fig)
-
-
-    def on_validation_epoch_end(self):
-        # Saving all necessary plots to the logger
-        for prompt_name, prompt in self.song_losses.items():
-            for song, instrument_losses in prompt.items():
-                fig, ax = plt.subplots(1, 4, figsize=(30, 10), num=1, clear=True)
-                title = f"Epoch_{self.current_epoch}_song_{song}"
-                fig.suptitle(title, fontsize=16)
-                for i, (instrument, loss) in enumerate(instrument_losses.items()):
-                    print(loss)
-                    loss = np.trim_zeros(loss, "b")
-                    # ax[i].bar(np.arange(len(loss)), loss)
-                    ax[i].plot(loss, "bo-")
-                    ax[i].set_title(instrument)
-                    ax[i].set_xlabel("number of window")
-                    ax[i].set_ylabel("L1")
-                    ax[i].set_ylim([0, 1.0])
                 self.logger.experiment[
-                    f"L1_losses/epoch{self.current_epoch}/{prompt_name}/{title}"
+                    f"loss_thresholds/epoch{self.current_epoch}/{key}"
                 ].upload(fig)
 
+    def on_validation_epoch_end(self):
+        self.plotter.update(self)
+
+    def on_fit_start(self):
+        self.on_train_epoch_start()
+
     def on_train_epoch_start(self):
+        self.song_losses = defaultdict(
             lambda: defaultdict(
                 lambda: {source: np.zeros(100) for source in self.sources}
             )
-
+        )

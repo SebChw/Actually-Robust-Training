@@ -140,3 +140,5 @@ Efficient_word_net
 WakeWordDetection
 checkpoints
 musdb
+labelnoise
+temp_plots

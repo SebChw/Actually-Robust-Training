@@ -20,12 +20,12 @@ def dummy_source_separation_sample(
         **{name: {"array": torch.randn(shape)} for name in instruments},
         "mean": 0,
         "std": 1,
-        "name": str(i % 4),
-        "n_window": i // 4,
+        "name": str(i % 8),
+        "n_window": i // 8,
     }
 
 
-def dummy_generator(sample_gen: typing.Callable, n_samples=64):
+def dummy_generator(sample_gen: typing.Callable, n_samples=32):
     def generator():
         for i in range(n_samples):
             yield sample_gen(i)
