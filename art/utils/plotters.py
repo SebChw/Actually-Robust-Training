@@ -2,6 +2,10 @@ from pathlib import Path
 import pickle
 import numpy as np
 import matplotlib.pyplot as plt
+import gc
+import matplotlib
+
+matplotlib.use("Agg")
 
 
 class SourceSepPlotter:
@@ -41,7 +45,8 @@ class SourceSepPlotter:
                         ax[i].set_ylim([0, self.y_axis_plot_limit])
 
                 else:
-                    fig, ax = pickle.load(open(plot_path, "rb"))
+                    with open(plot_path, "rb") as f:
+                        fig, ax = pickle.load(f)
 
                 for i, (instrument, loss) in enumerate(instrument_losses.items()):
                     loss = np.trim_zeros(loss, "b")
@@ -60,4 +65,9 @@ class SourceSepPlotter:
                         f"L1_losses/{stage_name}/{song}/{lit_module.current_epoch}"
                     ].upload(fig)
 
-                pickle.dump((fig, ax), open(plot_path, "wb"))
+                with open(plot_path, "wb") as f:
+                    pickle.dump((fig, ax), f)
+
+                fig.clf()
+                plt.close()
+                gc.collect()
