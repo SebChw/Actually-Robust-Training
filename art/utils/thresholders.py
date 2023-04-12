@@ -18,7 +18,11 @@ class SingleThresholdLabelStrategy:
 
     def update(self, losses: Dict[str, Dict[str, np.ndarray]]):
         self.all_losses = np.concatenate(
-            [losses[song][instrument] for song in losses for instrument in losses[song]]
+            [
+                np.trim_zeros(losses[song][instrument], "b")
+                for song in losses
+                for instrument in losses[song]
+            ]
         ).flatten()
         self.old_threshold = self.threshold
         self.threshold = np.percentile(self.all_losses, self.percentile)
