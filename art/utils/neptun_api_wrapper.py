@@ -1,5 +1,5 @@
+import argparse
 import neptune
-
 
 class NeptuneApiWrapper:
     def __init__(self, project_name='skdbmk/sourceseparation', mode="read-only"):
@@ -25,5 +25,10 @@ class NeptuneApiWrapper:
 
 
 if __name__ == "__main__":
-    neptune_api = NeptuneApiWrapper()
-    neptune_api.get_checkpoint(run_id='SOUR-33')
+    parser = argparse.ArgumentParser(description='Neptune API Wrapper')
+    parser.add_argument('--project_name', type=str, default='skdbmk/sourceseparation', help='Neptune project name')
+    parser.add_argument('--run_id', type=str, default='SOUR-33', help='Run ID for checkpoint')
+    args = parser.parse_args()
+
+    neptune_api = NeptuneApiWrapper(project_name=args.project_name)
+    neptune_api.get_checkpoint(run_id=args.run_id)
