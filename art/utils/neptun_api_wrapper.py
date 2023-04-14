@@ -22,7 +22,33 @@ class NeptuneApiWrapper:
 
         run[f'model/checkpoints/{model_path}'].download(path)
         return run
+    
+    def get_config(self, run_id=None):
+        run = neptune.init_run(project=self.project_name, with_id=run_id)
+        config = run['configuration'].fetch()
+        return config
 
+
+def get_overrides(args):
+    overrides = {}
+    for arg in args:
+        key, value = arg.split("=")
+        if key[0] == '+':
+            key = key[1:]
+        overrides[key] = value
+    return overrides
+
+def update_config(cfg, key, value):
+    print(key, value)
+    if '.' in key:
+        key, rest = key.split('.', 1)
+        update_config(cfg[key], rest, value)
+    else:
+        if value == 'null':
+            value = None
+        cfg[key] = value
+        print(cfg)
+    return cfg
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='Neptune API Wrapper')
@@ -31,4 +57,5 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     neptune_api = NeptuneApiWrapper(project_name=args.project_name)
-    neptune_api.get_checkpoint(run_id=args.run_id)
+    cfg = neptune_api.get_config(args.run_id)
+    print(cfg.module)
