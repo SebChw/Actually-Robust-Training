@@ -1,12 +1,11 @@
 from lightning import seed_everything
 from art.utils.loggers import get_pylogger
-from art.utils.neptun_api_wrapper import NeptuneApiWrapper, get_overrides, update_config
+from art.utils.neptun_api_wrapper import  get_last_training_data
 import hydra
 from pathlib import Path
 from omegaconf import DictConfig, OmegaConf
 from neptune.utils import stringify_unsupported
 import torch
-import sys
 
 import hydra
 import torch
@@ -27,19 +26,10 @@ log = get_pylogger(__name__)
 
 def train(cfg: DictConfig):
     # set seed for random number generators in pytorch, numpy and python.random
-    if cfg.get("continue_training_id"): #need to run on the same environment as the previous run!
-        print("Continuing training")
-        run_id = cfg.continue_training_id
-        neptuneAPIwrapper = NeptuneApiWrapper(project_name=cfg.logger.project)
-        neptuneAPIwrapper.get_checkpoint(run_id=run_id, path='./')
+    if cfg.get("continue_training_id"):
+        log.info(f"Continuing training from {cfg.logger.project} run {cfg.continue_training_id}")
+        get_last_training_data(cfg)
 
-        overrides = get_overrides(sys.argv[1:])
-
-        cfg = DictConfig(neptuneAPIwrapper.get_config(run_id=run_id))
-        cfg.ckpt_path = f"{run_id}.ckpt"
-        for key, value in overrides.items():
-            cfg = update_config(cfg, key, value)
-        
     if cfg.get("seed"):
         log.info(f"Seed everything with <{cfg.get('seed')}>")
         seed_everything(cfg.get("seed"), workers=True)
