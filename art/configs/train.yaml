@@ -26,6 +26,8 @@ compile: False
 
 upload_best_model: True
 
+continue_training_id: SOUR-213
+
 #Lightning checkpointing definition
 checkpoints:
   _target_: lightning.pytorch.callbacks.ModelCheckpoint
