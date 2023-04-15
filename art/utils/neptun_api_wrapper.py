@@ -60,12 +60,12 @@ def get_last_training_data(cfg):
     neptuneAPIwrapper = NeptuneApiWrapper(project_name=cfg.logger.project)
     neptuneAPIwrapper.get_checkpoint(run_id=run_id, path='./')
 
-    overrides = get_overrides(sys.argv[1:])
+    # overrides = get_overrides(sys.argv[1:])
 
-    cfg = DictConfig(neptuneAPIwrapper.get_config(run_id=run_id))
+    # cfg = DictConfig(neptuneAPIwrapper.get_config(run_id=run_id))
     cfg.ckpt_path = f"{run_id}.ckpt"
-    for key, value in overrides.items():
-        cfg = update_config(cfg, key, value)
+    # for key, value in overrides.items():
+    #     cfg = update_config(cfg, key, value)
 
 
 if __name__ == "__main__":
