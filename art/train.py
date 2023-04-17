@@ -1,11 +1,13 @@
-from lightning import seed_everything
-from art.utils.loggers import get_pylogger
-import hydra
 from pathlib import Path
-from omegaconf import DictConfig, OmegaConf
-from neptune.utils import stringify_unsupported
-import torch
+from unittest.mock import MagicMock
 
+import hydra
+import torch
+from lightning import seed_everything
+from neptune.utils import stringify_unsupported
+from omegaconf import DictConfig, OmegaConf
+
+from art.utils.loggers import get_pylogger
 
 _HYDRA_PARAMS = {
     "version_base": "1.3",
@@ -92,10 +94,3 @@ def main(cfg: DictConfig):
 
 if __name__ == "__main__":
     main()
-    # ! Previously it was like that. Now everything is set using config files
-    # neptune_logger = get_logger("skdbmk/sourceseparation", ["training", "wwd"])
-    # model = networks.M5()
-    # pl_module = litmodules.LitAudioClassifier(model, num_classes=36)
-    # data_module = datamodules.GoogleCommandDataModule()
-    # trainer = L.Trainer(accelerator="gpu", devices=1, logger=neptune_logger)
-    # trainer.fit(pl_module, datamodule=data_module)
