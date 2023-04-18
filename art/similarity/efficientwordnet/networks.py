@@ -1,6 +1,6 @@
-from torchvision import models
 import torch.nn as nn
 import torch.nn.functional as F
+from torchvision import models
 from torchvision.ops.misc import Conv2dNormActivation
 
 

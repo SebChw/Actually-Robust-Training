@@ -43,7 +43,7 @@ def _add_padding(x, length=AUDIO_LENGTH):
 #! Moreover this is highly inneficieny as it is done for every single audio file every epoch.
 def _remove_existing_padding(x: np.ndarray) -> np.ndarray:
     lastZeroBitBeforeAudio = 0
-    firstZeroBitAfterAudio = len(x)
+    firstZeroBitAfterAudio = len(x[0])
     for i in range(len(x[0])):
         # They use numpy arrays so 0th index is necessary as we use torchaudio
         if x[0][i] == 0:
@@ -201,6 +201,7 @@ class EfficientWordNetOriginalDataset(Dataset):
             self.words_in_dataset[idx // 2],
             self.words_in_dataset[(idx // 2 + idx % 2) % (self.n // 2)],
         )
+
         y = torch.tensor([1.0]) if idx % 2 == 0 else torch.tensor([0.0])
         return {"X1": audio1, "X2": audio2, "y": y}
 

@@ -45,12 +45,14 @@ class EfficientWordNetOriginal(L.LightningModule):
     def processing_step(self, batch, stage: TrainingStage):
         # y=1 -> examples are from the same class
         # y=0 -> examples are from different classes
+        #! Some inputs seems to be nans!
         X1, X2, y = batch["X1"], batch["X2"], batch["y"]
 
         emb1, emb2 = self.network(X1), self.network(X2)
         dist_pred = self.distance_func(emb1, emb2)
 
         loss = self._weird_loss(y, dist_pred)
+
         self.log(f"{stage.name}_loss", loss, prog_bar=True)
 
         y_pred = self._threshold_func(dist_pred)
