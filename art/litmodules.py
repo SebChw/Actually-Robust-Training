@@ -158,7 +158,7 @@ class LitAudioSourceSeparator(L.LightningModule):
             self.logger.log_metrics(self.wrong_label_strategy.get_metrics())
             for key, fig in self.wrong_label_strategy.get_figures().items():
                 self.logger.experiment[
-                    f"loss_thresholds/epoch{self.current_epoch}/{key}"
+                    f"loss_thresholds/epoch{self.current_epoch}_{key}"
                 ].upload(fig)
 
     def on_validation_epoch_end(self):
