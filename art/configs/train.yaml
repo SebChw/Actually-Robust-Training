@@ -26,7 +26,7 @@ compile: False
 
 upload_best_model: True
 
-continue_training_id: SOUR-213
+continue_training_id: null
 
 #Lightning checkpointing definition
 checkpoints:
