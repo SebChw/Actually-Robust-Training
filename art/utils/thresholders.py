@@ -65,6 +65,8 @@ class InstrumentThresholdLabelStrategy(SingleThresholdLabelStrategy):
         self.thresholds = []
         for source in self.sources:
             self.sources_losses[source] = np.concatenate(self.sources_losses[source]).flatten()
+            #filer elements >= 0
+            self.sources_losses[source] = self.sources_losses[source][self.sources_losses[source] >= 0]
             self.thresholds.append(np.percentile(self.sources_losses[source], self.percentile))
         self.thresholds = Tensor(self.thresholds).to(self.device)
 
