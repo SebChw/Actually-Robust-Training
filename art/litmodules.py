@@ -71,7 +71,6 @@ class LitAudioSourceSeparator(L.LightningModule):
         calculate_sdr=False,
         wrong_label_strategy=None,
         plotter=SourceSepPlotter(),
-        augment=True,
     ):
         super().__init__()
         self.sources = sources
@@ -79,16 +78,6 @@ class LitAudioSourceSeparator(L.LightningModule):
         self.calculate_sdr = calculate_sdr
         self.wrong_label_strategy = wrong_label_strategy
         self.plotter = plotter
-        if augment:
-            self.transform = nn.Sequential(
-            Shift(),
-            FlipChannels(),
-            FlipSign(),
-            Scale(),
-            Remix(),
-            )
-        else:
-            self.transform = nn.Identity()
 
         if calculate_sdr:
             # !one may use MetricCollection wrapper but not in this case
@@ -185,7 +174,3 @@ class LitAudioSourceSeparator(L.LightningModule):
             )
         )
 
-    def on_after_batch_transfer(self, batch, dataloader_idx: int):
-        x, y = batch["mixture"], batch["target"]
-        batch["mixture"] = self.transform(x)
-        return x, y
