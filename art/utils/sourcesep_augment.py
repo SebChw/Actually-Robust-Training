@@ -21,14 +21,14 @@ class Shift(nn.Module):
         self.same = same
 
     def forward(self, wav):
-        batch, sources, channels, time = wav.size()
+        sources, channels, time = wav.size()
         length = time - self.shift
         if self.shift > 0:
             if not self.training:
                 wav = wav[..., :length]
             else:
                 srcs = 1 if self.same else sources
-                offsets = th.randint(self.shift, [batch, srcs, 1, 1], device=wav.device)
+                offsets = th.randint(self.shift, [srcs, 1, 1], device=wav.device)
                 offsets = offsets.expand(-1, sources, channels, -1)
                 indexes = th.arange(length, device=wav.device)
                 wav = wav.gather(3, indexes + offsets)
@@ -40,9 +40,9 @@ class FlipChannels(nn.Module):
     Flip left-right channels.
     """
     def forward(self, wav):
-        batch, sources, channels, time = wav.size()
+        sources, channels, time = wav.size()
         if self.training and wav.size(2) == 2:
-            left = th.randint(2, (batch, sources, 1, 1), device=wav.device)
+            left = th.randint(2, (sources, 1, 1), device=wav.device)
             left = left.expand(-1, -1, -1, time)
             right = 1 - left
             wav = th.cat([wav.gather(2, left), wav.gather(2, right)], dim=2)
@@ -54,9 +54,9 @@ class FlipSign(nn.Module):
     Random sign flip.
     """
     def forward(self, wav):
-        batch, sources, channels, time = wav.size()
+        sources, channels, time = wav.size()
         if self.training:
-            signs = th.randint(2, (batch, sources, 1, 1), device=wav.device, dtype=th.float32)
+            signs = th.randint(2, (sources, 1, 1), device=wav.device, dtype=th.float32)
             wav = wav * (2 * signs - 1)
         return wav
 
@@ -103,9 +103,9 @@ class Scale(nn.Module):
         self.max = max
 
     def forward(self, wav):
-        batch, streams, channels, time = wav.size()
+        streams, channels, time = wav.size()
         device = wav.device
         if self.training and random.random() < self.proba:
-            scales = th.empty(batch, streams, 1, 1, device=device).uniform_(self.min, self.max)
+            scales = th.empty(streams, 1, 1, device=device).uniform_(self.min, self.max)
             wav *= scales
         return wav
