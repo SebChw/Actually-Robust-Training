@@ -92,16 +92,17 @@ class EfficientWordNetOriginalDataset(Dataset):
         self.words_in_dataset = _omit_hidden_files(os.listdir(self.datasetPath))
 
         count_of_words = len(self.words_in_dataset)
-        self.words_in_dataset = self.words_in_dataset[: int(0.9 * count_of_words)]
-        if stage == TrainingStage.TEST:
+        if stage == TrainingStage.TRAIN:
+            self.words_in_dataset = self.words_in_dataset[: int(0.9 * count_of_words)]
+        else:
             self.words_in_dataset = self.words_in_dataset[int(0.9 * count_of_words) :]
 
         # Magic value but it makes sense
         self.n = 2 * len(self.words_in_dataset)
 
-        # Our mel spectrogram produces 64x101 matricompared to their 64x98
+        # Our mel spectrogram produces 64x101 compared to their 64x98
         self.spec_transform = torchaudio.transforms.MelSpectrogram(
-            sample_rate=self.sr, n_fft=400, hop_length=160, n_mels=64
+            sample_rate=self.sr, n_fft=400, hop_length=160, n_mels=64, normalized=True
         )
 
         self.resamplers = {}

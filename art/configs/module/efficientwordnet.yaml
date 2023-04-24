@@ -1,1 +1,1 @@
-_target_: art.similarity.modules.EfficientWordNetOriginal
+_target_: art.similarity.efficientwordnet.modules.EfficientWordNetOriginal

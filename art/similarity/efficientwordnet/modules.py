@@ -4,7 +4,7 @@ import torch.nn as nn
 from torchmetrics import Accuracy
 
 from art.enums import TrainingStage
-from art.similarity.networks import EfficientWordNet
+from art.similarity.efficientwordnet.networks import EfficientWordNet
 from art.utils.metrics import get_metric_array
 
 
@@ -35,7 +35,7 @@ class EfficientWordNetOriginal(L.LightningModule):
         return torch.mean(match_loss + mismatch_loss)
 
     def configure_optimizers(self):
-        optimizer = torch.optim.Adam(self.parameters(), lr=1e-3)
+        optimizer = torch.optim.Adam(self.parameters(), lr=1e-3, weight_decay=0.01)
         return optimizer
 
     def _threshold_func(self, dist_pred):
@@ -47,18 +47,23 @@ class EfficientWordNetOriginal(L.LightningModule):
         # y=0 -> examples are from different classes
         #! Some inputs seems to be nans!
         X1, X2, y = batch["X1"], batch["X2"], batch["y"]
+        batch_size = X1.shape[0]
+        X = torch.cat([X1, X2], dim=0)
+        embeddings = self.network(X)
+        emb1, emb2 = embeddings[:batch_size], embeddings[batch_size:]
 
-        emb1, emb2 = self.network(X1), self.network(X2)
         dist_pred = self.distance_func(emb1, emb2)
 
         loss = self._weird_loss(y, dist_pred)
 
-        self.log(f"{stage.name}_loss", loss, prog_bar=True)
+        self.log(f"{stage.name}_loss", loss, prog_bar=True, batch_size=batch_size)
 
         y_pred = self._threshold_func(dist_pred)
         stage_accuracy = self.accuracies[stage.value]
         stage_accuracy(y_pred, y)
-        self.log(f"{stage.name}_acc", stage_accuracy, prog_bar=True)
+        self.log(
+            f"{stage.name}_acc", stage_accuracy, prog_bar=True, batch_size=batch_size
+        )
 
         return loss
 

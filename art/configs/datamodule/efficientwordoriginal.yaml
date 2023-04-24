@@ -1,5 +1,5 @@
-_target_: art.similarity.data.EfficientWordNetOriginalDataModule
-noise_chunked_path: WakeWordDetection/EfficientWord-Net/chunkedNoise
-noise_path: WakeWordDetection/EfficientWord-Net/noise_files_format_fixed
-words_path: WakeWordDetection/EfficientWord-Net/dataset_format_fixed
+_target_: art.similarity.efficientwordnet.data.EfficientWordNetOriginalDataModule
+noise_chunked_path: ../WakeWordDetection/EfficientWord-Net/chunkedNoise
+noise_path: ../WakeWordDetection/EfficientWord-Net/noise_files_format_fixed
+words_path: ../WakeWordDetection/EfficientWord-Net/dataset_format_fixed
 batch_size: 8
