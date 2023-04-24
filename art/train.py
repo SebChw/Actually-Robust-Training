@@ -1,13 +1,15 @@
 from pathlib import Path
-from unittest.mock import MagicMock
 
 import hydra
+import lovely_tensors as lt
 import torch
 from lightning import seed_everything
 from neptune.utils import stringify_unsupported
 from omegaconf import DictConfig, OmegaConf
 
 from art.utils.loggers import get_pylogger
+
+lt.monkey_patch()
 
 _HYDRA_PARAMS = {
     "version_base": "1.3",
