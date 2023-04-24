@@ -3,6 +3,7 @@ import torch.nn as nn
 import torch
 import numpy as np
 from collections import defaultdict
+from art.utils.sourcesep_augment import Scale, Shift, FlipSign, FlipChannels, Remix
 
 
 def create_waveform_collate(normalize=None, max_length=16000):
@@ -20,7 +21,7 @@ def create_waveform_collate(normalize=None, max_length=16000):
 
             if x.shape[0] > max_length:
                 random_offset = random.randint(0, x.shape[0] - max_length)
-                x = x[random_offset : random_offset + max_length]
+                x = x[random_offset: random_offset + max_length]
 
             if normalize:
                 (x - normalize["mean"]) / np.sqrt(normalize["var"] + 1e-7)
@@ -37,9 +38,19 @@ def create_waveform_collate(normalize=None, max_length=16000):
 
 
 class SourceSeparationCollate:
-    def __init__(self, max_length=-1, instruments=["bass", "vocals", "drums", "other"]):
+    def __init__(self, max_length=-1, instruments=["bass", "vocals", "drums", "other"], augment=False):
         self.max_length = max_length
         self.instruments = instruments
+        if augment:
+            self.augments = [
+                    Scale(), 
+                    # Shift(), - need to add some padding to use it.
+                    FlipSign(), 
+                    FlipChannels(), 
+                    Remix()
+                    ]
+        else:
+            self.augments = []
 
     def __call__(self, batch):
         X = defaultdict(lambda: [])
@@ -61,7 +72,7 @@ class SourceSeparationCollate:
                 )
 
                 instruments_wavs = {
-                    name: wav[:, random_offset : random_offset + self.max_length]
+                    name: wav[:, random_offset: random_offset + self.max_length]
                     for name, wav in instruments_wavs.items()
                 }
 
@@ -70,6 +81,12 @@ class SourceSeparationCollate:
 
         separations = [torch.stack(X[instrument]) for instrument in self.instruments]
         separations = torch.stack(separations, axis=1)
+        for augment in self.augments:
+            # choose random 8% samples from separations tensor
+            n_samples = int(separations.shape[0] * 0.08)
+            rand_idx = torch.randperm(separations.shape[0])[:n_samples]
+            random_samples = separations[rand_idx]
+            separations = torch.cat([separations, augment(random_samples)], dim=0)
 
         separations = (
             separations - torch.tensor(means).to(separations)[:, None, None, None]
