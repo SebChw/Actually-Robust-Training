@@ -224,7 +224,7 @@ class EfficientWordNetOriginalDataModule(L.LightningDataModule):
         # They cut randomly 100 chunks out of the noise Audio file
         # If one will try to reproduce it every time it will be different
         for i in range(count):
-            noiseAudioCrop = _random_crop(noiseAudio)
+            noiseAudioCrop = _random_crop(np.expand_dims(noiseAudio, 0))[0]
             outFilePath = (
                 target_folder
                 + "/"
