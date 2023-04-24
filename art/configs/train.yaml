@@ -28,8 +28,6 @@ upload_best_model: True
 
 continue_training_id: null
 
-augment: True
-
 #Lightning checkpointing definition
 checkpoints:
   _target_: lightning.pytorch.callbacks.ModelCheckpoint
