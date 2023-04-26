@@ -1,7 +1,6 @@
 import argparse
 import neptune
-from omegaconf import DictConfig
-import sys
+CONFIG_FILE = Path("config.yaml")
 
 
 class NeptuneApiWrapper:
@@ -68,12 +67,9 @@ def get_last_training_data(cfg):
     #     cfg = update_config(cfg, key, value)
 
 
-if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description='Neptune API Wrapper')
-    parser.add_argument('--project_name', type=str, default='skdbmk/sourceseparation', help='Neptune project name')
-    parser.add_argument('--run_id', type=str, default='SOUR-33', help='Run ID for checkpoint')
-    args = parser.parse_args()
 
-    neptune_api = NeptuneApiWrapper(project_name=args.project_name)
-    cfg = neptune_api.get_config(args.run_id)
-    print(cfg.module)
+def push_configuration(logger, cfg: DictConfig):
+    # I considered using tempfile but we want to have specific name of the file
+    OmegaConf.save(cfg, CONFIG_FILE)
+    logger.experiment["config"].upload(str(CONFIG_FILE), wait=True)
+    CONFIG_FILE.unlink()

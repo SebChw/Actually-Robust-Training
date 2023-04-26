@@ -31,9 +31,7 @@ def train(cfg: DictConfig):
     logger = hydra.utils.instantiate(cfg.logger)
 
     # push configuration
-    logger.experiment["configuration"] = stringify_unsupported(
-        OmegaConf.to_container(cfg, resolve=True)
-    )
+    push_configuration(logger, cfg)
 
     # Init lightning datamodule
     log.info(f"Instantiating datamodule <{cfg.datamodule._target_}>")
