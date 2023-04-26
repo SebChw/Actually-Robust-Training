@@ -1,12 +1,13 @@
-from lightning import seed_everything
-from art.utils.loggers import get_pylogger
-from art.utils.neptun_api_wrapper import  get_last_training_data
-import hydra
 from pathlib import Path
-from omegaconf import DictConfig, OmegaConf
-from neptune.utils import stringify_unsupported
-import torch
 
+import hydra
+import torch
+from lightning import seed_everything
+from omegaconf import DictConfig
+from pytorch_lightning.loggers import NeptuneLogger
+
+from art.utils.loggers import get_pylogger
+from art.utils.neptun_api_wrapper import get_last_run, push_configuration
 
 _HYDRA_PARAMS = {
     "version_base": "1.3",
@@ -19,16 +20,19 @@ log = get_pylogger(__name__)
 
 def train(cfg: DictConfig):
     # set seed for random number generators in pytorch, numpy and python.random
-    if cfg.get("continue_training_id"):
-        log.info(f"Continuing training from {cfg.logger.project} run {cfg.continue_training_id}")
-        get_last_training_data(cfg)
-
     if cfg.get("seed"):
         log.info(f"Seed everything with <{cfg.get('seed')}>")
         seed_everything(cfg.get("seed"), workers=True)
 
-    log.info(f"Instantiating logger <{cfg.logger._target_}>")
-    logger = hydra.utils.instantiate(cfg.logger)
+    if cfg.get("continue_training_id"):
+        log.info(
+            f"Continuing training from {cfg.logger.project} run {cfg.continue_training_id}"
+        )
+        run, cfg = get_last_run(cfg)
+        logger = NeptuneLogger(run=run)
+    else:
+        log.info(f"Instantiating logger <{cfg.logger._target_}>")
+        logger = hydra.utils.instantiate(cfg.logger)
 
     # push configuration
     push_configuration(logger, cfg)
