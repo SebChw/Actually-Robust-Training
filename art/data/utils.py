@@ -1,9 +1,9 @@
-from torch.utils.data import DataLoader
-import lightning as L
-
-import torch
-import datasets
 import typing
+
+import datasets
+import lightning as L
+import torch
+from torch.utils.data import DataLoader
 
 
 def dummy_classification_sample(shape=(1, 16000), label=0):
@@ -34,11 +34,12 @@ def dummy_generator(sample_gen: typing.Callable, n_samples=32):
 
 
 class SanityCheckDataModule(L.LightningDataModule):
-    def __init__(self, dataset_generator, collate, num_workers=1):
+    def __init__(self, dataset_generator, collate, num_workers=0):
         super().__init__()
         self.dataset_generator = dataset_generator
         self.collate = collate
-        self.num_workers= num_workers
+        self.num_workers = num_workers
+        self.persistent_workers = True if num_workers > 0 else False
 
     def prepare_data(self):
         # If you don't write anything here Lightning will try to use prepare_data_per_node
@@ -51,7 +52,13 @@ class SanityCheckDataModule(L.LightningDataModule):
         self.dataset = self.dataset.with_format("torch", device="cpu")
 
     def _get_loader(self):
-        return DataLoader(self.dataset, batch_size=4, collate_fn=self.collate, num_workers=self.num_workers)
+        return DataLoader(
+            self.dataset,
+            batch_size=4,
+            collate_fn=self.collate,
+            num_workers=self.num_workers,
+            persistent_workers=self.persistent_workers,
+        )
 
     def train_dataloader(self):
         return self._get_loader()
