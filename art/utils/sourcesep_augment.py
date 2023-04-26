@@ -15,6 +15,7 @@ class Shift(nn.Module):
     """
     Randomly shift audio in time by up to `shift` samples.
     """
+
     def __init__(self, shift=8192, same=False):
         super().__init__()
         self.shift = shift
@@ -39,6 +40,7 @@ class FlipChannels(nn.Module):
     """
     Flip left-right channels.
     """
+
     def forward(self, wav):
         batch, sources, channels, time = wav.size()
         if self.training and wav.size(2) == 2:
@@ -53,6 +55,7 @@ class FlipSign(nn.Module):
     """
     Random sign flip.
     """
+
     def forward(self, wav):
         batch, sources, channels, time = wav.size()
         if self.training:
@@ -65,6 +68,7 @@ class Remix(nn.Module):
     """
     Shuffle sources to make new mixes.
     """
+
     def __init__(self, proba=1, group_size=4):
         """
         Shuffle sources within one batch.

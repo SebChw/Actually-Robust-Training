@@ -6,7 +6,6 @@ import torchmetrics
 import numpy as np
 from collections import defaultdict
 from art.utils.plotters import SourceSepPlotter
-from art.utils.sourcesep_augment import Scale, Shift, FlipSign, FlipChannels, Remix
 
 
 class LitAudioClassifier(L.LightningModule):
@@ -173,4 +172,3 @@ class LitAudioSourceSeparator(L.LightningModule):
                 lambda: {source: np.zeros(100) for source in self.sources}
             )
         )
-

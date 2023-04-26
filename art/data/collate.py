@@ -3,7 +3,7 @@ import torch.nn as nn
 import torch
 import numpy as np
 from collections import defaultdict
-from art.utils.sourcesep_augment import Scale, Shift, FlipSign, FlipChannels, Remix
+from art.utils.sourcesep_augment import Scale, FlipSign, FlipChannels, Remix  # , Shift
 
 
 def create_waveform_collate(normalize=None, max_length=16000):
@@ -43,12 +43,12 @@ class SourceSeparationCollate:
         self.instruments = instruments
         if augment:
             self.augments = [
-                    Scale(), 
-                    # Shift(), - need to add some padding to use it.
-                    FlipSign(), 
-                    FlipChannels(), 
-                    Remix()
-                    ]
+                Scale(),
+                # Shift(), - need to add some padding to use it.
+                FlipSign(),
+                FlipChannels(),
+                Remix()
+            ]
         else:
             self.augments = []
 
