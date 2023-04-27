@@ -1,0 +1,3 @@
+from typing import Optional
+
+def seed_everything(seed: Optional[int] = None, workers: bool = False) -> int: ...
