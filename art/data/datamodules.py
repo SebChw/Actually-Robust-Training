@@ -82,7 +82,7 @@ class SourceSeparationDataModule(L.LightningDataModule):
         self.batch_size = batch_size
         self.num_workers = num_workers
 
-        self.collate = SourceSeparationCollate(max_length, augment)
+        self.collate = SourceSeparationCollate(max_length, augment=augment)
         self.dataset = None
 
     def prepare_data(self):

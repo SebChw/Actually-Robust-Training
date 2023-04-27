@@ -6,3 +6,4 @@ dataset_generator:
 
 collate:
   _target_: art.data.collate.SourceSeparationCollate
+num_workers: 2
