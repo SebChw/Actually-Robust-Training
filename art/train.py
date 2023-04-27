@@ -42,7 +42,7 @@ def train(cfg: DictConfig):
 
     if cfg.compile:
         log.info("Compiling the model.")
-        model = torch.compile(model, mode="reduce-overhead")
+        model = torch.compile(model, mode="reduce-overhead")  # type: ignore
 
     # Overfit one batch if wanted for sanity check
     if cfg.get("overfit_one_batch"):
