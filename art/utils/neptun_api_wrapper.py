@@ -12,16 +12,17 @@ class NeptuneApiWrapper:
     
     def get_checkpoint(self, run_id=None, path='./'):
         # None defaults to last run, but including the read only run!
-        run = neptune.init_run(project=self.project_name, with_id=run_id)
-        if 'ckpt' not in path:
-            path = f'{path}{run_id}.ckpt'
-        try: 
-            model_path = run['model/best_model_path'].fetch().split('/')[-1][:-5]
-        except neptune.exceptions.MissingFieldException:
-            print("Wrong id!")
+        if "ckpt" not in path:
+            path = f"{path}{self.run_id}.ckpt"
+        try:
+            model_path = self.run["training/model/best_model_path"].fetch().split("/")[-1][:-5]
+        except neptune.exceptions.MissingFieldException as e:
+            raise Exception(
+                f"Couldn't find Best model under specified id {self.run_id}"
+            ).with_traceback(e.__traceback__)
 
-        run[f'model/checkpoints/{model_path}'].download(path)
-        return run
+        self.run[f"training/model/checkpoints/{model_path}"].download(path)
+        return path
 
 
 if __name__ == "__main__":
