@@ -1,3 +1,0 @@
-_target_: art.data.datamodules.SourceSeparationDataModule
-batch_size: 4
-dataset_kwargs: { "path": "sebchw/musdb18" }

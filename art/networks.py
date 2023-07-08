@@ -1,6 +1,6 @@
+import torch
 import torch.nn as nn
 from torch.nn import functional as F
-import torch
 
 
 class M5(nn.Module):

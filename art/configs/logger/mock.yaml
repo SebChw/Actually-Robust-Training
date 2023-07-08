@@ -1,1 +1,1 @@
-_target_: unittest.mock.MagicMock # I tested this too pytorch_lightning.loggers.logger.DummyLogger  but it seems not to work
+_target_: unittest.mock.MagicMock
