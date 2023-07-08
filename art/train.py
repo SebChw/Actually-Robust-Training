@@ -1,6 +1,7 @@
 from pathlib import Path
 
 import hydra
+import lovely_tensors as lt
 import torch
 from lightning import seed_everything
 from omegaconf import DictConfig
@@ -8,6 +9,8 @@ from pytorch_lightning.loggers import NeptuneLogger
 
 from art.utils.loggers import get_pylogger
 from art.utils.neptun_api_wrapper import get_last_run, push_configuration
+
+lt.monkey_patch()
 
 _HYDRA_PARAMS = {
     "version_base": "1.3",
@@ -48,6 +51,11 @@ def train(cfg: DictConfig):
     if cfg.compile:
         log.info("Compiling the model.")
         model = torch.compile(model, mode="reduce-overhead")
+
+    if cfg.get("validate_loss_at_init"):
+        log.info("Validating loss at init")
+        trainer = hydra.utils.instantiate(cfg.trainer)
+        metrics = trainer.validate(model=model, datamodule=datamodule)
 
     # Overfit one batch if wanted for sanity check
     if cfg.get("overfit_one_batch"):

@@ -2,5 +2,5 @@ _target_: lightning.Trainer
 
 accelerator: gpu
 devices: 1
-max_epochs: 2
+max_epochs: 30
 precision: 32
