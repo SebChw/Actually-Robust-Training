@@ -10,60 +10,6 @@ import torchmetrics
 from art.utils.plotters import SourceSepPlotter
 
 
-class LitAudioClassifier(L.LightningModule):
-    def __init__(self, model, num_classes):
-        super().__init__()
-        self.model = model
-
-        # Why this is necessary in common pitfalls
-        # https://torchmetrics.readthedocs.io/en/stable/pages/lightning.html
-        self.accuracy = nn.ModuleList(
-            [
-                torchmetrics.Accuracy(task="multiclass", num_classes=num_classes)
-                for _ in range(3)
-            ]
-        )
-        self.str_to_stage = {
-            "train": 0,
-            "val": 1,
-            "test": 2,
-        }
-
-    def forward(self, x):
-        return self.model(x)
-
-    def configure_optimizers(self):
-        optimizer = torch.optim.Adam(self.parameters(), lr=1e-3)
-        return optimizer
-
-    def processing_step(self, batch, stage):
-        x, y = batch["data"], batch["label"]
-        logits = self.model(x)
-        loss = F.cross_entropy(logits, y)
-        self.log(f"{stage}_loss", loss, on_step=True, on_epoch=False, prog_bar=True)
-
-        stage_id = self.str_to_stage[stage]
-        self.accuracy[stage_id](logits, y)
-        self.log(
-            f"{stage}_acc",
-            self.accuracy[stage_id],
-            on_step=False,
-            on_epoch=True,
-            prog_bar=True,
-        )
-
-        return loss
-
-    def training_step(self, batch, batch_idx):
-        return self.processing_step(batch, "train")
-
-    def validation_step(self, batch, batch_idx):
-        self.processing_step(batch, "val")
-
-    def test_step(self, batch, batch_idx):
-        self.processing_step(batch, "test")
-
-
 class LitAudioSourceSeparator(L.LightningModule):
     def __init__(
         self,
@@ -116,7 +62,11 @@ class LitAudioSourceSeparator(L.LightningModule):
 
         # At this point loss has shape (n_songs, n_instruments)
         self._update_song_losses(prompt, batch, loss)
-        if self.current_epoch > self.warmup_epochs and self.wrong_label_strategy and prompt == "train":
+        if (
+            self.current_epoch > self.warmup_epochs
+            and self.wrong_label_strategy
+            and prompt == "train"
+        ):
             loss = self.wrong_label_strategy(loss)
         loss = loss.mean()
 
@@ -170,10 +120,9 @@ class LitAudioSourceSeparator(L.LightningModule):
         self.on_train_epoch_start()
 
     def on_train_epoch_start(self):
-        #init with -1 to filter out later
+        # init with -1 to filter out later
         self.song_losses = defaultdict(
             lambda: defaultdict(
                 lambda: {source: np.full(100, -1) for source in self.sources}
             )
         )
-
