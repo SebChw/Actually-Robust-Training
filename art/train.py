@@ -46,6 +46,11 @@ def train(cfg: DictConfig):
         log.info("Compiling the model.")
         model = torch.compile(model, mode="reduce-overhead")
 
+    if cfg.get("validate_loss_at_init"):
+        log.info("Validating loss at init")
+        trainer = hydra.utils.instantiate(cfg.trainer)
+        metrics = trainer.validate(model=model, datamodule=datamodule)
+
     # Overfit one batch if wanted for sanity check
     if cfg.get("overfit_one_batch"):
         log.info("Overfitting on one batch of the data")
