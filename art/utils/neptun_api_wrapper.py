@@ -1,3 +1,9 @@
+############################################################################
+# Generally the idea of logging should be rethought. We should focus on supporting at least
+# MLFLOW, Neptune and wand. Probably we should got inspired by how lightning handles it.
+# And if user wants to perform some custom logging with neptune it should be easily doable.
+############################################################################
+
 import sys
 from pathlib import Path
 

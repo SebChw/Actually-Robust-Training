@@ -1,3 +1,7 @@
+######################################################################
+# This should take some modular form. However One can take some inspiration from this.
+######################################################################
+
 from pathlib import Path
 
 import hydra

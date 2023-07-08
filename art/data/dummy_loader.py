@@ -5,6 +5,10 @@ import lightning as L
 import torch
 from torch.utils.data import DataLoader
 
+############################################################################
+# I like the concept of dummy data loader a lot. So ill keep it in original ART
+############################################################################
+
 
 def dummy_classification_sample(shape=(1, 16000), label=0):
     return {"data": torch.randn(shape), "label": label}

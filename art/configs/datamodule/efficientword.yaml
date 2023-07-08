@@ -1,4 +1,0 @@
-_target_: art.similarity.efficientwordnet.data.EfficientWordNetDataModule
-noise_path: ../WakeWordDetection/EfficientWord-Net/noise_files_format_fixed
-word_path: ../WakeWordDetection/EfficientWord-Net/dataset_format_fixed
-batch_size: 16
