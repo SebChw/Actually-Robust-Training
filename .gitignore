@@ -129,7 +129,6 @@ dmypy.json
 .pyre/
 
 # custom
-List_of*
 *.ipynb
 lightning_logs
 .neptune
@@ -141,4 +140,5 @@ WakeWordDetection
 checkpoints
 musdb
 labelnoise
+checkpoints
 temp_plots

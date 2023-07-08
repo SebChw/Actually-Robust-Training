@@ -50,7 +50,7 @@ def train(cfg: DictConfig):
 
     if cfg.compile:
         log.info("Compiling the model.")
-        model = torch.compile(model, mode="reduce-overhead")
+        model = torch.compile(model, mode="reduce-overhead")  # type: ignore
 
     if cfg.get("validate_loss_at_init"):
         log.info("Validating loss at init")

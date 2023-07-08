@@ -1,0 +1,3 @@
+from typing import Callable
+
+def rank_zero_only(fn: Callable) -> Callable: ...
