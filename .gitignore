@@ -135,5 +135,11 @@ lightning_logs
 .vscode
 outputs
 
+
 checkpoints
+Efficient_word_net
+WakeWordDetection
+checkpoints
+musdb
+labelnoise
 temp_plots

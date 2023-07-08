@@ -1,12 +1,16 @@
 from pathlib import Path
 
 import hydra
+import lovely_tensors as lt
 import torch
 from lightning import seed_everything
-from neptune.utils import stringify_unsupported
-from omegaconf import DictConfig, OmegaConf
+from omegaconf import DictConfig
+from pytorch_lightning.loggers import NeptuneLogger
 
 from art.utils.loggers import get_pylogger
+from art.utils.neptun_api_wrapper import get_last_run, push_configuration
+
+lt.monkey_patch()
 
 _HYDRA_PARAMS = {
     "version_base": "1.3",
@@ -20,28 +24,38 @@ log = get_pylogger(__name__)
 def train(cfg: DictConfig):
     # set seed for random number generators in pytorch, numpy and python.random
     if cfg.get("seed"):
-        log.info(f"Seed everything with <{cfg.seed}>")
-        seed_everything(cfg.seed, workers=True)
+        log.info(f"Seed everything with <{cfg.get('seed')}>")
+        seed_everything(cfg.get("seed"), workers=True)
 
-    log.info(f"Instantiating logger <{cfg.logger._target_}>")
-    logger = hydra.utils.instantiate(cfg.logger, _recursive_=False)
+    if cfg.get("continue_training_id"):
+        log.info(
+            f"Continuing training from {cfg.logger.project} run {cfg.continue_training_id}"
+        )
+        run, cfg = get_last_run(cfg)
+        logger = NeptuneLogger(run=run)
+    else:
+        log.info(f"Instantiating logger <{cfg.logger._target_}>")
+        logger = hydra.utils.instantiate(cfg.logger)
 
     # push configuration
-    logger.experiment["configuration"] = stringify_unsupported(
-        OmegaConf.to_container(cfg, resolve=True)
-    )
+    push_configuration(logger, cfg)
 
     # Init lightning datamodule
     log.info(f"Instantiating datamodule <{cfg.datamodule._target_}>")
-    datamodule = hydra.utils.instantiate(cfg.datamodule, _recursive_=False)
+    datamodule = hydra.utils.instantiate(cfg.datamodule)
 
     # Init lightning model
     log.info(f"Instantiating lightning model <{cfg.module._target_}>")
-    model = hydra.utils.instantiate(cfg.module, _recursive_=False)
+    model = hydra.utils.instantiate(cfg.module)
 
     if cfg.compile:
         log.info("Compiling the model.")
         model = torch.compile(model, mode="reduce-overhead")  # type: ignore
+
+    if cfg.get("validate_loss_at_init"):
+        log.info("Validating loss at init")
+        trainer = hydra.utils.instantiate(cfg.trainer)
+        metrics = trainer.validate(model=model, datamodule=datamodule)
 
     # Overfit one batch if wanted for sanity check
     if cfg.get("overfit_one_batch"):
@@ -52,8 +66,12 @@ def train(cfg: DictConfig):
     # Init lightning trainer
     log.info(f"Instantiating trainer <{cfg.trainer._target_}>")
     checkpoint_callback = hydra.utils.instantiate(cfg.checkpoints)
+
+    # ! [logger] is necessary so that Lightning doesn't confuse MagicMock with a list
     trainer = hydra.utils.instantiate(
-        cfg.trainer, logger=logger, callbacks=[checkpoint_callback]
+        cfg.trainer,
+        logger=[logger],
+        callbacks=[checkpoint_callback],
     )
 
     # Train the model

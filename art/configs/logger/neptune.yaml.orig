@@ -1,4 +1,9 @@
 _target_: lightning.pytorch.loggers.NeptuneLogger
 api_key: ${oc.env:NEPTUNE_API_TOKEN} # api key is loaded from environment variable
-project: skdbmk/${task_name}
+<<<<<<< HEAD
+project: ghost-audio-team/${task_name}
+=======
+project: skdbmk/sourceseparation
+>>>>>>> 71cab0d (add: sourcesep baseline)
 log_model_checkpoints: True
+prefix: ""

@@ -1,18 +1,12 @@
 defaults:
   - _self_
-  - datamodule: sdx_labelnoise
-  - module: source_separation
-  - trainer: default
-  - logger: neptune
+  - datamodule: musdb18.yaml
+  - module: source_separation.yaml
+  - trainer: default.yaml
+  - logger: neptune.yaml
 
 # task name, determines output directory path
-task_name: "wake-word-detection"
-
-#Flag allowing another sanity check -> You can easily calculate expected value of the loss when you initialize your model with random weights.
-validate_loss_at_init: True
-
-#Flag allowing sanity check -> If your implementation can't even overfit one batch, then it's probably something wrong.
-overfit_one_batch: False
+task_name: "source_separation"
 
 # set False to skip model training
 train: True
@@ -32,13 +26,11 @@ compile: False
 
 upload_best_model: True
 
-continue_training_id: null
-
 #Lightning checkpointing definition
 checkpoints:
   _target_: lightning.pytorch.callbacks.ModelCheckpoint
   save_top_k: 1
-  monitor: VALIDATION_acc
+  monitor: val_acc
   mode: max
   dirpath: checkpoints
-  filename: "${task_name}-{epoch}-{val_loss:.2f}"
+  filename: "${task_name}-{epoch}-{val_acc:.2f}"

@@ -1,0 +1,11 @@
+_target_: art.litmodules.LitAudioSourceSeparator
+model:
+  _target_: torchaudio.models.HDemucs
+  sources: ["bass", "vocals", "drums", "other"]
+wrong_label_strategy:
+  _target_: art.utils.thresholders.InstrumentThresholdLabelStrategy
+  sources: ["bass", "vocals", "drums", "other"]
+plotter:
+  _target_: art.utils.plotters.SourceSepPlotter
+warmup_epochs: 5
+sources: ["bass", "vocals", "drums", "other"] # Interpolation doesn't work :(
