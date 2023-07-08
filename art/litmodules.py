@@ -72,6 +72,7 @@ class LitAudioSourceSeparator(L.LightningModule):
         calculate_sdr=False,
         wrong_label_strategy=None,
         plotter=SourceSepPlotter(),
+        warmup_epochs=5,
     ):
         super().__init__()
         self.sources = sources
@@ -79,7 +80,7 @@ class LitAudioSourceSeparator(L.LightningModule):
         self.calculate_sdr = calculate_sdr
         self.wrong_label_strategy = wrong_label_strategy
         self.plotter = plotter
-
+        self.warmup_epochs = warmup_epochs
         if calculate_sdr:
             # !one may use MetricCollection wrapper but not in this case
             self.sdr = nn.ModuleDict(
@@ -115,7 +116,7 @@ class LitAudioSourceSeparator(L.LightningModule):
 
         # At this point loss has shape (n_songs, n_instruments)
         self._update_song_losses(prompt, batch, loss)
-        if self.wrong_label_strategy and prompt == "train":
+        if self.current_epoch > self.warmup_epochs and self.wrong_label_strategy and prompt == "train":
             loss = self.wrong_label_strategy(loss)
         loss = loss.mean()
 
@@ -154,12 +155,12 @@ class LitAudioSourceSeparator(L.LightningModule):
         return self.processing_step(batch, "test")
 
     def on_train_epoch_end(self):
-        if self.wrong_label_strategy:
+        if self.current_epoch > self.warmup_epochs and self.wrong_label_strategy:
             self.wrong_label_strategy.update(self.song_losses["train"])
             self.logger.log_metrics(self.wrong_label_strategy.get_metrics())
             for key, fig in self.wrong_label_strategy.get_figures().items():
                 self.logger.experiment[
-                    f"loss_thresholds/epoch{self.current_epoch}/{key}"
+                    f"loss_thresholds/epoch{self.current_epoch}_{key}"
                 ].upload(fig)
 
     def on_validation_epoch_end(self):
@@ -169,8 +170,10 @@ class LitAudioSourceSeparator(L.LightningModule):
         self.on_train_epoch_start()
 
     def on_train_epoch_start(self):
+        #init with -1 to filter out later
         self.song_losses = defaultdict(
             lambda: defaultdict(
-                lambda: {source: np.zeros(100) for source in self.sources}
+                lambda: {source: np.full(100, -1) for source in self.sources}
             )
         )
+

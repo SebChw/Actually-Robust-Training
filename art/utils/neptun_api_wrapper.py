@@ -18,13 +18,15 @@ class NeptuneApiWrapper:
         if "ckpt" not in path:
             path = f"{path}{self.run_id}.ckpt"
         try:
-            model_path = self.run["model/best_model_path"].fetch().split("/")[-1][:-5]
+            model_path = (
+                self.run["training/model/best_model_path"].fetch().split("/")[-1][:-5]
+            )
         except neptune.exceptions.MissingFieldException as e:
             raise Exception(
                 f"Couldn't find Best model under specified id {self.run_id}"
             ).with_traceback(e.__traceback__)
 
-        self.run[f"model/checkpoints/{model_path}"].download(path)
+        self.run[f"training/model/checkpoints/{model_path}"].download(path)
         return path
 
 
