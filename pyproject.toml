@@ -37,7 +37,8 @@ dev = [
   "pytest-cov>=4.0.0",
   "mypy>=1.1.1",
   "black>=23.1.0",
-  "myst-parser",
+  "myst_nb==0.17.2",
+  "sphinx-autodoc2==0.4.2"
 ]
 
 [project.urls]
