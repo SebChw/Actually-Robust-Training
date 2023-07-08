@@ -1,11 +1,10 @@
-from torch.utils.data import DataLoader
-import lightning as L
-
-import torch
 import datasets
+import lightning as L
+import torch
+from torch.utils.data import DataLoader
 from torch.utils.data.sampler import BatchSampler, RandomSampler
 
-from art.data.collate import create_waveform_collate, SourceSeparationCollate
+from art.data.collate import SourceSeparationCollate, create_waveform_collate
 
 
 class GoogleCommandDataModule(L.LightningDataModule):

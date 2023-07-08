@@ -1,8 +1,8 @@
 from typing import Dict
 
+import matplotlib
 import numpy as np
 from matplotlib import pyplot as plt
-import matplotlib
 
 matplotlib.use("Agg")
 

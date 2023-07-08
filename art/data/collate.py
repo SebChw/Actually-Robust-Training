@@ -1,9 +1,11 @@
 import random
-import torch.nn as nn
-import torch
-import numpy as np
 from collections import defaultdict
-from art.utils.sourcesep_augment import Scale, Shift, FlipSign, FlipChannels, Remix
+
+import numpy as np
+import torch
+import torch.nn as nn
+
+from art.utils.sourcesep_augment import FlipChannels, FlipSign, Remix, Scale
 
 
 def create_waveform_collate(normalize=None, max_length=16000):
@@ -21,7 +23,7 @@ def create_waveform_collate(normalize=None, max_length=16000):
 
             if x.shape[0] > max_length:
                 random_offset = random.randint(0, x.shape[0] - max_length)
-                x = x[random_offset: random_offset + max_length]
+                x = x[random_offset : random_offset + max_length]
 
             if normalize:
                 (x - normalize["mean"]) / np.sqrt(normalize["var"] + 1e-7)
@@ -38,17 +40,22 @@ def create_waveform_collate(normalize=None, max_length=16000):
 
 
 class SourceSeparationCollate:
-    def __init__(self, max_length=-1, instruments=["bass", "vocals", "drums", "other"], augment=False):
+    def __init__(
+        self,
+        max_length=-1,
+        instruments=["bass", "vocals", "drums", "other"],
+        augment=False,
+    ):
         self.max_length = max_length
         self.instruments = instruments
         if augment:
             self.augments = [
-                    Scale(), 
-                    # Shift(), - need to add some padding to use it.
-                    FlipSign(), 
-                    FlipChannels(), 
-                    Remix()
-                    ]
+                Scale(),
+                # Shift(), - need to add some padding to use it.
+                FlipSign(),
+                FlipChannels(),
+                Remix(),
+            ]
         else:
             self.augments = []
 
@@ -72,7 +79,7 @@ class SourceSeparationCollate:
                 )
 
                 instruments_wavs = {
-                    name: wav[:, random_offset: random_offset + self.max_length]
+                    name: wav[:, random_offset : random_offset + self.max_length]
                     for name, wav in instruments_wavs.items()
                 }
 
