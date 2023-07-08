@@ -127,18 +127,5 @@ dmypy.json
 
 # Pyre type checker
 .pyre/
-
-# custom
-*.ipynb
-lightning_logs
-.neptune
 .vscode
-outputs
-
-Efficient_word_net
-WakeWordDetection
-checkpoints
-musdb
-labelnoise
-checkpoints
-temp_plots
+*.ipynb
