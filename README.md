@@ -1,5 +1,11 @@
 # audio-research-toolkit
 
+
+`NA POCZATKU ABSTRAKCYJNIE!!! DEFINIUJEMY TYLKO PRZEPIS DLA UZYTKOWNIKA A ON NA RAZIE WSZYSTKO MUSI ZROBIC SAM. JAK TO SIE UDA TO BEDZIEMY ZA NIEGO PROBOWAC AUTOMATYZOWAC` 
+
+`STARAJCIE SIE PRZESTRZEGAC SOLIDA - PRZYNAJMNIEJ Single responsibility`
+
+
 ![Tests](https://github.com/SebChw/audio-research-toolkit/actions/workflows/tests.yml/badge.svg)
 
 * [Art Design](https://docs.google.com/presentation/d/1m_DTeKvJVMBfEhC76eO9nKPLJp1sLvWXfCvefKd0Hc4/edit?usp=sharing)
