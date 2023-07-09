@@ -12,3 +12,14 @@ crucial stuff to be done for me:
 * Do research how users can inject custom behaviours! and prepare some POC this is really crucial as this is the main part of art.
 * Do research on how to handle loggers (supporting many should be very good) and prepare POC. We want to have funcionalities like training continuation, uploading images etc.
 * create POC of the system for visualizations. If we do this well this potentially can be big advantage. I see it in the way that we have an object (Visualizaer) that takes as attrbiute hugging face dataset and we can assign some callbacks to it that later can be used inside dash app?
+
+* Should our checks be in tests folder?
+NO
+
+* Visualizer should be part o f step?
+It will go out IN LAUNDRY
+
+* Visualizer should be responsible only for flot/table/log message generation. Rest should be handled by gui.
+
+* Do you think that we would need experiment level checks? I think only step level checks are enough.
+
