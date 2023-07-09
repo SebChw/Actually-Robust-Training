@@ -51,3 +51,15 @@ Ostatni stage -  Proste stworzenie API z dockerem. `fastapi`, `gremio`
 * Pododawac jakies hinty do poszczegolnych stage. Na razie Zmockowane, jakies bardzo ogolne a potem ewentualnie customowe.
 
 * na pozniej `POC` jak polaczyc DL modele i ML modele na etapie baselinu.
+* 
+
+
+* Should our checks be in tests folder?
+NO
+
+* Visualizer should be part o f step?
+It will go out IN LAUNDRY
+
+* Visualizer should be responsible only for flot/table/log message generation. Rest should be handled by gui.
+
+* Do you think that we would need experiment level checks? Yes
