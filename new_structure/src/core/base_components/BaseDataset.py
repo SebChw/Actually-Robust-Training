@@ -1,0 +1,2 @@
+class BaseDataset:
+    pass
