@@ -18,12 +18,16 @@ class CLI:
     def run_evaluation(self, project_name: str, args):
         pass
 
-    def create_project(self, project_name: str, project_type: ProjectType ,args):
+    def create_project(self, project_name: str, project_type: ProjectType, args):
         pass
 
     def run_checks(self, project_name: str, args):
         pass
 
-    def do_step(self, project_name: str, step_name:str, args):
+    def do_step(self, project_name: str, step_name: str, args):
         pass
 
+    def add_component(self):
+        # One can add Mlbaseline etc. to the codebase
+        # python -m art add ml_baseline -> in local folder new file is created.
+        pass
