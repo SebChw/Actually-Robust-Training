@@ -1,7 +1,7 @@
+09.07.2023
+
 
 `NA POCZATKU ABSTRAKCYJNIE!!! DEFINIUJEMY TYLKO PRZEPIS DLA UZYTKOWNIKA A ON NA RAZIE WSZYSTKO MUSI ZROBIC SAM. JAK TO SIE UDA TO BEDZIEMY ZA NIEGO PROBOWAC AUTOMATYZOWAC` 
-
-
 
 1. We need to abstract things! Most of the code seems to be project specific -> everyone agree
 2. Configs shouldn't be by default in the art library. We should create some automatic cookiecutter etc. So that if someone needs some predefined config one downloads it on the fly. To many configs -> mess. 
@@ -51,3 +51,49 @@ Ostatni stage -  Proste stworzenie API z dockerem. `fastapi`, `gremio`
 * Pododawac jakies hinty do poszczegolnych stage. Na razie Zmockowane, jakies bardzo ogolne a potem ewentualnie customowe.
 
 * na pozniej `POC` jak polaczyc DL modele i ML modele na etapie baselinu.
+
+* create POC of the system for visualizations. If we do this well this potentially can be big advantage. I see it in the way that we have an object (Visualizaer) that takes as attrbiute hugging face dataset and we can assign some callbacks to it that later can be used inside dash app?
+
+* Should our checks be in tests folder?
+NO
+
+* Visualizer should be part o f step?
+It will go out IN LAUNDRY
+
+* Visualizer should be responsible only for flot/table/log message generation. Rest should be handled by gui.
+
+* Do you think that we would need experiment level checks? I think only step level checks are enough.
+
+
+====================================================================================================================
+18.07.2023
+`Mateusz TODO`: Logger, co potrzebujemy:
+* Mozliwosc wrzucania obrazkow z visualizera itp. - Must have
+* Mozliwosc kontynuacji treningu z checkpointu zapisanego na serwisie logujacym - mniej wazne.
+* Logowanie configu - Must have
+
+Problemy z konfliktem w configu:
+* Jesli pobieramy configa z neta, to robimy tak jak git commit bez flagi `m` i komus w edytorze wyswietla sie config, ktory moze zmienic albo zaakceptowac. Sciagasz config z batch_size 16 a Twoja maszyna pomiesci np 8 itp. Ustawienia pathow itd.
+  * Rozdzielmy configi dotyczace ustawien systemowych od configow ktore sie nie zmienia.
+
+Przygotowywanie templatek:
+* powinnismy inspirowac sie spaCy
+* klonowanie repo (tak jak spacy) - inteligente, ze bierzemy tylko konkretne pliki.
+* Idea zeby pozwolic uzytkownikowi dynamicznie dodawac jakies komponenty, zeby nie zawalic go od razu wszystkim. (sprawdzic jak ciezkie to bedzie). Na samym poczatku totalnie minimum i dynamiczne dodawanie.
+* Na nastepny raz jakis PoC.
+* check hydra for configs. Try to combine it with SpaCy.
+* Karol TODO: `Na razie niech komus sie pojawi templates i folder z configami (hydra) lub jeden wiekszy. Stworz z tym opsobne repo. Czy da sie wybierac z tego folderu pojedyncze pliku`
+
+Struktura projektu:
+* Builder do experymentu - to nie jest najlepszy pomysl (chyba)
+* Sam step ma w sobie next_step - taki dekorator, ze kazdy step dekorujemy kolejnym. Ale wtedy stepy wiedza o sobie to jest problem. Zly pomysl.
+* Step mogly by byc tworzone z configow, hydra potrafi inicjalizowac obiekty
+* Na razie zostanmy przy liscie zrobimy to potem.
+* Stepy nie komunikuja sie z soba przez pythona tylko przez zapisywane pliki.
+* W jaki sposob stage informuja o tym, gdzie zapisal swoj wynik. Umozliwienie komunikacji pomiedzy stepami moze miec sens.
+
+Kacper, Sebastian: `TODO: Sprobowac odpalic wszystkie stepy po kolei z dummy projektem.`
+
+======================================================================================================================
+
+
