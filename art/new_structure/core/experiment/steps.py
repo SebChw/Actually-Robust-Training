@@ -2,8 +2,9 @@ from abc import ABC, abstractmethod
 from typing import Any, List
 
 from pytorch_lightning import Trainer
-from src.core.base_components.BaseModel import Baseline
-from src.core.experiment.Check import Check
+
+from art.new_structure.core.base_components.BaseModel import Baseline
+from art.new_structure.core.experiment.Check import Check
 
 
 class Step(ABC):

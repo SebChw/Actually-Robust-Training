@@ -1,5 +1,6 @@
 import lightning.pytorch as pl
-from src.core.base_components.BaseModel import BaseModel
+
+from art.new_structure.core.base_components.BaseModel import BaseModel
 
 
 class ClassificationModel(pl.LightningModule):

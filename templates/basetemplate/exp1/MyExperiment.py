@@ -3,11 +3,9 @@ from baselines import HeuristicBaseline, MlBaseline
 from datasets import Dataset
 from sklearn.datasets import make_classification
 from sklearn.linear_model import LogisticRegression
-from src.core.experiment.Experiment import Experiment
-from src.templates.basetemplate.exp1.MyModel import ClassificationModel
-from src.templates.basetemplate.MyDataset import MyDataset
 
-from new_structure.src.core.experiment.steps import (
+from art.new_structure.core.experiment.Experiment import Experiment
+from art.new_structure.core.experiment.steps import (
     CheckLossOnInit,
     EvaluateBaselines,
     Overfit,
@@ -15,6 +13,8 @@ from new_structure.src.core.experiment.steps import (
     Regularize,
     Tune,
 )
+from art.new_structure.templates.basetemplate.exp1.MyModel import ClassificationModel
+from art.new_structure.templates.basetemplate.MyDataset import MyDataset
 
 
 def calculate_metrics(prediction, gt):

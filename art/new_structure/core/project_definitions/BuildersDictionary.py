@@ -1,5 +1,8 @@
 from enum import Enum
-from src.core.project_definitions.builders import ClassificationProjectBuilder
+
+from art.new_structure.core.project_definitions.builders import (
+    ClassificationProjectBuilder,
+)
 
 
 class BuildersDictionary(Enum):

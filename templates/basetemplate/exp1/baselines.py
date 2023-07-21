@@ -1,5 +1,6 @@
 from datasets import Dataset
-from src.core.base_components.BaseModel import Baseline
+
+from art.new_structure.core.base_components.BaseModel import Baseline
 
 
 class MlBaseline(Baseline):
