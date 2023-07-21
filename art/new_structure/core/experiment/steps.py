@@ -1,7 +1,7 @@
 from abc import ABC, abstractmethod
 from typing import Any, List
 
-from pytorch_lightning import Trainer
+from lightning.pytorch import Trainer
 
 from art.new_structure.core.base_components.BaseModel import Baseline
 from art.new_structure.core.experiment.Check import Check
@@ -12,13 +12,17 @@ class Step(ABC):
     descrption: str
     checks: Check
 
-    @abstractmethod
-    def verify_passed(self) -> bool:
-        pass
+    # @abstractmethod
+    # def verify_passed(self) -> bool:
+    #     pass
 
     @abstractmethod
     def __call__(self):
         pass
+
+    # TODO read about properties etc. and select the best
+    def set_metric(self, metric):
+        self.metric = metric
 
 
 class ExploreData(Step):
@@ -44,7 +48,10 @@ class EvaluateBaselines(Step):
     ):  # Probably all steps could have same loop and saving results etc.
         self.results = {}
         for baseline in self.baselines:
-            trainer = Trainer()
+            baseline.train_baseline(self.datamodule.train_dataloader())
+            baseline.set_metric(self.metric)
+
+            trainer = Trainer(accelerator=baseline.accelerator)
             results = trainer.validate(model=baseline, datamodule=self.datamodule)
 
             # TODO: how to save results in a best way?

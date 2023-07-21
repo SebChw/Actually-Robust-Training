@@ -131,3 +131,4 @@ dmypy.json
 *.ipynb
 
 NLP-Legal-eval
+lightning_logs

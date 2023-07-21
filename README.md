@@ -1,9 +1,6 @@
 # audio-research-toolkit
 
-
-`NA POCZATKU ABSTRAKCYJNIE!!! DEFINIUJEMY TYLKO PRZEPIS DLA UZYTKOWNIKA A ON NA RAZIE WSZYSTKO MUSI ZROBIC SAM. JAK TO SIE UDA TO BEDZIEMY ZA NIEGO PROBOWAC AUTOMATYZOWAC` 
-
-`STARAJCIE SIE PRZESTRZEGAC SOLIDA - PRZYNAJMNIEJ Single responsibility`
+Import lightning consistent as `lightning.pytorch`
 
 
 ![Tests](https://github.com/SebChw/audio-research-toolkit/actions/workflows/tests.yml/badge.svg)

@@ -1,50 +1,66 @@
+import numpy as np
 from datasets import Dataset
+from torchmetrics import Accuracy
 
 from art.new_structure.core.base_components.BaseModel import Baseline
 
 
 class MlBaseline(Baseline):
     def __init__(self, model):
+        super().__init__(accelerator="cpu")
         self.model = model
+        self.name = "MlBaseline"
 
-    def prepare_data(self, data):
-        # TODO it should always return pandas dataframe
+    # prepare_data name is taken by lightning
+    def create_data(self, dataloader):
+        # TODO it should always return X,y as numpy arrays
         # Taka generalna funkcje prepare data dla MlBaseline powinnismy przygotowac
-        if isinstance(data, Dataset):
-            return data.to_pandas()
+        X = []
+        y = []
+        for batch in dataloader:
+            X.append(batch["x"])
+            y.append(batch["y"])
 
-    def train(self, train_data):
+        return np.concatenate(X), np.concatenate(y)
+
+    # train has conflicts with lightning
+    def train_baseline(self, train_data):
         # raise NotImplementedError
 
-        #! Idea jest taka, ze w tym miejscu kazdy dostaje pandasa i robi sobie z nim zo zechce
-        train_data = self.prepare_data(train_data)
+        #! Idea jest taka, ze w tym miejscu kazdy dostaje X, y i robi sobie z nim zo zechce
+        X, y = self.create_data(train_data)
 
         # TO jest customowy kod napisany przez usera
-        target_col = train_data.columns == "y"
-        X, y = train_data.loc[:, ~target_col], train_data.loc[:, target_col]
         self.model = self.model.fit(X, y)
 
     def validation_step(self, batch, batch_idx):
         # raise NotImplementedError
         # TODO: even in MLModel we should do this in batch mode.
-        x, y = self.prepare_batch(batch)
+        x, y = batch["x"], batch["y"]
 
-        predictions = self.model(X)
+        predictions = self.model.predict(x)
 
         # TODO We should probably make all used metrics somehow reusable within different stages.
-        # self.accurac(predictions, y)
+        self.metric(self, predictions, y)
 
 
 class HeuristicBaseline(Baseline):
+    def __init__(self):
+        super().__init__(accelerator="cpu")
+        self.name = "HeuristicBaseline"
+
+    def train_baseline(self, train_data):
+        """Initialize already existing solution"""
+        pass
+
     def validation_step(self, batch, batch_idx):
         # raise NotImplementedError
+        x, y = batch["x"], batch["y"]
 
-        x, y = self.prepare_batch(batch)
-
-        predictions = np.full(x.shape[0], 5)
+        predictions = np.full(x.shape[0], 0)
 
         # TODO We should probably make all used metrics somehow reusable within different stages.
-        # self.accurac(predictions, y)
+        self.metric(self, predictions, y)
 
 
 class AlreadyExistingSolutionBaseline(Baseline):
