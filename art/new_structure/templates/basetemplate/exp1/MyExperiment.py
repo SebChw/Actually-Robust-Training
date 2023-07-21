@@ -2,6 +2,7 @@ import pandas as pd
 from baselines import HeuristicBaseline, MlBaseline
 from datasets import Dataset
 from sklearn.datasets import make_classification
+from sklearn.linear_model import LogisticRegression
 from src.core.experiment.Experiment import Experiment
 from src.templates.basetemplate.exp1.MyModel import ClassificationModel
 from src.templates.basetemplate.MyDataset import MyDataset
@@ -37,7 +38,9 @@ class MyExperiment(Experiment):
         # Potentially we can save file versions to show which model etc was used.
         # TODO, do we want to use list or something different like self.add_step(). Consider builder pattern.
         self.steps = [
-            EvaluateBaselines([HeuristicBaseline(), MlBaseline], dataset),
+            EvaluateBaselines(
+                [HeuristicBaseline(), MlBaseline(LogisticRegression())], dataset
+            ),
             CheckLossOnInit(
                 self.model, dataset
             ),  # From now I assume that we will use the same mode
@@ -52,6 +55,12 @@ class MyExperiment(Experiment):
         # TODO: every step should do it. Experiment shuldn't know about dashboard existance
         # self.update_dashboard(self.steps) # now from each step we take internal information it has remembered and save them to show on a dashboard
 
+        for step in self.steps:
+            step()
+
         self.logger = None
 
         self.dataset = MyDataset()
+
+
+exp = MyExperiment("exp1")

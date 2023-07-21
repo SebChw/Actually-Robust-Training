@@ -1,9 +1,11 @@
 from datasets import Dataset
-from sklearn.linear_model import LogisticRegression
 from src.core.base_components.BaseModel import Baseline
 
 
 class MlBaseline(Baseline):
+    def __init__(self, model):
+        self.model = model
+
     def prepare_data(self, data):
         # TODO it should always return pandas dataframe
         # Taka generalna funkcje prepare data dla MlBaseline powinnismy przygotowac
@@ -19,7 +21,7 @@ class MlBaseline(Baseline):
         # TO jest customowy kod napisany przez usera
         target_col = train_data.columns == "y"
         X, y = train_data.loc[:, ~target_col], train_data.loc[:, target_col]
-        self.model = LogisticRegression().fit(X, y)
+        self.model = self.model.fit(X, y)
 
     def validation_step(self, batch, batch_idx):
         # raise NotImplementedError
