@@ -1,4 +1,5 @@
 import numpy as np
+import torch.nn as nn
 from baselines import HeuristicBaseline, MlBaseline
 from MyDataset import DummyDataModule
 from MyModel import ClassificationModel
@@ -27,8 +28,10 @@ class MyExperiment(Experiment):
     def __init__(self, name, **kwargs):
         data = DummyDataModule()
 
-        self.network = None
-        self.model = ClassificationModel(model=self.network)
+        self.network = nn.Sequential(nn.Linear(20, 10), nn.ReLU(), nn.Linear(10, 1))
+        self.model = ClassificationModel(
+            model=self.network, loss_fn=nn.BCEWithLogitsLoss()
+        )
 
         # Potentially we can save file versions to show which model etc was used.
         # TODO, do we want to use list or something different like self.add_step(). Consider builder pattern.
@@ -36,10 +39,10 @@ class MyExperiment(Experiment):
             EvaluateBaselines(
                 [HeuristicBaseline(), MlBaseline(LogisticRegression())], data
             ),
-            # CheckLossOnInit(
-            #     self.model, data
-            # ),  # From now I assume that we will use the same mode
-            # OverfitOneBatch(self.model, data),
+            CheckLossOnInit(
+                self.model, data
+            ),  # From now I assume that we will use the same mode
+            OverfitOneBatch(self.model, data),
             # Overfit(self.model, data),
             # Regularize(
             #    self.model.turn_on_regularization(), data.turn_on_regularization()

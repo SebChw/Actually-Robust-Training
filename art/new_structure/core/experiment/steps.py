@@ -67,7 +67,7 @@ class CheckLossOnInit(Step):
     def __call__(self):
         trainer = Trainer()
         self.results = trainer.validate(
-            model=self.model, datamodule=self.datamodule.get_subset("train")
+            model=self.model, dataloaders=self.datamodule.train_dataloader()
         )
 
 
@@ -78,7 +78,9 @@ class OverfitOneBatch(Step):
 
     def __call__(self):
         trainer = Trainer(overfit_batches=1, max_epochs=50)
-        trainer.fit(model=self.model, train_dataloaders=self.datamodule)
+        trainer.fit(
+            model=self.model, train_dataloaders=self.datamodule.train_dataloader()
+        )
 
 
 class Overfit(Step):
