@@ -103,7 +103,6 @@ Issues Sebastian:
 * jak rozwiazac calculate metrics, zeby kazdy mial wspolna. Wielokrotne dziedziczenie. Zrobic cos ala `interfejs` i wtedy uzytkownik definiuje tylko ten interfejs (Swietny pomysl).
 * Ogarnac, tak zeby ladnie sie zewszad importowalo. Narzucic jakis styl pisania. Napisac instrukcje jak importowac. Nie zostawialbym tego na usera.
 
-
 Issues Karol:
 * Osobne templatki - osobne branche. Na ten moment git
 * Raczej nadal bym myslal jak to zrobic lepiej zeby nie skonczyc z 20 branchami.
@@ -117,4 +116,4 @@ Issues Mati:
 * Na razie nie personalizujemy, pomysl
 * Fabryka Loggerow - rozwazyc.
 * Ogarnac to ladowanie z checkpointow - `top priority`. Wrzucam checkpoint potem moge go pobrac i kontynuowac trening
-
+* Ogarnac synchornizacje folderow lokalnie a z wandb/neptune.
