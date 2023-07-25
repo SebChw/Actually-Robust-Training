@@ -43,10 +43,12 @@ class MyExperiment(Experiment):
                 self.model, data
             ),  # From now I assume that we will use the same mode
             OverfitOneBatch(self.model, data),
-            # Overfit(self.model, data),
-            # Regularize(
-            #    self.model.turn_on_regularization(), data.turn_on_regularization()
-            # ),
+            # TODO During overfitting and later stage we may need some additional kwargs to be passed to the trainer like max_epochs
+            Overfit(self.model, data),
+            # TODO Where this turn on regularization should be called? Probably it should be hidden from the user
+            Regularize(
+                self.model.turn_on_regularization(), data.turn_on_regularization()
+            ),
             # Tune(self.model, data),
         ]  # steps are run they remember their internal state
 

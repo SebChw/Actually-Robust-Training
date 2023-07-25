@@ -82,20 +82,32 @@ class OverfitOneBatch(Step):
             model=self.model, train_dataloaders=self.datamodule.train_dataloader()
         )
 
+        # this contains loss after last step. It should be very small
+        # additionally the name of the metric should be predefined
+        # TODO think if we want to measure some metrics here to.
+        loss_at_the_end = trainer.logged_metrics["train_loss"]
+        print(f"Loss at the end of overfitting: {loss_at_the_end}")
+
 
 class Overfit(Step):
-    def __init__(self, model, datamodule):
+    def __init__(self, model, datamodule, max_epochs=1):
         self.model = model
         self.datamodule = datamodule
+        self.max_epochs = max_epochs
 
     def __call__(self):
-        trainer = Trainer()  # It probably should take some configs
+        # It probably should take some configs
+        trainer = Trainer(max_epochs=self.max_epochs)
         trainer.fit(
-            model=self.model, train_dataloaders=self.datamodule.get_subset("train")
+            model=self.model, train_dataloaders=self.datamodule.train_dataloader()
         )
+        # TODO should we validate, or rather use trainer.logged_metrics["train_loss"]
         self.results = trainer.validate(
-            model=self.model, datamodule=self.datamodule.get_subset("train")
+            model=self.model, dataloaders=self.datamodule.train_dataloader()
         )
+        # TODO pass this loss somewhere to check if stage is passed succesfully.
+        loss_at_the_end = self.results[0]["validation_loss"]
+        print(f"Loss at the end of overfitting: {loss_at_the_end}")
 
 
 class Regularize(Step):
@@ -106,6 +118,10 @@ class Regularize(Step):
     def __call__(self):
         trainer = Trainer()  # It probably should take some configs
         trainer.fit(model=self.model, datamodule=self.datamodule)
+        # TODO should we validate, or rather use trainer.logged_metrics["train_loss"]
+        metrics = trainer.logged_metrics["validation_loss"]
+        # TODO pass this loss somewhere to check if stage is passed succesfully.
+        print(f"Loss at the end of regularization: {metrics}")
 
 
 class Tune(Step):

@@ -96,4 +96,25 @@ Kacper, Sebastian: `TODO: Sprobowac odpalic wszystkie stepy po kolei z dummy pro
 
 ======================================================================================================================
 
+25.07.2023
+
+Issues Sebastian:
+* jak wprowadzac regularyzacje modelu i zbioru danych? -  pierwsze pytanie gdzie ma byc ta metoda czy w LightningModule czy gdzies poza. Alternatywa `turn_on_regularization(model, **kwargs)`
+* jak rozwiazac calculate metrics, zeby kazdy mial wspolna. Wielokrotne dziedziczenie. Zrobic cos ala `interfejs` i wtedy uzytkownik definiuje tylko ten interfejs (Swietny pomysl).
+* Ogarnac, tak zeby ladnie sie zewszad importowalo. Narzucic jakis styl pisania. Napisac instrukcje jak importowac. Nie zostawialbym tego na usera.
+
+
+Issues Karol:
+* Osobne templatki - osobne branche. Na ten moment git
+* Raczej nadal bym myslal jak to zrobic lepiej zeby nie skonczyc z 20 branchami.
+* Sprawdzic mozliwosci https://cookiecutter.readthedocs.io/en/stable/README.html i byc moze zastapil bym uzywanie `git` wlasnie tym cookiecooterem
+* `typer` + `hydra`, cool.
+* Sprawdzilbym jak to robi `react`, `poetry`. Wybrac z czego mozemy wziac najlepsze rzeczy. Byc moze przygotowac jakis `raport` z tego.
+
+Issues Mati:
+* Na razie MlFlow odpuszczamy.
+* Jak wrzucamy obrazki to mozemy wlaczyc optymalizacje ich rozmiarow, zeby nie zawalaly bardzo duzo miejsca.
+* Na razie nie personalizujemy, pomysl
+* Fabryka Loggerow - rozwazyc.
+* Ogarnac to ladowanie z checkpointow - `top priority`. Wrzucam checkpoint potem moge go pobrac i kontynuowac trening
 

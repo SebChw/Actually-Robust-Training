@@ -33,3 +33,11 @@ class DummyDataModule(pl.LightningDataModule):
 
     def train_dataloader(self):
         return DataLoader(self.dataset, batch_size=16)
+
+    def turn_on_regularization(self):
+        pass
+        # TODO, how to do this?
+        return self
+
+    def turn_off_regularization(self):
+        pass
