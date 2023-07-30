@@ -1,8 +1,6 @@
 from enum import Enum
 
-from art.new_structure.core.project_definitions.builders import (
-    ClassificationProjectBuilder,
-)
+from art.core.project_definitions.builders import ClassificationProjectBuilder
 
 
 class BuildersDictionary(Enum):

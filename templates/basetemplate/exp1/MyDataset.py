@@ -3,7 +3,7 @@ from datasets import Dataset
 from sklearn.datasets import make_classification
 from torch.utils.data import DataLoader
 
-from art.new_structure.core.base_components.BaseDataset import BaseDataset
+from art.core.base_components.BaseDataset import BaseDataset
 
 # I moved it here so that imports works. We must agree on how we handle this.
 

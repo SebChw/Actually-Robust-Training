@@ -5,8 +5,8 @@ from MyDataset import DummyDataModule
 from MyModel import ClassificationModel
 from sklearn.linear_model import LogisticRegression
 
-from art.new_structure.core.experiment.Experiment import Experiment
-from art.new_structure.core.experiment.steps import (
+from art.core.experiment.Experiment import Experiment
+from art.core.experiment.steps import (
     CheckLossOnInit,
     EvaluateBaselines,
     Overfit,

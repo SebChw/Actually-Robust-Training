@@ -1,4 +1,4 @@
-from art.new_structure.core.webapi.WebAPI import WebAPI
+from art.core.webapi.WebAPI import WebAPI
 
 
 class MyAPI(WebAPI):

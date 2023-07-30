@@ -2,7 +2,7 @@ import numpy as np
 from datasets import Dataset
 from torchmetrics import Accuracy
 
-from art.new_structure.core.base_components.BaseModel import Baseline
+from art.core.base_components.BaseModel import Baseline
 
 
 class MlBaseline(Baseline):

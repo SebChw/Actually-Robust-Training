@@ -1,6 +1,6 @@
 from typing import List
 
-from art.new_structure.core.experiment.steps import Step
+from art.core.experiment.steps import Step
 
 
 class Experiment:

@@ -3,8 +3,8 @@ from typing import Any, List
 
 from lightning.pytorch import Trainer
 
-from art.new_structure.core.base_components.BaseModel import Baseline
-from art.new_structure.core.experiment.Check import Check
+from art.core.base_components.BaseModel import Baseline
+from art.core.experiment.Check import Check
 
 
 class Step(ABC):
