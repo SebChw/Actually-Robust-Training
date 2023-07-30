@@ -1,16 +1,8 @@
-from typing import Any
-
 import lightning.pytorch as pl
 import torch
 
 
-class MetricCalculator:
-    # TODO consider this solution
-    def calculate_metric():
-        pass
-
-
-class ClassificationModel(pl.LightningModule, MetricCalculator):
+class ClassificationModel(pl.LightningModule):
     def __init__(self, model, loss_fn):
         super().__init__()
         self.model = model
