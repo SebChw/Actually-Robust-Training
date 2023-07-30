@@ -35,8 +35,7 @@ class DummyDataModule(pl.LightningDataModule):
         return DataLoader(self.dataset, batch_size=16)
 
     def turn_on_regularization(self):
-        pass
-        # TODO, how to do this?
+        """But in case of dataset it is probably better to put this on the user."""
         return self
 
     def turn_off_regularization(self):
