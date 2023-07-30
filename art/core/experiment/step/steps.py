@@ -1,23 +1,27 @@
 from abc import ABC, abstractmethod
-from typing import Any, List
+from typing import Any, List, Dict
 
 from lightning.pytorch import Trainer
 
 from art.core.base_components.BaseModel import Baseline
-from art.core.experiment.Check import Check
+from art.core.experiment.step.checks import Check
+from art.core.experiment.step.step_savers import JSONStepSaver
 
 
 class Step(ABC):
     name: str
-    descrption: str
-    checks: Check
+    description: str
 
-    # @abstractmethod
-    # def verify_passed(self) -> bool:
-    #     pass
+    def __init__(self, name: str, description: str):
+        self.name = name
+        self.description = description
 
     @abstractmethod
     def __call__(self):
+        pass
+
+    @abstractmethod
+    def get_saved_state(self) -> Dict[str, str]:
         pass
 
     # TODO read about properties etc. and select the best
@@ -39,6 +43,7 @@ class EvaluateBaselines(Step):
     def __init__(
         self, baselines: List[Baseline], datamodule
     ):  # Probably all steps could have same init
+        super().__init__("EvaluateBaselines", "Evaluates baselines on the dataset")
         self.baselines = baselines
         # TODO should we enforce datamodule to be hf dataset?
         self.datamodule = datamodule
@@ -57,10 +62,17 @@ class EvaluateBaselines(Step):
             # TODO: how to save results in a best way?
             # TODO do it on the fly in some files. After every step some results are saved in a file
             self.results[baseline.name] = results
+        JSONStepSaver().save(self.results, self.name, "results.json")
+
+    def get_saved_state(self) -> Dict[str, str]:
+        return {f"{baseline.name}_baseline": f"{baseline.name}_baseline/" for baseline in self.baselines} | {
+            "results": "results.json",
+        }
 
 
 class CheckLossOnInit(Step):
     def __init__(self, model, datamodule):
+        super().__init__("CheckLossOnInit", "Checks loss on init")
         self.model = model
         self.datamodule = datamodule
 
@@ -68,11 +80,18 @@ class CheckLossOnInit(Step):
         trainer = Trainer()
         self.results = trainer.validate(
             model=self.model, dataloaders=self.datamodule.train_dataloader()
-        )
+        )[0]
+        JSONStepSaver().save(self.results, self.name, "results.json")
+
+    def get_saved_state(self) -> Dict[str, str]:
+        return {
+            "results": "results.json",
+        }
 
 
 class OverfitOneBatch(Step):
     def __init__(self, model, datamodule):
+        super().__init__("OverfitOneBatch", "Overfits one batch")
         self.model = model
         self.datamodule = datamodule
 
@@ -85,12 +104,18 @@ class OverfitOneBatch(Step):
         # this contains loss after last step. It should be very small
         # additionally the name of the metric should be predefined
         # TODO think if we want to measure some metrics here to.
-        loss_at_the_end = trainer.logged_metrics["train_loss"]
+        loss_at_the_end = float(trainer.logged_metrics["train_loss"])
         print(f"Loss at the end of overfitting: {loss_at_the_end}")
+        JSONStepSaver().save({"loss_at_the_end":loss_at_the_end}, self.name, "results.json")
 
+    def get_saved_state(self) -> Dict[str, str]:
+        return {
+            "results": "results.json",
+        }
 
 class Overfit(Step):
     def __init__(self, model, datamodule, max_epochs=1):
+        super().__init__("Overfit", "Overfits one batch")
         self.model = model
         self.datamodule = datamodule
         self.max_epochs = max_epochs
@@ -106,12 +131,19 @@ class Overfit(Step):
             model=self.model, dataloaders=self.datamodule.train_dataloader()
         )
         # TODO pass this loss somewhere to check if stage is passed succesfully.
-        loss_at_the_end = self.results[0]["validation_loss"]
+        loss_at_the_end = float(self.results[0]["validation_loss"])
         print(f"Loss at the end of overfitting: {loss_at_the_end}")
+        JSONStepSaver().save({"loss_at_the_end": loss_at_the_end}, self.name, "results.json")
+
+    def get_saved_state(self) -> Dict[str, str]:
+        return {
+            "results": "results.json",
+        }
 
 
 class Regularize(Step):
     def __init__(self, model, datamodule):
+        super().__init__("Regularize", "Regularizes model")
         self.model = model
         self.datamodule = datamodule
 
@@ -122,10 +154,16 @@ class Regularize(Step):
         metrics = trainer.logged_metrics["validation_loss"]
         # TODO pass this loss somewhere to check if stage is passed succesfully.
         print(f"Loss at the end of regularization: {metrics}")
+        JSONStepSaver().save({"metrics": metrics}, self.name, "results.json")
 
+    def get_saved_state(self) -> Dict[str, str]:
+        return {
+            "results": "results.json",
+        }
 
 class Tune(Step):
     def __init__(self, model, datamodule):
+        super().__init__("Tune", "Tunes model")
         self.model = model
         self.datamodule = datamodule
 
@@ -133,6 +171,11 @@ class Tune(Step):
         trainer = Trainer()  # Here we should write other object for this.
         # TODO how to solve this?
         trainer.tune(model=self.model, datamodule=self.datamodule)
+
+    def get_saved_state(self) -> Dict[str, str]:
+        return {
+            "results": "results.json",
+        }
 
 
 class Squeeze(Step):
