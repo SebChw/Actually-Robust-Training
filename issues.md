@@ -117,3 +117,49 @@ Issues Mati:
 * Fabryka Loggerow - rozwazyc.
 * Ogarnac to ladowanie z checkpointow - `top priority`. Wrzucam checkpoint potem moge go pobrac i kontynuowac trening
 * Ogarnac synchornizacje folderow lokalnie a z wandb/neptune.
+  
+
+============================================================================================================================
+08.03.2023
+
+W sumie do logerow mozna by uzyc registering decorator, zeby uzywac kilku na raz.
+
+**Na razie robimy tylko jeden typ zadania i spisujemy potencjalne problemy.**
+
+Karol:
+* Osobny skrypt, ktory wypelnia config.
+* Mamy jedna glowna templatke
+* Pozniej dynamicznie tworzymy projekt
+* Mamy mozliwosc dodac jakas czesc juz po stworzeniu projektu.
+* `cookiecutter` to jest niesamowity kombain mozna zrobic w nim wszystko o czym mowilismy.
+
+
+Kacper:
+* dodac do nazw cyferki zeby bylo wiadomo, kto kiedy 
+* Do dopracowania komunikacja pomiedzy krokami
+* `Inplace` czy nie `Inplace`. Za inplace jest taki, zeby nie marnowac pamieci na GPU. Przy kazdym stepie inicjalizowac na nowo. ?
+* `Dekorator` ktory czysci po kazdym stepie 
+
+Logger:
+* Na razie testowac tylko `Neptune`
+
+Sebastian:
+* `Compute Metrics` w praktyce.
+
+
+**Przygotowac jakis tutorial**
+
+Co mamy:
+1. Tworzenie projektu.
+2. Mozliwosc przejscia po wszystkich krokach.
+3. Mozliwosc zapisywania wynikow.
+4. Sprawdzanie czy stage przeszedl.
+
+To do:
+1. Dodanie puszczenia z CLI + potencjalnie na teraz jakis raport ASCI -> `Karol`
+2. Dodanie wizualizacji w czasie wykonywanie stepow, ktore ida do tego samego folderu. -> `Sebastian`
+3. Tutorial -> `Sebastian`/`Kacper`
+4. LOGO -> `DB`
+5. Cel: Brzezinski + tutorial -> Brzezinski z wytrenowanym MNISTem = sukces.
+6. Zrobic tak, zeby templates to bylo osobne repo -> `Sebastian`/`Kacper`
+7. Add order in checkpoint folders
