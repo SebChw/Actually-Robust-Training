@@ -11,10 +11,12 @@ from art.core.experiment.step.step_savers import JSONStepSaver
 class Step(ABC):
     name: str
     description: str
+    STEPS_REGISTRY = []
 
     def __init__(self, name: str, description: str):
         self.name = name
         self.description = description
+        self.STEPS_REGISTRY.append(self)
 
     @abstractmethod
     def __call__(self):

@@ -1,73 +1,86 @@
-from typing import Dict
+from typing import Dict, List, Optional
+
+from art.core.experiment.step.steps import Step
+
+
+class DefaultMetric:
+    pass
+
+
+class DefaultModel:
+    pass
 
 
 class MetricCalculator:
     """Thanks to this preparing templates for different kinds of project will be very easy."""
 
-    prepare_registry = {}
+    prepare_registry = dict()
+    exceptions = dict()
+    metrics = []
 
     @classmethod
-    def register_prepare(cls, metric_class=None, model_class=None):
-        def decorator(prepare_func):
-            if metric_class is None and model_class is None:
-                cls.prepare_registry["default"] = prepare_func
+    def register_prepare(
+        cls,
+        prepare_func,
+        metric_classes: List = [DefaultMetric],
+        model_classes: List = [DefaultModel],
+    ):
+        for metric_class in metric_classes:
+            first_part = metric_class.__class__.__name__
+            for model_class in model_classes:
+                second_part = model_class.__class__.__name__
+                if first_part == second_part:
+                    raise ValueError(
+                        "Names of prepare classes or functions must be unique!"
+                    )
+                cls.prepare_registry[(first_part, second_part)] = prepare_func
 
-            elif metric_class is not None and model_class is not None:
-                cls.prepare_registry[
-                    (metric_class.__name__, model_class.__name__)
-                ] = prepare_func
-
-            elif metric_class is not None:
-                cls.prepare_registry[metric_class.__name__] = prepare_func
-
-            elif model_class is not None:
-                cls.prepare_registry[model_class.__name__] = prepare_func
-
-        return decorator
-
-    def check_if_needed(self, metric, lightning_module, stage: str):
-        metric_name = metric.__class__.__name__
-        l_module_name = lightning_module.__class__.__name__
-        if metric_name in self.exceptions:
-            return True
-
-        if (metric_name, l_module_name) in self.exceptions[metric_name]:
-            return True
-
-        if (metric_name, l_module_name, stage) in self.exceptions[metric_name]:
+    @classmethod
+    def check_if_needed(cls, metric, step: str, stage):
+        metric = metric.__class__.__name__
+        if frozenset([metric, step, stage]) in cls.exceptions:
             return True
 
         return False
 
-    def get_prepare_f(self, metric, lightning_module):
-        metric_class = metric.__class__.__name__
-        model_class = lightning_module.__class__.__name__
+    @classmethod
+    def add_exception(
+        cls,
+        metrics: Optional[List] = None,
+        steps: Optional[List[Step]] = None,
+        stages: List[str] = ["train", "val"],
+    ):
+        if metrics is None:
+            metrics = cls.metrics
+        if steps is None:
+            steps = Step.STEPS_REGISTRY
 
-        if (metric_class, model_class) in self.prepare_registry:
-            return self.prepare_registry[(metric_class, model_class)]
+        for metric in metrics:
+            metric_name = metric.__class__.__name__
+            for step in steps:
+                step_name = step.name
+                for stage in stages:
+                    cls.exceptions[frozenset([metric_name, step_name, stage])] = True
 
-        elif metric_class in self.prepare_registry:
-            return self.prepare_registry[metric_class]
+    @classmethod
+    def get_prepare_f(cls, metric, model):
+        metric_name = metric.__class__.__name__
+        model_name = model.__class__.__name__
 
-        elif model_class in self.prepare_registry:
-            return self.prepare_registry[model_class]
-
-        elif "default" in self.prepare_registry:
-            return self.prepare_registry["default"]
-
+        if (metric_name, model_name) in cls.prepare_registry:
+            return cls.prepare_registry[(metric_name, model_name)]
+        elif (metric_name, DefaultModel.__name__) in cls.prepare_registry:
+            return cls.prepare_registry[(metric_name, DefaultModel.__name__)]
+        elif (DefaultMetric.__name__, model_name) in cls.prepare_registry:
+            return cls.prepare_registry[(DefaultMetric.__name__, model_name)]
+        elif (DefaultMetric.__name__, DefaultModel.__name__) in cls.prepare_registry:
+            return cls.prepare_registry[(DefaultMetric.__name__, DefaultModel.__name__)]
         else:
-            lambda y: y
+            return lambda y: y
 
-    def __init__(self):
-        self.metrics = []
-        # In this dictionary we define when metric shouldn't be calculated
-        # Exceptions are defined by user before everything starts.
-        self.exceptions = {}
-
-    def calculate_metrics(self, lightning_module, data_for_metrics: Dict, stage: str):
-        for metric in self.metrics:
-            if self.check_if_needed(metric, lightning_module, stage):
-                prepare_f = self.get_prepare_f(metric, lightning_module)
-                # The last question would be how to know in which stage we are to log separately for Overfit and OverfitOneBatch etc.
-                # + should we somehow store all previously calculated data.
-                lightning_module.log(metric(prepare_f(data_for_metrics)))
+    @classmethod
+    def calculate_metrics(cls, model, data_for_metrics: Dict, stage: str, step):
+        for metric in cls.metrics:
+            if cls.check_if_needed(metric, step, stage):
+                prepare_f = cls.get_prepare_f(metric, model)
+                model.log(metric(prepare_f(data_for_metrics)))
