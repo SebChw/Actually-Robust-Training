@@ -1,29 +1,35 @@
 import typer
 import os
 import shutil
-from git import Repo
-import time
+from typing import List
+from cookiecutter.main import cookiecutter
+from art.cli.utils import get_git_user_info
 
-URL = "https://github.com/SebChw/art_template.git"
+TEMPLATE_URL  = "https://github.com/SebChw/art_template.git"
 
 app = typer.Typer()
 
-
 @app.command()
-def create_project(project_name: str, keep_as_repo: bool = False) -> None:
+def create_project(project_name: str, author: str = typer.Option(None), keep_as_repo: bool = False) -> None:
+    git_username, git_email = get_git_user_info()
+    
     try:
-        _ = Repo.clone_from(URL, project_name, branch="main", depth=1)
+        cookiecutter(
+            r"C:\polibuda\inzynierka_utils\art_template",
+            no_input=True,  # This flag prevents Cookiecutter from asking for user input
+            extra_context={"project_name": project_name, "author": git_username, "email": git_email},  # Pass the project_name to the template
+        )
     except Exception as e:
-        print("Error while cloning the template's repository:", str(e))
+        print("Error while generating project using Cookiecutter:", str(e))
         return
 
-    try:
-        time.sleep(1)
-        git_folder = os.path.join(project_name, ".git")
-        shutil.rmtree(git_folder, ignore_errors=True)
-    except Exception as e:
-        print("System error while deleting .git directory:", str(e))
-        return
+    if not keep_as_repo:
+        try:
+            git_folder = os.path.join(project_name, ".git")
+            shutil.rmtree(git_folder, ignore_errors=True)
+        except Exception as e:
+            print("System error while deleting .git directory:", str(e))
+            return
 
     print(f"Project created in {project_name}/")
 
