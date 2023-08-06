@@ -34,3 +34,13 @@ If you are to push your code please use
 tox
 ```
 to make sure every check passes
+
+In order to use CLI check:
+```sh
+python -m art.cli --help
+```
+
+To create project from template:
+```sh
+python -m art.cli create_project --name my_project
+```
