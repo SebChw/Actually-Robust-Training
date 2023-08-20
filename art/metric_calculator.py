@@ -1,6 +1,10 @@
 from typing import Dict, List, Optional
 
-from art.core.experiment.step.steps import Step
+import torch
+
+from art.enums import PREDICTION, TARGET, TrainingStage
+from art.experiment_state import ExperimentState
+from art.step.steps import Step
 
 
 class DefaultMetric:
@@ -26,9 +30,9 @@ class MetricCalculator:
         model_classes: List = [DefaultModel],
     ):
         for metric_class in metric_classes:
-            first_part = metric_class.__class__.__name__
+            first_part = metric_class.__name__
             for model_class in model_classes:
-                second_part = model_class.__class__.__name__
+                second_part = model_class.__name__
                 if first_part == second_part:
                     raise ValueError(
                         "Names of prepare classes or functions must be unique!"
@@ -36,19 +40,33 @@ class MetricCalculator:
                 cls.prepare_registry[(first_part, second_part)] = prepare_func
 
     @classmethod
-    def check_if_needed(cls, metric, step: str, stage):
+    def check_if_needed(cls, metric):
         metric = metric.__class__.__name__
+        step, stage = ExperimentState.get_step(), ExperimentState.get_stage()
         if frozenset([metric, step, stage]) in cls.exceptions:
-            return True
+            return False
 
-        return False
+        return True
+
+    @classmethod
+    def register_metric(
+        cls,
+        metric,
+        exception_steps=None,
+        exception_stages=[TrainingStage.TRAIN.name, TrainingStage.VALIDATION.name],
+    ):
+        # TODO maybe we can pass list here?
+        cls.metrics.append(metric)
+        cls.add_exception(
+            metrics=[metric], steps=exception_steps, stages=exception_stages
+        )
 
     @classmethod
     def add_exception(
         cls,
         metrics: Optional[List] = None,
         steps: Optional[List[Step]] = None,
-        stages: List[str] = ["train", "val"],
+        stages: List[str] = [TrainingStage.TRAIN.name, TrainingStage.VALIDATION.name],
     ):
         if metrics is None:
             metrics = cls.metrics
@@ -61,6 +79,18 @@ class MetricCalculator:
                 step_name = step.name
                 for stage in stages:
                     cls.exceptions[frozenset([metric_name, step_name, stage])] = True
+
+    @classmethod
+    def unify_type(cls, x):
+        if not isinstance(x, torch.Tensor):
+            x = torch.Tensor(x)
+
+        return x
+
+    @classmethod
+    def default_prepare(cls, data):
+        preds, targets = data[PREDICTION], data[TARGET]
+        return cls.unify_type(preds), cls.unify_type(targets)
 
     @classmethod
     def get_prepare_f(cls, metric, model):
@@ -76,11 +106,35 @@ class MetricCalculator:
         elif (DefaultMetric.__name__, DefaultModel.__name__) in cls.prepare_registry:
             return cls.prepare_registry[(DefaultMetric.__name__, DefaultModel.__name__)]
         else:
-            return lambda y: y
+            return cls.default_prepare
 
     @classmethod
-    def calculate_metrics(cls, model, data_for_metrics: Dict, stage: str, step):
-        for metric in cls.metrics:
-            if cls.check_if_needed(metric, step, stage):
-                prepare_f = cls.get_prepare_f(metric, model)
-                model.log(metric(prepare_f(data_for_metrics)))
+    def build_name(cls, model, metric):
+        step, stage = ExperimentState.get_step(), ExperimentState.get_stage()
+        return f"{metric.__class__.__name__}-{model.__class__.__name__}-{stage}-{step}"
+
+    @classmethod
+    def to(cls, device):
+        cls.metrics = [metric.to(device) for metric in cls.metrics]
+
+    @classmethod
+    def compile(cls, model, stage=None, step=None):
+        # TODO implement this. It should be called before the stage starts
+        # TODO I don't know how to pass stage here yet
+        # TODO this should be set and used in __call__ instead of looking at many if statements every time.
+        cls.current_metrics = []
+
+    def __call__(self, model, data_for_metrics: Dict):
+        for metric in self.metrics:
+            if self.check_if_needed(metric):
+                # TODO Instead of this get_prepare and check if needed one should
+                # TODO compile list of computable metrics before the stage runs
+                prepare_f = self.get_prepare_f(metric, model)
+                prepared_data = prepare_f(data_for_metrics)
+                metric_val = metric(*prepared_data)
+                metric_name = self.build_name(model, metric)
+                model.log(metric_name, metric_val)
+
+                data_for_metrics[metric.__class__.__name__] = metric_val
+
+        return data_for_metrics
