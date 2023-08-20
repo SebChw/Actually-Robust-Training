@@ -2,37 +2,21 @@ from typing import Any, Optional
 
 import lightning.pytorch as pl
 import torch.nn
-from lightning.pytorch.utilities.types import STEP_OUTPUT
 
+from art.enums import LOSS, TrainingStage
 from art.metric_calculator import MetricCalculator
-
-
-class Baseline(pl.LightningModule):
-    def __init__(self, accelerator="cpu"):
-        super().__init__()
-        self.accelerator = accelerator
-
-    def validation_step(self, batch, batch_idx) -> float:
-        x, y = batch
-        y_hat = None  # perform prediction here
-        loss = None  # calculate metrics of your choice here
-        # self.log("val_loss", loss, on_step=False, on_epoch=True)
-        raise NotImplementedError
-
-    # TODO think if this shouldn't be added in some class higher in hierarchy like Model
-    def set_metric(self, metric):
-        self.metric = metric
 
 
 class ArtModule(pl.LightningModule):
     def __init__(
         self,
-        device="cpu",
+        # device="cpu",
     ):
         super().__init__()
         self.regularized = True
-        self.device.type = device
+        # print(self.device)
         self.metric_calculator = MetricCalculator()
+        self.reset_pipelines()
 
     """
     I think in case of models we can easily write some general purpose function that will do the job.
@@ -45,6 +29,23 @@ class ArtModule(pl.LightningModule):
     4. Set all dropouts to 0
     5. Normalization layers probably should stay untouched.
     """
+
+    def reset_pipelines(self):
+        # THIS FUNCTION IS NECESSARY AS WE MAY DECORATE AND DECORATED FUNCTIONS WON'T BE USED!
+        #! This probably should be splitted into 2 classes. One for model another for baseline.
+        self.train_step_pipeline = [
+            self.parse_data,
+            self.predict,
+            self.compute_metrics,
+            self.compute_loss,
+        ]  # STRATEGY DESIGN PATTERN
+        self.validation_step_pipeline = [
+            self.parse_data,
+            self.predict,
+            self.compute_metrics,
+            self.compute_loss,
+        ]
+        self.ml_train_pipeline = [self.ml_parse_data, self.baseline_train]
 
     def turn_on_model_regularizations(self):
         if not self.regularized:
@@ -73,3 +74,42 @@ class ArtModule(pl.LightningModule):
             )
 
             self.regularized = False
+
+    def parse_data(self, data):
+        return data
+
+    def predict(self, data):
+        return data
+
+    # I wonder if compute_loss could be somehow passed to compute_metrics.
+    # But I see some limitations.
+    def compute_loss(self, data):
+        return data
+
+    def compute_metrics(self, data):
+        self.metric_calculator(self, data)
+        return data
+
+    def validation_step(self, batch, batch_idx):
+        data = {"batch": batch, "batch_idx": batch_idx}
+        for func in self.validation_step_pipeline:
+            data = func(data)
+
+    def training_step(self, batch, batch_idx):
+        data = {"batch": batch, "batch_idx": batch_idx}
+        for func in self.train_step_pipeline:
+            data = func(data)
+
+        return data[LOSS]
+
+    def ml_parse_data(self, data):
+        return data
+
+    def baseline_train(self, data):
+        return data
+
+    def ml_train(self, data):
+        for func in self.ml_train_pipeline:
+            data = func(data)
+
+        return data
