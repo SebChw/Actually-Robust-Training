@@ -6,25 +6,7 @@ from lightning.pytorch import Trainer
 from art.enums import TRAIN_LOSS, VALIDATION_LOSS, TrainingStage
 from art.experiment_state import ExperimentState
 from art.step.checks import Check
-from art.step.step_savers import JSONStepSaver
-
-
-class Step(ABC):
-    name: str
-    description: str
-    STEPS_REGISTRY = []
-
-    def __init__(self):
-        self.STEPS_REGISTRY.append(self)
-
-    @abstractmethod
-    def __call__(self):
-        ExperimentState.current_stage = TrainingStage.VALIDATION
-        ExperimentState.current_step = self
-
-    @abstractmethod
-    def get_saved_state(self) -> Dict[str, str]:
-        pass
+from art.step.step import Step
 
 
 class ExploreData(Step):
@@ -48,10 +30,7 @@ class EvaluateBaselines(Step):
         self.baselines = baselines
         self.datamodule = datamodule
 
-    def __call__(
-        self,
-    ):  # Probably all steps could have same loop and saving results etc.
-        super().__call__()
+    def do(self, previous_states):  # Probably all steps could have same loop and saving results etc.
         self.results = {}
         for baseline in self.baselines:
             baseline.ml_train({"dataloader": self.datamodule.train_dataloader()})
@@ -62,15 +41,9 @@ class EvaluateBaselines(Step):
             # TODO: how to save results in a best way?
             # TODO do it on the fly in some files. After every step some results are saved in a file
             self.results[baseline.name] = results
-        JSONStepSaver().save(self.results, self.name, "results.json")
 
     def get_saved_state(self) -> Dict[str, str]:
-        return {
-            f"{baseline.name}_baseline": f"{baseline.name}_baseline/"
-            for baseline in self.baselines
-        } | {
-            "results": "results.json",
-        }
+        return {f"{baseline.name}_baseline": f"{baseline.name}_baseline/" for baseline in self.baselines}
 
 
 class CheckLossOnInit(Step):
@@ -82,18 +55,11 @@ class CheckLossOnInit(Step):
         self.model = model
         self.datamodule = datamodule
 
-    def __call__(self):
-        super().__call__()
+    def do(self, previous_states):
         trainer = Trainer()
-        self.results = trainer.validate(
+        self.results.update(trainer.validate(
             model=self.model, dataloaders=self.datamodule.train_dataloader()
-        )[0]
-        JSONStepSaver().save(self.results, self.name, "results.json")
-
-    def get_saved_state(self) -> Dict[str, str]:
-        return {
-            "results": "results.json",
-        }
+        )[0])
 
 
 class OverfitOneBatch(Step):
@@ -106,8 +72,7 @@ class OverfitOneBatch(Step):
         self.datamodule = datamodule
         self.number_of_steps = number_of_steps
 
-    def __call__(self):
-        super().__call__()
+    def do(self, previous_states):
         trainer = Trainer(overfit_batches=1, max_epochs=self.number_of_steps)
         trainer.fit(
             model=self.model, train_dataloaders=self.datamodule.train_dataloader()
@@ -116,16 +81,10 @@ class OverfitOneBatch(Step):
         # this contains loss after last step. It should be very small
         # additionally the name of the metric should be predefined
         # TODO change "train_loss" to some constant
-        loss_at_the_end = float(trainer.logged_metrics[TRAIN_LOSS])
+        print(trainer.logged_metrics)
+        loss_at_the_end = float(trainer.logged_metrics["CrossEntropyLoss-MNISTModel-VALIDATION-Overfit One Batch"])#TODO not hardcode
         print(f"Loss at the end of overfitting: {loss_at_the_end}")
-        JSONStepSaver().save(
-            {"loss_at_the_end": loss_at_the_end}, self.name, "results.json"
-        )
-
-    def get_saved_state(self) -> Dict[str, str]:
-        return {
-            "results": "results.json",
-        }
+        self.results["loss_at_the_end"] = loss_at_the_end
 
 
 class Overfit(Step):
@@ -138,8 +97,7 @@ class Overfit(Step):
         self.datamodule = datamodule
         self.max_epochs = max_epochs
 
-    def __call__(self):
-        super().__call__()
+    def do(self, previous_states):
         # It probably should take some configs
         trainer = Trainer(max_epochs=self.max_epochs)
         trainer.fit(
@@ -150,16 +108,9 @@ class Overfit(Step):
             model=self.model, dataloaders=self.datamodule.train_dataloader()
         )
         # TODO pass this loss somewhere to check if stage is passed succesfully.
-        loss_at_the_end = float(self.results[0][VALIDATION_LOSS])
+        loss_at_the_end = float(self.results[0]['CrossEntropyLoss-MNISTModel-VALIDATION-Overfit'])
         print(f"Loss at the end of overfitting: {loss_at_the_end}")
-        JSONStepSaver().save(
-            {"loss_at_the_end": loss_at_the_end}, self.name, "results.json"
-        )
-
-    def get_saved_state(self) -> Dict[str, str]:
-        return {
-            "results": "results.json",
-        }
+        self.results["loss_at_the_end"] = loss_at_the_end
 
 
 class Regularize(Step):
@@ -171,20 +122,14 @@ class Regularize(Step):
         self.model = model
         self.datamodule = datamodule
 
-    def __call__(self):
-        super().__call__()
+    def do(self, previous_states):
         trainer = Trainer()  # It probably should take some configs
         trainer.fit(model=self.model, datamodule=self.datamodule)
         # TODO should we validate, or rather use trainer.logged_metrics["train_loss"]
         metrics = trainer.logged_metrics["validation_loss"]
         # TODO pass this loss somewhere to check if stage is passed succesfully.
         print(f"Loss at the end of regularization: {metrics}")
-        JSONStepSaver().save({"metrics": metrics}, self.name, "results.json")
-
-    def get_saved_state(self) -> Dict[str, str]:
-        return {
-            "results": "results.json",
-        }
+        self.results["metrics"] = metrics
 
 
 class Tune(Step):
@@ -196,15 +141,10 @@ class Tune(Step):
         self.model = model
         self.datamodule = datamodule
 
-    def __call__(self):
+    def do(self, previous_states):
         trainer = Trainer()  # Here we should write other object for this.
         # TODO how to solve this?
         trainer.tune(model=self.model, datamodule=self.datamodule)
-
-    def get_saved_state(self) -> Dict[str, str]:
-        return {
-            "results": "results.json",
-        }
 
 
 class Squeeze(Step):
