@@ -30,12 +30,13 @@ class Experiment:
 
     def run_all(self):
         for i,(step, checks) in enumerate(zip(self.steps, self.checks)):
-            if i <= self.state["last_completed_state_index"]:
+            #TODO discuss if we should rather check succesfull completion instead of this.
+            if i <= self.state["last_completed_state_index"]: 
                 continue
-            # Dependency injection so that user doesn't have to pass metric function everywhere
             print(step.name)
             step(self.state["steps"])
             for check in checks:
+                check.name = step.name # TODO this is solution just for now
                 result = check.check(None, step._get_saved_state())
                 if not result.is_positive:
                     raise Exception(f"Check failed for step: {step.name}")

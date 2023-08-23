@@ -1,8 +1,11 @@
+import math
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
 from typing import Dict, List
 
 from art.step.step_savers import JSONStepSaver
+
+# TODO all these checks could be squeezed into one class that take a callable (check)? To be discussed
 
 
 @dataclass
@@ -23,6 +26,7 @@ class Check(ABC):
 
     @abstractmethod
     def check(self, dataset, step_state_dict: Dict[str, str]) -> ResultOfCheck:
+        # TODO: why we pass dataset here?
         assert all([file in step_state_dict for file in self.required_files])
 
 
@@ -53,6 +57,39 @@ class CheckScoreEqualsTo(Check):
         super().check(dataset, step_state_dict)
         result = JSONStepSaver().load(self.name, step_state_dict["results"])
         if result[self.score_filed] == self.score:
+            return ResultOfCheck(is_positive=True)
+        else:
+            return ResultOfCheck(
+                is_positive=False,
+                error=f"Score {result[self.score_filed]} is not equal to {self.score}",
+            )
+
+
+class CheckScoreCloseTo(Check):
+    def __init__(
+        self,
+        name: str,
+        description: str,
+        score_filed: str,
+        score: float,
+        rel_tol=1e-09,
+        abs_tol=0.0,
+    ):
+        super().__init__(name, description, ["results"])
+        self.score_filed = score_filed
+        self.score = score
+        self.rel_tol = rel_tol
+        self.abs_tol = abs_tol
+
+    def check(self, dataset, step_state_dict: Dict[str, str]) -> ResultOfCheck:
+        super().check(dataset, step_state_dict)
+        result = JSONStepSaver().load(self.name, step_state_dict["results"])
+        if math.isclose(
+            result[self.score_filed],
+            self.score,
+            rel_tol=self.rel_tol,
+            abs_tol=self.abs_tol,
+        ):
             return ResultOfCheck(is_positive=True)
         else:
             return ResultOfCheck(

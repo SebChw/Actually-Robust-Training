@@ -13,8 +13,7 @@ class ExploreData(Step):
     """This class checks whether we have some markdown file description of the dataset + we implemented visualizations"""
 
 
-# TODO move init to Step class, as all steps have same init
-# TODO Add saving results
+# TODO add something like Trainer kwargs to every step
 
 
 class EvaluateBaselines(Step):
@@ -30,7 +29,9 @@ class EvaluateBaselines(Step):
         self.baselines = baselines
         self.datamodule = datamodule
 
-    def do(self, previous_states):  # Probably all steps could have same loop and saving results etc.
+    def do(
+        self, previous_states
+    ):  # Probably all steps could have same loop and saving results etc.
         self.results = {}
         for baseline in self.baselines:
             baseline.ml_train({"dataloader": self.datamodule.train_dataloader()})
@@ -43,7 +44,10 @@ class EvaluateBaselines(Step):
             self.results[baseline.name] = results
 
     def get_saved_state(self) -> Dict[str, str]:
-        return {f"{baseline.name}_baseline": f"{baseline.name}_baseline/" for baseline in self.baselines}
+        return {
+            f"{baseline.name}_baseline": f"{baseline.name}_baseline/"
+            for baseline in self.baselines
+        }
 
 
 class CheckLossOnInit(Step):
@@ -57,9 +61,11 @@ class CheckLossOnInit(Step):
 
     def do(self, previous_states):
         trainer = Trainer()
-        self.results.update(trainer.validate(
-            model=self.model, dataloaders=self.datamodule.train_dataloader()
-        )[0])
+        self.results.update(
+            trainer.validate(
+                model=self.model, dataloaders=self.datamodule.train_dataloader()
+            )[0]
+        )
 
 
 class OverfitOneBatch(Step):
@@ -82,7 +88,11 @@ class OverfitOneBatch(Step):
         # additionally the name of the metric should be predefined
         # TODO change "train_loss" to some constant
         print(trainer.logged_metrics)
-        loss_at_the_end = float(trainer.logged_metrics["CrossEntropyLoss-MNISTModel-VALIDATION-Overfit One Batch"])#TODO not hardcode
+        loss_at_the_end = float(
+            trainer.logged_metrics[
+                "CrossEntropyLoss-MNISTModel-TRAIN-Overfit One Batch"
+            ]
+        )  # TODO not hardcode
         print(f"Loss at the end of overfitting: {loss_at_the_end}")
         self.results["loss_at_the_end"] = loss_at_the_end
 
@@ -106,11 +116,13 @@ class Overfit(Step):
         # TODO should we validate, or rather use trainer.logged_metrics["train_loss"]
         self.results = trainer.validate(
             model=self.model, dataloaders=self.datamodule.train_dataloader()
+        )[0]
+        ExperimentState.current_stage = TrainingStage.VALIDATION
+        self.results.update(
+            trainer.validate(
+                model=self.model, dataloaders=self.datamodule.val_dataloader()
+            )[0]
         )
-        # TODO pass this loss somewhere to check if stage is passed succesfully.
-        loss_at_the_end = float(self.results[0]['CrossEntropyLoss-MNISTModel-VALIDATION-Overfit'])
-        print(f"Loss at the end of overfitting: {loss_at_the_end}")
-        self.results["loss_at_the_end"] = loss_at_the_end
 
 
 class Regularize(Step):
@@ -123,13 +135,17 @@ class Regularize(Step):
         self.datamodule = datamodule
 
     def do(self, previous_states):
-        trainer = Trainer()  # It probably should take some configs
+        self.model.turn_on_model_regularizations()
+        self.datamodule.turn_on_regularizations()
+
+        trainer = Trainer(
+            check_val_every_n_epoch=50, max_epochs=50
+        )  # TODO It probably should take some configs
         trainer.fit(model=self.model, datamodule=self.datamodule)
-        # TODO should we validate, or rather use trainer.logged_metrics["train_loss"]
-        metrics = trainer.logged_metrics["validation_loss"]
-        # TODO pass this loss somewhere to check if stage is passed succesfully.
-        print(f"Loss at the end of regularization: {metrics}")
-        self.results["metrics"] = metrics
+        ExperimentState.current_stage = TrainingStage.VALIDATION
+        self.results = trainer.validate(
+            model=self.model, dataloaders=self.datamodule.val_dataloader()
+        )[0]
 
 
 class Tune(Step):

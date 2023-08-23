@@ -1,9 +1,9 @@
 from abc import ABC, abstractmethod
-from typing import Any, List, Dict
-from art.step.step_savers import JSONStepSaver
+from typing import Any, Dict, List
 
 from art.enums import TrainingStage
 from art.experiment_state import ExperimentState
+from art.step.step_savers import JSONStepSaver
 
 
 class Step(ABC):
@@ -20,7 +20,7 @@ class Step(ABC):
         self.results = {}
 
     def __call__(self, previous_states: List[Dict]):
-        ExperimentState.current_stage = TrainingStage.VALIDATION
+        ExperimentState.current_stage = TrainingStage.TRAIN # TODO: Some steps need to do this during execution time
         ExperimentState.current_step = self
         self.do(previous_states)
         JSONStepSaver().save(self.results, self.STEPS_REGISTRY.index(self), self.name, "results.json")
