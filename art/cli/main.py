@@ -15,7 +15,7 @@ def create_project(project_name: str, author: str = typer.Option(None), keep_as_
     
     try:
         cookiecutter(
-            r"C:\polibuda\inzynierka_utils\art_template",
+            TEMPLATE_URL,
             no_input=True,  # This flag prevents Cookiecutter from asking for user input
             extra_context={"project_name": project_name, "author": git_username, "email": git_email},  # Pass the project_name to the template
         )
