@@ -5,19 +5,21 @@ from typing import List
 from cookiecutter.main import cookiecutter
 from art.cli.utils import get_git_user_info
 
-TEMPLATE_URL  = "https://github.com/SebChw/art_template.git"
+TEMPLATE_URL = "https://github.com/SebChw/art_template.git"
 
 app = typer.Typer()
 
+
 @app.command()
-def create_project(project_name: str, author: str = typer.Option(None), keep_as_repo: bool = False) -> None:
+def create_project(project_name: str, keep_as_repo: bool = False, branch: str = "main") -> None:
     git_username, git_email = get_git_user_info()
-    
+
     try:
         cookiecutter(
             TEMPLATE_URL,
-            no_input=True,  # This flag prevents Cookiecutter from asking for user input
-            extra_context={"project_name": project_name, "author": git_username, "email": git_email},  # Pass the project_name to the template
+            no_input=True,
+            extra_context={"project_name": project_name, "author": git_username, "email": git_email},  # Pass the project_name to the template,
+            checkout=branch,  # Use the latest version of the template
         )
     except Exception as e:
         print("Error while generating project using Cookiecutter:", str(e))
@@ -32,6 +34,11 @@ def create_project(project_name: str, author: str = typer.Option(None), keep_as_
             return
 
     print(f"Project created in {project_name}/")
+
+
+@app.command()
+def get_started():
+    create_project(project_name="mnist_tutorial", branch="mnist_tutorial_cookiecutter")
 
 
 @app.command()
