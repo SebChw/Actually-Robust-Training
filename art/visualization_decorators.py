@@ -34,6 +34,9 @@ def set_visualization(
         )
         setattr(obj, method, decorated)
 
+        if hasattr(obj, "reset_pipelines"):
+            obj.reset_pipelines()
+
 
 if __name__ == "__main__":
     """Just to test how this works."""
