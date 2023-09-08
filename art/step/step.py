@@ -9,21 +9,21 @@ from art.step.step_savers import JSONStepSaver
 class Step(ABC):
     name: str
     description: str
-    STEPS_REGISTRY = []#TODO I do not think this is a good idea...
-
-    @classmethod
-    def get_id(cls, instance):
-        return cls.STEPS_REGISTRY.index(instance)
 
     def __init__(self):
-        self.STEPS_REGISTRY.append(self)
         self.results = {}
+        self.model = None
+        self.datamodule = None
 
     def __call__(self, previous_states: List[Dict]):
-        ExperimentState.current_stage = TrainingStage.TRAIN # TODO: Some steps need to do this during execution time
+        # TODO: Some steps need to do this during execution time
+        ExperimentState.current_stage = TrainingStage.TRAIN
         ExperimentState.current_step = self
         self.do(previous_states)
-        JSONStepSaver().save(self.results, self.STEPS_REGISTRY.index(self), self.name, "results.json")
+
+        JSONStepSaver().save(
+            self.results, self.get_step_id(), self.name, "results.json"
+        )
 
     @abstractmethod
     def do(self, previous_states: List[Dict]):
@@ -36,3 +36,6 @@ class Step(ABC):
 
     def get_saved_state(self) -> Dict[str, str]:
         return {}
+
+    def get_step_id(self) -> str:
+        return f"{self.model.__class__.__name__}_{self.datamodule.__class__.__name__}"

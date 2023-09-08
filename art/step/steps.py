@@ -49,6 +49,13 @@ class EvaluateBaselines(Step):
             for baseline in self.baselines
         }
 
+    def get_step_id(self) -> str:
+        baseline_prefix = "_".join(
+            [baseline.__class__.__name__ for baseline in self.baselines]
+        )
+        datamodule_prefix = self.datamodule.__class__.__name__
+        return f"{baseline_prefix}_{datamodule_prefix}"
+
 
 class CheckLossOnInit(Step):
     name = "Check Loss On Init"
