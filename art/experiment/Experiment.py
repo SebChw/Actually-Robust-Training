@@ -17,11 +17,10 @@ class Experiment:
         self.name = name
         self.steps = []
         self.checks = []
-        #TODO think about merging it with ExperimentState class
-        self.state ={
+        # TODO think about merging it with ExperimentState class
+        self.state = {
             "status": "created",
-            "last_completed_state_index": -1,
-            "steps": []
+            "steps": [],
         }
         # self.update_dashboard(self.steps) # now from each step we take internal information it has remembered and save them to show on a dashboard
 
@@ -31,16 +30,30 @@ class Experiment:
 
     def run_all(self):
         MetricCalculator.create_exceptions(self.steps)
+        for step, checks in zip(self.steps, self.checks):
+            step_passed = True
+
+            for check in checks:
+                result = check.check(None, step)
+                if not result.is_positive:
+                    step_passed = False
+                    break
+
+            # TODO implement step changed utility
+            # step_changed = False
+            # if step_changed_utility(step):
+            #   step_changed = True
+
+            if step_passed:
+                print(f"Step {step.name}_{step.get_step_id()} was already completed.")
                 continue
-            print(step.name)
+
             step(self.state["steps"])
             for check in checks:
-                check.name = step.name # TODO this is solution just for now
-                result = check.check(None, step._get_saved_state())
+                result = check.check(None, step)
                 if not result.is_positive:
                     raise Exception(f"Check failed for step: {step.name}")
-            self.state["last_completed_state_index"] = i
+
             self.state["steps"].append(step.get_saved_state())
 
         self.logger = None
-
