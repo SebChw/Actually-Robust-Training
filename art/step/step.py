@@ -16,7 +16,6 @@ class Step(ABC):
         self.datamodule = None
 
     def __call__(self, previous_states: List[Dict]):
-        # TODO: Some steps need to do this during execution time
         ExperimentState.current_stage = TrainingStage.TRAIN
         ExperimentState.current_step = self
         self.do(previous_states)
