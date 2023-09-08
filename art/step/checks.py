@@ -3,6 +3,7 @@ from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
 from typing import Dict, List
 
+from art.enums import TrainingStage
 from art.step.step_savers import JSONStepSaver
 
 
@@ -22,22 +23,31 @@ class Check(ABC):
         name: str,
         description: str,
         required_files: List[str],
-        required_key: str,
+        required_key_metric,  # This requires an object which was used to calculate metric
+        required_key_stage: TrainingStage,
         required_value: float,
     ):
         self.check_name = name
         self.description = description
         self.required_files = required_files
-        self.required_key = required_key
+        self.required_key_metric = required_key_metric
+        self.required_key_stage = required_key_stage
         self.required_value = required_value
 
     @abstractmethod
     def _check_method(self, result) -> ResultOfCheck:
         pass
 
+    def build_required_key(self, step, stage, metric):
+        metric = metric.__class__.__name__
+        model = step.model.__class__.__name__ if hasattr(step, "model") else ""
+        step_name = step.name
+        self.required_key = f"{metric}-{model}-{stage}-{step_name}"
+
     def check(self, dataset, step) -> ResultOfCheck:
         # TODO why we pass dataset here
         step_state_dict = step._get_saved_state()
+        self.build_required_key(step, self.required_key_stage, self.required_key_metric)
         assert all([file in step_state_dict for file in self.required_files])
         result = JSONStepSaver().load(step.id, step.name, step_state_dict["results"])
         return self._check_method(result)
