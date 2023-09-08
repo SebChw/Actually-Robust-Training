@@ -109,7 +109,7 @@ class Overfit(Step):
         trainer.fit(
             model=self.model, train_dataloaders=self.datamodule.train_dataloader()
         )
-        # TODO should we validate, or rather use trainer.logged_metrics["train_loss"]
+
         self.results = trainer.validate(
             model=self.model, dataloaders=self.datamodule.train_dataloader()
         )[0]
