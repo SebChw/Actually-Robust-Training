@@ -5,8 +5,6 @@ from typing import Dict, List
 
 from art.step.step_savers import JSONStepSaver
 
-# TODO all these checks could be squeezed into one class that take a callable (check)? To be discussed
-
 
 @dataclass
 class ResultOfCheck:
@@ -19,49 +17,51 @@ class Check(ABC):
     description: str
     required_files: List[str]
 
-    def __init__(self, name: str, description: str, required_files: List[str]):
-        self.name = name
+    def __init__(
+        self,
+        name: str,
+        description: str,
+        required_files: List[str],
+        required_key: str,
+        required_value: float,
+    ):
+        self.check_name = name
         self.description = description
         self.required_files = required_files
+        self.required_key = required_key
+        self.required_value = required_value
 
     @abstractmethod
-    def check(self, dataset, step_state_dict: Dict[str, str]) -> ResultOfCheck:
-        # TODO: why we pass dataset here?
+    def _check_method(self, result) -> ResultOfCheck:
+        pass
+
+    def check(self, dataset, step) -> ResultOfCheck:
+        # TODO why we pass dataset here
+        step_state_dict = step._get_saved_state()
         assert all([file in step_state_dict for file in self.required_files])
+        result = JSONStepSaver().load(step.id, step.name, step_state_dict["results"])
+        return self._check_method(result)
 
 
 class CheckScoreExists(Check):
-    def __init__(self, name: str, description: str, score_filed: str):
-        super().__init__(name, description, ["results"])
-        self.score_filed = score_filed
-
-    def check(self, dataset, step_state_dict: Dict[str, str]) -> ResultOfCheck:
-        super().check(dataset, step_state_dict)
-        result = JSONStepSaver().load(self.name, step_state_dict["results"])
-        if self.score_filed in result:
+    def _check_method(self, result) -> ResultOfCheck:
+        if self.required_key in result:
             return ResultOfCheck(is_positive=True)
         else:
             return ResultOfCheck(
                 is_positive=False,
-                error=f"Score {self.score_filed} is not in results.json",
+                error=f"Score {self.required_key} is not in results.json",
             )
 
 
 class CheckScoreEqualsTo(Check):
-    def __init__(self, name: str, description: str, score_filed: str, score: float):
-        super().__init__(name, description, ["results"])
-        self.score_filed = score_filed
-        self.score = score
-
-    def check(self, dataset, step_state_dict: Dict[str, str]) -> ResultOfCheck:
-        super().check(dataset, step_state_dict)
-        result = JSONStepSaver().load(self.name, step_state_dict["results"])
-        if result[self.score_filed] == self.score:
+    def _check_method(self, result) -> ResultOfCheck:
+        if result[self.required_key] == self.required_value:
             return ResultOfCheck(is_positive=True)
         else:
             return ResultOfCheck(
                 is_positive=False,
-                error=f"Score {result[self.score_filed]} is not equal to {self.score}",
+                error=f"Score {result[self.required_key]} is not equal to {self.required_value}",
             )
 
 
@@ -70,23 +70,19 @@ class CheckScoreCloseTo(Check):
         self,
         name: str,
         description: str,
-        score_filed: str,
-        score: float,
+        required_key: str,
+        required_value: float,
         rel_tol=1e-09,
         abs_tol=0.0,
     ):
-        super().__init__(name, description, ["results"])
-        self.score_filed = score_filed
-        self.score = score
+        super().__init__(name, description, ["results"], required_key, required_value)
         self.rel_tol = rel_tol
         self.abs_tol = abs_tol
 
-    def check(self, dataset, step_state_dict: Dict[str, str]) -> ResultOfCheck:
-        super().check(dataset, step_state_dict)
-        result = JSONStepSaver().load(self.name, step_state_dict["results"])
+    def _check_method(self, result) -> ResultOfCheck:
         if math.isclose(
-            result[self.score_filed],
-            self.score,
+            result[self.required_key],
+            self.required_value,
             rel_tol=self.rel_tol,
             abs_tol=self.abs_tol,
         ):
@@ -94,41 +90,27 @@ class CheckScoreCloseTo(Check):
         else:
             return ResultOfCheck(
                 is_positive=False,
-                error=f"Score {result[self.score_filed]} is not equal to {self.score}",
+                error=f"Score {result[self.required_key]} is not equal to {self.required_value}",
             )
 
 
 class CheckScoreGreaterThan(Check):
-    def __init__(self, name: str, description: str, score_filed: str, score: float):
-        super().__init__(name, description, ["results"])
-        self.score_filed = score_filed
-        self.score = score
-
-    def check(self, dataset, step_state_dict: Dict[str, str]) -> ResultOfCheck:
-        super().check(dataset, step_state_dict)
-        result = JSONStepSaver().load(self.name, step_state_dict["results"])
-        if result[self.score_filed] > self.score:
+    def _check_method(self, result) -> ResultOfCheck:
+        if result[self.required_key] > self.required_value:
             return ResultOfCheck(is_positive=True)
         else:
             return ResultOfCheck(
                 is_positive=False,
-                error=f"Score {result[self.score_filed]} is not greater than {self.score}",
+                error=f"Score {result[self.required_key]} is not greater than {self.required_value}",
             )
 
 
 class CheckScoreLessThan(Check):
-    def __init__(self, name: str, description: str, score_filed: str, score: float):
-        super().__init__(name, description, ["results"])
-        self.score_filed = score_filed
-        self.score = score
-
-    def check(self, dataset, step_state_dict: Dict[str, str]) -> ResultOfCheck:
-        super().check(dataset, step_state_dict)
-        result = JSONStepSaver().load(self.name, step_state_dict["results"])
-        if result[self.score_filed] < self.score:
+    def _check_method(self, result) -> ResultOfCheck:
+        if result[self.required_key] < self.required_value:
             return ResultOfCheck(is_positive=True)
         else:
             return ResultOfCheck(
                 is_positive=False,
-                error=f"Score {result[self.score_filed]} is not less than {self.score}",
+                error=f"Score {result[self.required_key]} is not less than {self.required_value}",
             )
