@@ -21,6 +21,7 @@ class MetricCalculator:
     prepare_registry = dict()
     exceptions = dict()
     metrics = []
+    exceptions_to_be_added = []
 
     @classmethod
     def register_prepare(
@@ -68,17 +69,26 @@ class MetricCalculator:
         steps: Optional[List[Step]] = None,
         stages: List[str] = [TrainingStage.TRAIN.name, TrainingStage.VALIDATION.name],
     ):
-        if metrics is None:
-            metrics = cls.metrics
-        if steps is None:
-            steps = Step.STEPS_REGISTRY
+        cls.exceptions_to_be_added.append((metrics, steps, stages))
 
-        for metric in metrics:
-            metric_name = metric.__class__.__name__
-            for step in steps:
-                step_name = step.name
-                for stage in stages:
-                    cls.exceptions[frozenset([metric_name, step_name, stage])] = True
+    @classmethod
+    def create_exceptions(cls, list_of_steps: List[Step]):
+        for metrics, steps, stages in cls.exceptions_to_be_added:
+            if metrics is None:
+                metrics = cls.metrics
+            if steps is None:
+                steps = list_of_steps
+
+            for metric in metrics:
+                metric_name = metric.__class__.__name__
+                for step in steps:
+                    step_name = step.name
+                    for stage in stages:
+                        cls.exceptions[
+                            frozenset([metric_name, step_name, stage])
+                        ] = True
+
+        cls.exceptions_to_be_added = []
 
     @classmethod
     def unify_type(cls, x):

@@ -1,5 +1,6 @@
 from typing import List
 
+from art.metric_calculator import MetricCalculator
 from art.step.checks import Check
 from art.step.step import Step
 
@@ -29,11 +30,7 @@ class Experiment:
         self.checks.append(checks)
 
     def run_all(self):
-        for i,(step, checks) in enumerate(zip(self.steps, self.checks)):
-            #TODO discuss if we should rather check succesfull completion instead of this.
-            #TODO discuss if we want to omit steps that were already completed -> what if somebody changes the step/ArtModule?
-            # also we could add a message that step was already completed
-            if i <= self.state["last_completed_state_index"]: 
+        MetricCalculator.create_exceptions(self.steps)
                 continue
             print(step.name)
             step(self.state["steps"])
