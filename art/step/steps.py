@@ -90,18 +90,7 @@ class OverfitOneBatch(Step):
         trainer.fit(
             model=self.model, train_dataloaders=self.datamodule.train_dataloader()
         )
-
-        # this contains loss after last step. It should be very small
-        # additionally the name of the metric should be predefined
-        # TODO change "train_loss" to some constant
-        print(trainer.logged_metrics)
-        loss_at_the_end = float(
-            trainer.logged_metrics[
-                "CrossEntropyLoss-MNISTModel-TRAIN-Overfit One Batch"
-            ]
-        )  # TODO not hardcode
-        print(f"Loss at the end of overfitting: {loss_at_the_end}")
-        self.results["loss_at_the_end"] = loss_at_the_end
+        self.results.update(trainer.logged_metrics)
 
 
 class Overfit(Step):
