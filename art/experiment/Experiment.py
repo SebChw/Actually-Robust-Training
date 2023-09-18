@@ -1,5 +1,6 @@
 from typing import List
 
+from art.experiment.experiment_state import ExperimentState
 from art.metric_calculator import MetricCalculator
 from art.step.checks import Check
 from art.step.step import Step
@@ -9,28 +10,25 @@ class Experiment:
     name: str
     steps: List[Step]
     logger: object  # probably lightning logger
-    state: dict
+    state: ExperimentState
 
     def __init__(self, name, **kwargs):
         # Potentially we can save file versions to show which model etc was used.
-        # TODO, do we want to use list or something different like self.add_step(). Consider builder pattern.
         self.name = name
         self.steps = []
         self.checks = []
-        # TODO think about merging it with ExperimentState class
-        self.state = {
-            "status": "created",
-            "steps": [],
-        }
+        self.state = ExperimentState()
         # self.update_dashboard(self.steps) # now from each step we take internal information it has remembered and save them to show on a dashboard
 
     def add_step(self, step: Step, checks: List[Check]):
         self.steps.append(step)
+        step.set_experiment(self)
         self.checks.append(checks)
 
     def run_all(self):
-        MetricCalculator.create_exceptions(self.steps)
+        MetricCalculator.create_exceptions()
         for step, checks in zip(self.steps, self.checks):
+            self.state.current_step = step
             step_passed = True
 
             for check in checks:
@@ -48,12 +46,12 @@ class Experiment:
                 print(f"Step {step.name}_{step.get_step_id()} was already completed.")
                 continue
 
-            step(self.state["steps"])
+            step(self.state.steps)
             for check in checks:
                 result = check.check(None, step)
                 if not result.is_positive:
                     raise Exception(f"Check failed for step: {step.name}")
 
-            self.state["steps"].append(step.get_saved_state())
+            self.state.steps.append(step.get_saved_state())
 
         self.logger = None

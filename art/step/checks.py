@@ -48,7 +48,12 @@ class Check(ABC):
         # TODO why we pass dataset here
         step_state_dict = step._get_saved_state()
         self.build_required_key(step, self.required_key_stage, self.required_key_metric)
-        assert all([file in step_state_dict for file in self.required_files])
+        files_exist =  all([file in step_state_dict for file in self.required_files])
+        if not files_exist:
+            return ResultOfCheck(
+                is_positive=False,
+                error=f"There are missing files ",
+            )
         result = JSONStepSaver().load(step.id, step.name, step_state_dict["results"])
         return self._check_method(result)
 

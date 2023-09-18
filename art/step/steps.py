@@ -4,7 +4,6 @@ from typing import Any, Dict, List
 from lightning.pytorch import Trainer
 
 from art.enums import TRAIN_LOSS, VALIDATION_LOSS, TrainingStage
-from art.experiment_state import ExperimentState
 from art.step.checks import Check
 from art.step.step import Step
 
@@ -41,6 +40,7 @@ class EvaluateBaselines(Step):
 
             # TODO: how to save results in a best way?
             # TODO do it on the fly in some files. After every step some results are saved in a file
+            print(results)
             self.results[baseline.name] = results
 
     def get_saved_state(self) -> Dict[str, str]:
@@ -113,7 +113,7 @@ class Overfit(Step):
         self.results = trainer.validate(
             model=self.model, dataloaders=self.datamodule.train_dataloader()
         )[0]
-        ExperimentState.current_stage = TrainingStage.VALIDATION
+        self.experiment.current_stage = TrainingStage.VALIDATION
         self.results.update(
             trainer.validate(
                 model=self.model, dataloaders=self.datamodule.val_dataloader()
@@ -138,7 +138,7 @@ class Regularize(Step):
             check_val_every_n_epoch=50, max_epochs=50
         )  # TODO It probably should take some configs
         trainer.fit(model=self.model, datamodule=self.datamodule)
-        ExperimentState.current_stage = TrainingStage.VALIDATION
+        self.experiment.current_stage = TrainingStage.VALIDATION
         self.results = trainer.validate(
             model=self.model, dataloaders=self.datamodule.val_dataloader()
         )[0]
