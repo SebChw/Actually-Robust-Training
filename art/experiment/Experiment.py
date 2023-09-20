@@ -1,14 +1,16 @@
-from typing import List
+from typing import List, TYPE_CHECKING
 
 from art.experiment.experiment_state import ExperimentState
 from art.metric_calculator import MetricCalculator
 from art.step.checks import Check
-from art.step.step import Step
+
+if TYPE_CHECKING:
+    from art.step.step import Step
 
 
 class Experiment:
     name: str
-    steps: List[Step]
+    steps: List["Step"]
     logger: object  # probably lightning logger
     state: ExperimentState
 
@@ -20,8 +22,10 @@ class Experiment:
         self.state = ExperimentState()
         # self.update_dashboard(self.steps) # now from each step we take internal information it has remembered and save them to show on a dashboard
 
-    def add_step(self, step: Step, checks: List[Check]):
+    def add_step(self, step: "Step", checks: List[Check]):
         self.steps.append(step)
+        self.state.step_states[step.get_model_name()][step.get_name_with_id()] = step._get_saved_state()
+        step.set_step_id(len(self.steps))
         step.set_experiment(self)
         self.checks.append(checks)
 
@@ -47,12 +51,9 @@ class Experiment:
                 print(f"Step {step.name}_{step.get_step_id()} was already completed.")
                 continue
 
-            step(self.state.steps)
+            step(self.state.step_states)
             for check in checks:
                 result = check.check(step)
                 if not result.is_positive:
-                    raise Exception(f"Check failed for step: {step.name}")
-
-            self.state.steps.append(step.get_saved_state())
-
+                    raise Exception(f"Check failed for step: {step.name}. Reason: {result.error}")
         self.logger = None

@@ -3,6 +3,7 @@ from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
 from typing import Dict, List
 
+from art.core import ArtModule
 from art.enums import TrainingStage
 from art.step.step_savers import JSONStepSaver
 
@@ -17,6 +18,7 @@ class Check(ABC):
     name: str
     description: str
     required_files: List[str]
+    model: ArtModule = None
 
     def __init__(
         self,
@@ -24,22 +26,26 @@ class Check(ABC):
         required_key_metric,  # This requires an object which was used to calculate metric
         required_key_stage: TrainingStage,
         required_value: float,
+        model=None
     ):
         self.required_files = required_files
         self.required_key_metric = required_key_metric
         self.required_key_stage = required_key_stage
         self.required_value = required_value
+        self.model = model
 
     @abstractmethod
     def _check_method(self, result) -> ResultOfCheck:
         pass
 
     def build_required_key(self, step, stage, metric):
-        metric = metric.__name__
-        # TODO fix this for baselinesx
-        model = step.model.__class__.__name__ if hasattr(step, "model") else ""
+        metric = metric.__class__.__name__
+        if self.model is None:
+            model_name = step.model.__class__.__name__ if hasattr(step, "model") else ""
+        else:
+            model_name = self.model.__class__.__name__
         step_name = step.name
-        self.required_key = f"{metric}-{model}-{stage.name}-{step_name}"
+        self.required_key = f"{metric}-{model_name}-{stage.name}-{step_name}"
 
     def check(self, step) -> ResultOfCheck:
         step_state_dict = step._get_saved_state()
@@ -93,12 +99,14 @@ class CheckScoreCloseTo(Check):
         required_value: float,
         rel_tol=1e-09,
         abs_tol=0.0,
+        model=None
     ):
         super().__init__(
             ["results"],
             required_key_metric,
             required_key_stage,
             required_value,
+            model
         )
         self.rel_tol = rel_tol
         self.abs_tol = abs_tol

@@ -40,8 +40,7 @@ class EvaluateBaselines(Step):
 
             # TODO: how to save results in a best way?
             # TODO do it on the fly in some files. After every step some results are saved in a file
-            print(results)
-            self.results[baseline.name] = results
+            self.results.update(results[0])
 
     def get_saved_state(self) -> Dict[str, str]:
         return {
@@ -49,12 +48,8 @@ class EvaluateBaselines(Step):
             for baseline in self.baselines
         }
 
-    def get_step_id(self) -> str:
-        baseline_prefix = "_".join(
-            [baseline.__class__.__name__ for baseline in self.baselines]
-        )
-        datamodule_prefix = self.datamodule.__class__.__name__
-        return f"{baseline_prefix}_{datamodule_prefix}"
+    def get_model_name(self) -> str:
+        return ""
 
 
 class CheckLossOnInit(Step):
@@ -90,7 +85,11 @@ class OverfitOneBatch(Step):
         trainer.fit(
             model=self.model, train_dataloaders=self.datamodule.train_dataloader()
         )
-        self.results.update(trainer.logged_metrics)
+        for key, value in trainer.logged_metrics.items():
+            if hasattr(value, 'item'):
+                self.results[key] = value.item()
+            else:
+                self.results[key] = value
 
 
 class Overfit(Step):

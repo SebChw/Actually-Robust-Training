@@ -3,9 +3,10 @@ from typing import TYPE_CHECKING, Dict, List, Optional
 import torch
 
 from art.enums import PREDICTION, TARGET, TrainingStage
-from art.step.steps import Step
+
 
 if TYPE_CHECKING:
+    from art.step.steps import Step
     from art.experiment.Experiment import Experiment
 
 
@@ -45,11 +46,6 @@ class MetricCalculator:
 
     @classmethod
     def set_experiment(cls, experiment: "Experiment"):
-        # def run_all_with_exceptions(*args, **kwargs):
-        #     cls.create_exceptions()
-        #     return experiment.run_all(*args, **kwargs)
-        #
-        # experiment.run_all = run_all_with_exceptions
         cls.experiment = experiment
 
     @classmethod
@@ -86,7 +82,7 @@ class MetricCalculator:
     def add_exception(
         cls,
         metrics: Optional[List] = None,
-        steps: Optional[List[Step]] = None,
+        steps: Optional[List["Step"]] = None,
         stages: List[str] = [TrainingStage.TRAIN.name, TrainingStage.VALIDATION.name],
     ):
         cls.exceptions_to_be_added.append((metrics, steps, stages))
