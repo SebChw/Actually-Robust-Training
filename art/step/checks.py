@@ -20,15 +20,11 @@ class Check(ABC):
 
     def __init__(
         self,
-        name: str,  # ! do we need this?
-        description: str,  #! do we need this?
         required_files: List[str],
         required_key_metric,  # This requires an object which was used to calculate metric
         required_key_stage: TrainingStage,
         required_value: float,
     ):
-        self.check_name = name
-        self.description = description
         self.required_files = required_files
         self.required_key_metric = required_key_metric
         self.required_key_stage = required_key_stage
@@ -39,13 +35,13 @@ class Check(ABC):
         pass
 
     def build_required_key(self, step, stage, metric):
-        metric = metric.__class__.__name__
+        metric = metric.__name__
+        # TODO fix this for baselinesx
         model = step.model.__class__.__name__ if hasattr(step, "model") else ""
         step_name = step.name
-        self.required_key = f"{metric}-{model}-{stage}-{step_name}"
+        self.required_key = f"{metric}-{model}-{stage.name}-{step_name}"
 
-    def check(self, dataset, step) -> ResultOfCheck:
-        # TODO why we pass dataset here
+    def check(self, step) -> ResultOfCheck:
         step_state_dict = step._get_saved_state()
         self.build_required_key(step, self.required_key_stage, self.required_key_metric)
         files_exist = all([file in step_state_dict for file in self.required_files])
@@ -54,7 +50,16 @@ class Check(ABC):
                 is_positive=False,
                 error=f"There are missing files ",
             )
-        result = JSONStepSaver().load(step.id, step.name, step_state_dict["results"])
+
+        if not JSONStepSaver().get_path(step.get_step_id(), step.name, step_state_dict["results"]).exists():  # fmt: skip
+            return ResultOfCheck(
+                is_positive=False,
+                error=f"Files doesn't exist",
+            )
+
+        result = JSONStepSaver().load(
+            step.get_step_id(), step.name, step_state_dict["results"]
+        )
         return self._check_method(result)
 
 
@@ -83,14 +88,18 @@ class CheckScoreEqualsTo(Check):
 class CheckScoreCloseTo(Check):
     def __init__(
         self,
-        name: str,
-        description: str,
-        required_key: str,
+        required_key_metric,  # This requires an object which was used to calculate metric
+        required_key_stage: TrainingStage,
         required_value: float,
         rel_tol=1e-09,
         abs_tol=0.0,
     ):
-        super().__init__(name, description, ["results"], required_key, required_value)
+        super().__init__(
+            ["results"],
+            required_key_metric,
+            required_key_stage,
+            required_value,
+        )
         self.rel_tol = rel_tol
         self.abs_tol = abs_tol
 

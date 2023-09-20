@@ -1,15 +1,12 @@
-from typing import Dict, List, Optional
+from typing import TYPE_CHECKING, Dict, List, Optional
 
 import torch
 
 from art.enums import PREDICTION, TARGET, TrainingStage
-
-from typing import TYPE_CHECKING
 from art.step.steps import Step
 
 if TYPE_CHECKING:
     from art.experiment.Experiment import Experiment
-
 
 
 class DefaultMetric:
@@ -58,7 +55,10 @@ class MetricCalculator:
     @classmethod
     def check_if_needed(cls, metric):
         metric = metric.__class__.__name__
-        step, stage = cls.experiment.state.get_current_step(), cls.experiment.state.get_current_stage()
+        step, stage = (
+            cls.experiment.state.get_current_step(),
+            cls.experiment.state.get_current_stage(),
+        )
         if frozenset([metric, step, stage]) in cls.exceptions:
             return False
 
@@ -140,7 +140,10 @@ class MetricCalculator:
 
     @classmethod
     def build_name(cls, model, metric):
-        step, stage = cls.experiment.state.get_current_step(), cls.experiment.state.get_current_stage()
+        step, stage = (
+            cls.experiment.state.get_current_step(),
+            cls.experiment.state.get_current_stage(),
+        )
         return f"{metric.__class__.__name__}-{model.__class__.__name__}-{stage}-{step}"
 
     @classmethod

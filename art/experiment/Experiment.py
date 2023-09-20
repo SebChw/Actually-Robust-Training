@@ -33,7 +33,7 @@ class Experiment:
             step_passed = True
 
             for check in checks:
-                result = check.check(None, step)
+                result = check.check(step)
                 if not result.is_positive:
                     step_passed = False
                     break
@@ -49,7 +49,7 @@ class Experiment:
 
             step(self.state.steps)
             for check in checks:
-                result = check.check(None, step)
+                result = check.check(step)
                 if not result.is_positive:
                     raise Exception(f"Check failed for step: {step.name}")
 

@@ -41,4 +41,4 @@ class Step(ABC):
         return {}
 
     def get_step_id(self) -> str:
-        return f"{self.model.__class__.__name__}_{self.datamodule.__class__.__name__}"
+        return f"{self.model.__class__.__name__}"  # TODO return back id identifier
