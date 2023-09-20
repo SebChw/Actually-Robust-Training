@@ -73,9 +73,10 @@ class MetricCalculator:
     ):
         # TODO maybe we can pass list here?
         cls.metrics.append(metric)
-        cls.add_exception(
-            metrics=[metric], steps=exception_steps, stages=exception_stages
-        )
+        if exception_steps is not None:
+            cls.add_exception(
+                metrics=[metric], steps=exception_steps, stages=exception_stages
+            )
 
     def register_metrics(self, metrics):
         for metric in metrics:

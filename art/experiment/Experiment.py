@@ -26,6 +26,7 @@ class Experiment:
         self.checks.append(checks)
 
     def run_all(self):
+        MetricCalculator.set_experiment(self)
         MetricCalculator.create_exceptions()
         for step, checks in zip(self.steps, self.checks):
             self.state.current_step = step

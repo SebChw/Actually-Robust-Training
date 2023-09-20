@@ -20,8 +20,8 @@ class Check(ABC):
 
     def __init__(
         self,
-        name: str,
-        description: str,
+        name: str,  # ! do we need this?
+        description: str,  #! do we need this?
         required_files: List[str],
         required_key_metric,  # This requires an object which was used to calculate metric
         required_key_stage: TrainingStage,
@@ -48,7 +48,7 @@ class Check(ABC):
         # TODO why we pass dataset here
         step_state_dict = step._get_saved_state()
         self.build_required_key(step, self.required_key_stage, self.required_key_metric)
-        files_exist =  all([file in step_state_dict for file in self.required_files])
+        files_exist = all([file in step_state_dict for file in self.required_files])
         if not files_exist:
             return ResultOfCheck(
                 is_positive=False,
