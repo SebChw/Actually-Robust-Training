@@ -40,10 +40,7 @@ class Check(ABC):
 
     def build_required_key(self, step, stage, metric):
         metric = metric.__class__.__name__
-        if self.model is None:
-            model_name = step.model.__class__.__name__ if hasattr(step, "model") else ""
-        else:
-            model_name = self.model.__class__.__name__
+        model_name = self.model.__class__.__name__ if self.model else step.get_model_name()
         step_name = step.name
         self.required_key = f"{metric}-{model_name}-{stage.name}-{step_name}"
 
@@ -78,6 +75,14 @@ class CheckScoreExists(Check):
                 is_positive=False,
                 error=f"Score {self.required_key} is not in results.json",
             )
+
+
+class CheckResultExists(CheckScoreExists):
+    def __init__(self, key):
+        super().__init__(["results"], None, None, -1, None)
+        self.required_key = key
+    def build_required_key(self, step, stage, metric):
+        return self.required_key
 
 
 class CheckScoreEqualsTo(Check):
