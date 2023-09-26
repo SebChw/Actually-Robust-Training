@@ -4,7 +4,6 @@ from typing import Any, Dict, List
 from lightning.pytorch import Trainer
 
 from art.enums import TRAIN_LOSS, VALIDATION_LOSS, TrainingStage
-from art.experiment_state import ExperimentState
 from art.step.checks import Check
 from art.step.step import Step
 
@@ -41,7 +40,7 @@ class EvaluateBaselines(Step):
 
             # TODO: how to save results in a best way?
             # TODO do it on the fly in some files. After every step some results are saved in a file
-            self.results[baseline.name] = results
+            self.results.update(results[0])
 
     def get_saved_state(self) -> Dict[str, str]:
         return {
@@ -49,12 +48,8 @@ class EvaluateBaselines(Step):
             for baseline in self.baselines
         }
 
-    def get_step_id(self) -> str:
-        baseline_prefix = "_".join(
-            [baseline.__class__.__name__ for baseline in self.baselines]
-        )
-        datamodule_prefix = self.datamodule.__class__.__name__
-        return f"{baseline_prefix}_{datamodule_prefix}"
+    def get_model_name(self) -> str:
+        return ""
 
 
 class CheckLossOnInit(Step):
@@ -90,7 +85,11 @@ class OverfitOneBatch(Step):
         trainer.fit(
             model=self.model, train_dataloaders=self.datamodule.train_dataloader()
         )
-        self.results.update(trainer.logged_metrics)
+        for key, value in trainer.logged_metrics.items():
+            if hasattr(value, 'item'):
+                self.results[key] = value.item()
+            else:
+                self.results[key] = value
 
 
 class Overfit(Step):
@@ -113,7 +112,7 @@ class Overfit(Step):
         self.results = trainer.validate(
             model=self.model, dataloaders=self.datamodule.train_dataloader()
         )[0]
-        ExperimentState.current_stage = TrainingStage.VALIDATION
+        self.experiment.current_stage = TrainingStage.VALIDATION
         self.results.update(
             trainer.validate(
                 model=self.model, dataloaders=self.datamodule.val_dataloader()
@@ -138,7 +137,7 @@ class Regularize(Step):
             check_val_every_n_epoch=50, max_epochs=50
         )  # TODO It probably should take some configs
         trainer.fit(model=self.model, datamodule=self.datamodule)
-        ExperimentState.current_stage = TrainingStage.VALIDATION
+        self.experiment.current_stage = TrainingStage.VALIDATION
         self.results = trainer.validate(
             model=self.model, dataloaders=self.datamodule.val_dataloader()
         )[0]
