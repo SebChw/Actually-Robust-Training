@@ -1,49 +1,59 @@
-from typing import List
+from typing import List, TYPE_CHECKING
 
+from art.experiment.experiment_state import ExperimentState
+from art.metric_calculator import MetricCalculator
 from art.step.checks import Check
-from art.step.step import Step
+
+if TYPE_CHECKING:
+    from art.step.step import Step
 
 
 class Experiment:
     name: str
-    steps: List[Step]
+    steps: List["Step"]
     logger: object  # probably lightning logger
-    state: dict
+    state: ExperimentState
 
     def __init__(self, name, **kwargs):
         # Potentially we can save file versions to show which model etc was used.
-        # TODO, do we want to use list or something different like self.add_step(). Consider builder pattern.
         self.name = name
         self.steps = []
         self.checks = []
-        #TODO think about merging it with ExperimentState class
-        self.state ={
-            "status": "created",
-            "last_completed_state_index": -1,
-            "steps": []
-        }
+        self.state = ExperimentState()
         # self.update_dashboard(self.steps) # now from each step we take internal information it has remembered and save them to show on a dashboard
 
-    def add_step(self, step: Step, checks: List[Check]):
+    def add_step(self, step: "Step", checks: List[Check]):
         self.steps.append(step)
+        self.state.step_states[step.get_model_name()][step.get_name_with_id()] = step._get_saved_state()
+        step.set_step_id(len(self.steps))
+        step.set_experiment(self)
         self.checks.append(checks)
 
     def run_all(self):
-        for i,(step, checks) in enumerate(zip(self.steps, self.checks)):
-            #TODO discuss if we should rather check succesfull completion instead of this.
-            #TODO discuss if we want to omit steps that were already completed -> what if somebody changes the step/ArtModule?
-            # also we could add a message that step was already completed
-            if i <= self.state["last_completed_state_index"]: 
-                continue
-            print(step.name)
-            step(self.state["steps"])
+        MetricCalculator.set_experiment(self)
+        MetricCalculator.create_exceptions()
+        for step, checks in zip(self.steps, self.checks):
+            self.state.current_step = step
+            step_passed = True
+
             for check in checks:
-                check.name = step.name # TODO this is solution just for now
-                result = check.check(None, step._get_saved_state())
+                result = check.check(step)
                 if not result.is_positive:
-                    raise Exception(f"Check failed for step: {step.name}")
-            self.state["last_completed_state_index"] = i
-            self.state["steps"].append(step.get_saved_state())
+                    step_passed = False
+                    break
 
+            # TODO implement step changed utility
+            # step_changed = False
+            # if step_changed_utility(step):
+            #   step_changed = True
+
+            if step_passed:
+                print(f"Step {step.name}_{step.get_step_id()} was already completed.")
+                continue
+
+            step(self.state.step_states)
+            for check in checks:
+                result = check.check(step)
+                if not result.is_positive:
+                    raise Exception(f"Check failed for step: {step.name}. Reason: {result.error}")
         self.logger = None
-

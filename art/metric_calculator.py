@@ -1,10 +1,13 @@
-from typing import Dict, List, Optional
+from typing import TYPE_CHECKING, Dict, List, Optional
 
 import torch
 
 from art.enums import PREDICTION, TARGET, TrainingStage
-from art.experiment_state import ExperimentState
-from art.step.steps import Step
+
+
+if TYPE_CHECKING:
+    from art.step.steps import Step
+    from art.experiment.Experiment import Experiment
 
 
 class DefaultMetric:
@@ -21,6 +24,8 @@ class MetricCalculator:
     prepare_registry = dict()
     exceptions = dict()
     metrics = []
+    exceptions_to_be_added = []
+    experiment: "Experiment"
 
     @classmethod
     def register_prepare(
@@ -40,9 +45,16 @@ class MetricCalculator:
                 cls.prepare_registry[(first_part, second_part)] = prepare_func
 
     @classmethod
+    def set_experiment(cls, experiment: "Experiment"):
+        cls.experiment = experiment
+
+    @classmethod
     def check_if_needed(cls, metric):
         metric = metric.__class__.__name__
-        step, stage = ExperimentState.get_step(), ExperimentState.get_stage()
+        step, stage = (
+            cls.experiment.state.get_current_step(),
+            cls.experiment.state.get_current_stage(),
+        )
         if frozenset([metric, step, stage]) in cls.exceptions:
             return False
 
@@ -57,28 +69,42 @@ class MetricCalculator:
     ):
         # TODO maybe we can pass list here?
         cls.metrics.append(metric)
-        cls.add_exception(
-            metrics=[metric], steps=exception_steps, stages=exception_stages
-        )
+        if exception_steps is not None:
+            cls.add_exception(
+                metrics=[metric], steps=exception_steps, stages=exception_stages
+            )
+
+    def register_metrics(self, metrics):
+        for metric in metrics:
+            self.register_metric(metric)
 
     @classmethod
     def add_exception(
         cls,
         metrics: Optional[List] = None,
-        steps: Optional[List[Step]] = None,
+        steps: Optional[List["Step"]] = None,
         stages: List[str] = [TrainingStage.TRAIN.name, TrainingStage.VALIDATION.name],
     ):
-        if metrics is None:
-            metrics = cls.metrics
-        if steps is None:
-            steps = Step.STEPS_REGISTRY
+        cls.exceptions_to_be_added.append((metrics, steps, stages))
 
-        for metric in metrics:
-            metric_name = metric.__class__.__name__
-            for step in steps:
-                step_name = step.name
-                for stage in stages:
-                    cls.exceptions[frozenset([metric_name, step_name, stage])] = True
+    @classmethod
+    def create_exceptions(cls):
+        for metrics, steps, stages in cls.exceptions_to_be_added:
+            if metrics is None:
+                metrics = cls.metrics
+            if steps is None:
+                steps = cls.experiment.steps
+
+            for metric in metrics:
+                metric_name = metric.__class__.__name__
+                for step in steps:
+                    step_name = step.name
+                    for stage in stages:
+                        cls.exceptions[
+                            frozenset([metric_name, step_name, stage])
+                        ] = True
+
+        cls.exceptions_to_be_added = []
 
     @classmethod
     def unify_type(cls, x):
@@ -110,7 +136,10 @@ class MetricCalculator:
 
     @classmethod
     def build_name(cls, model, metric):
-        step, stage = ExperimentState.get_step(), ExperimentState.get_stage()
+        step, stage = (
+            cls.experiment.state.get_current_step(),
+            cls.experiment.state.get_current_stage(),
+        )
         return f"{metric.__class__.__name__}-{model.__class__.__name__}-{stage}-{step}"
 
     @classmethod
