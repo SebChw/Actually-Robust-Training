@@ -15,10 +15,10 @@ class StepSaver(ABC):
         pass
 
     def ensure_directory(self, step_id: str, step_name: str):
-        return (BASE_PATH / f"{step_name}_{step_id}").mkdir(parents=True, exist_ok=True)
+        return (BASE_PATH / f"{step_id}_{step_name}").mkdir(parents=True, exist_ok=True)
 
     def get_path(self, step_id: str, step_name: str, filename: str):
-        return BASE_PATH / f"{step_name}_{step_id}" / filename
+        return BASE_PATH / f"{step_id}_{step_name}" / filename
 
 
 class JSONStepSaver(StepSaver):
