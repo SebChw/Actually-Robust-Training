@@ -24,7 +24,6 @@ class Step(ABC):
         self.experiment.current_stage = TrainingStage.TRAIN
         self.experiment.current_step = self
         self.do(previous_states)
-
         JSONStepSaver().save(
             self.results, self.get_step_id(), self.name, "results.json"
         )
@@ -55,3 +54,12 @@ class Step(ABC):
 
     def get_full_step_name(self) -> str:
         return f"{self.get_step_id()}_{self.name}"
+
+    def get_hash(self) -> str:
+        return self.model.get_hash()
+
+    def add_result(self, name: str, value: Any):
+        self.results[name] = value
+
+    def get_results(self):
+        return self.results

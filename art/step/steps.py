@@ -6,6 +6,7 @@ from lightning.pytorch import Trainer
 from art.enums import TRAIN_LOSS, VALIDATION_LOSS, TrainingStage
 from art.step.checks import Check
 from art.step.step import Step
+from art.core.base_components.base_model import ArtModule
 
 
 class ExploreData(Step):
@@ -15,41 +16,35 @@ class ExploreData(Step):
 # TODO add something like Trainer kwargs to every step
 
 
-class EvaluateBaselines(Step):
-    """This class takes list of baselines and evaluates/trains them on the dataset"""
+class EvaluateBaseline(Step):
+    """This class takes a baseline and evaluates/trains it on the dataset"""
 
-    name = "Evaluate Baselines"
-    description = "Evaluates baselines on the dataset"
+    name = "Evaluate Baseline"
+    description = "Evaluates a baseline on the dataset"
 
     def __init__(
-        self, baselines: List, datamodule
+        self, baseline: ArtModule, datamodule
     ):  # Probably all steps could have same init
         super().__init__()
-        self.baselines = baselines
         self.datamodule = datamodule
+        self.model = baseline
 
     def do(
         self, previous_states
     ):  # Probably all steps could have same loop and saving results etc.
-        self.results = {}
-        for baseline in self.baselines:
-            baseline.ml_train({"dataloader": self.datamodule.train_dataloader()})
+        self.model.ml_train({"dataloader": self.datamodule.train_dataloader()})
 
-            trainer = Trainer(accelerator=baseline.device.type)
-            results = trainer.validate(model=baseline, datamodule=self.datamodule)
+        trainer = Trainer(accelerator=self.model.device.type)
+        results = trainer.validate(model=self.model, datamodule=self.datamodule)
 
-            # TODO: how to save results in a best way?
-            # TODO do it on the fly in some files. After every step some results are saved in a file
-            self.results.update(results[0])
+        # TODO: how to save results in a best way?
+        # TODO do it on the fly in some files. After every step some results are saved in a file
+        self.results.update(results[0])
 
     def get_saved_state(self) -> Dict[str, str]:
         return {
-            f"{baseline.name}_baseline": f"{baseline.name}_baseline/"
-            for baseline in self.baselines
+            f"{self.model.name}_baseline": f"{self.model.name}_baseline/"
         }
-
-    def get_model_name(self) -> str:
-        return ""
 
 
 class CheckLossOnInit(Step):
