@@ -5,7 +5,6 @@ from typing import Dict, List
 
 from art.core import ArtModule
 from art.enums import TrainingStage
-from art.step.step_savers import JSONStepSaver
 
 
 @dataclass
@@ -18,21 +17,16 @@ class Check(ABC):
     name: str
     description: str
     required_files: List[str]
-    model: ArtModule = None
 
     def __init__(
         self,
-        required_files: List[str],
         required_key_metric,  # This requires an object which was used to calculate metric
         required_key_stage: TrainingStage,
         required_value: float,
-        model=None
     ):
-        self.required_files = required_files
         self.required_key_metric = required_key_metric
         self.required_key_stage = required_key_stage
         self.required_value = required_value
-        self.model = model
 
     @abstractmethod
     def _check_method(self, result) -> ResultOfCheck:
@@ -40,29 +34,13 @@ class Check(ABC):
 
     def build_required_key(self, step, stage, metric):
         metric = metric.__class__.__name__
-        model_name = self.model.__class__.__name__ if self.model else step.get_model_name()
+        model_name = step.get_model_name()
         step_name = step.name
         self.required_key = f"{metric}-{model_name}-{stage.name}-{step_name}"
 
     def check(self, step) -> ResultOfCheck:
-        step_state_dict = step._get_saved_state()
+        result = step.get_results()
         self.build_required_key(step, self.required_key_stage, self.required_key_metric)
-        files_exist = all([file in step_state_dict for file in self.required_files])
-        if not files_exist:
-            return ResultOfCheck(
-                is_positive=False,
-                error=f"There are missing files ",
-            )
-
-        if not JSONStepSaver().get_path(step.get_step_id(), step.name, step_state_dict["results"]).exists():  # fmt: skip
-            return ResultOfCheck(
-                is_positive=False,
-                error=f"Files doesn't exist",
-            )
-
-        result = JSONStepSaver().load(
-            step.get_step_id(), step.name, step_state_dict["results"]
-        )
         return self._check_method(result)
 
 
@@ -75,15 +53,6 @@ class CheckScoreExists(Check):
                 is_positive=False,
                 error=f"Score {self.required_key} is not in results.json",
             )
-
-
-class CheckResultExists(CheckScoreExists):
-    def __init__(self, key):
-        super().__init__(["results"], None, None, -1, None)
-        self.required_key = key
-
-    def build_required_key(self, step, stage, metric):
-        return self.required_key
 
 
 class CheckScoreEqualsTo(Check):
@@ -105,15 +74,8 @@ class CheckScoreCloseTo(Check):
         required_value: float,
         rel_tol=1e-09,
         abs_tol=0.0,
-        model=None
     ):
-        super().__init__(
-            ["results"],
-            required_key_metric,
-            required_key_stage,
-            required_value,
-            model
-        )
+        super().__init__(required_key_metric, required_key_stage, required_value)
         self.rel_tol = rel_tol
         self.abs_tol = abs_tol
 
