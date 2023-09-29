@@ -1,6 +1,6 @@
 """Singleton that knows the current experiment state + have information about the world around"""
 from collections import defaultdict
-from typing import Union, Dict
+from typing import Dict, Union
 
 from art.enums import TrainingStage
 from art.step.step import Step
@@ -39,4 +39,4 @@ class ExperimentState:
         return self.current_step.name
 
     def get_current_stage(self):
-        return self.current_stage.name
+        return self.current_step.current_stage.name
