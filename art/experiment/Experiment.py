@@ -27,10 +27,41 @@ class Experiment:
         step.set_step_id(len(self.steps))
         self.checks.append(checks)
 
-    def fill_step_states(self, step):
+    def fill_step_states(self, step: "Step"):
         self.state.step_states[step.get_model_name()][
             step.get_name_with_id()
         ] = step.get_results()
+
+    def check_checks(self, step: "Step", checks: List[Check]):
+        for check in checks:
+            result = check.check(step)
+            if not result.is_positive:
+                raise Exception(
+                    f"Check failed for step: {step.name}. Reason: {result.error}"
+                )
+
+    def check_if_must_be_run(self, step: "Step", checks: List[Check]):
+        if not step.was_run():
+            return True
+        else:
+            step.load_results()
+            try:
+                self.check_checks(step, checks)
+            except Exception as e:
+                return True
+
+        step_current_hash = step.get_hash()
+        step_saved_hash = step.get_results()["hash"]
+        model_changed = True if step_current_hash != step_saved_hash else False
+
+        if model_changed:
+            print(
+                f"Code of the model in {step.get_full_step_name()} was changed. Rerun needed."
+            )
+            return True
+
+        print(f"Step {step.name}_{step.get_step_id()} was already completed.")
+        return False
 
     def run_all(self):
         MetricCalculator.set_experiment(self)
@@ -39,47 +70,16 @@ class Experiment:
         for step, checks in zip(self.steps, self.checks):
             self.state.current_step = step
 
-            step_passed = True
-            if not step.was_run():  # fmt: skip
-                step_passed = False
-            else:
-                step.load_results()
-                for check in checks:
-                    check_result = check.check(step)
-                    if not check_result.is_positive:
-                        step_passed = False
-                        break
-
-            if step_passed:
-                step_current_hash = step.get_hash()
-                step_saved_hash = step.get_results()["hash"]
-                model_changed = False
-                if step_current_hash != step_saved_hash:
-                    model_changed = True
-                if not model_changed:
-                    print(
-                        f"Step {step.name}_{step.get_step_id()} was already completed."
-                    )
-                    self.fill_step_states(step)
-                    continue
-                else:
-                    print(
-                        f"We've noticed you changed some code in your model in step {step.name}_{step.get_step_id()}. We will rerun it."
-                    )
+            if not self.check_if_must_be_run(step, checks):
+                self.fill_step_states(step)
+                continue
 
             step.add_result("hash", step.get_hash())
 
             step(self.state.step_states)
-            for check in checks:
-                result = check.check(step)
-                if not result.is_positive:
-                    raise Exception(
-                        f"Check failed for step: {step.name}. Reason: {result.error}"
-                    )
 
+            self.check_checks(step, checks)
             self.fill_step_states(step)
-
-        self.logger = None
 
     def get_steps(self):
         return self.steps
