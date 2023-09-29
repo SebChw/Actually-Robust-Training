@@ -16,9 +16,9 @@ release = "0.0.1"
 
 extensions = [
     "myst_nb",
-    "autodoc2",
     "sphinx.ext.napoleon",
     "sphinx.ext.doctest",
+    "sphinx.ext.autodoc",
 ]
 
 autodoc2_packages = [
