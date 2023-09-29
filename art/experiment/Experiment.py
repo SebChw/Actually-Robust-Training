@@ -83,3 +83,9 @@ class Experiment:
 
     def get_steps(self):
         return self.steps
+
+    def exchange_step(self, step: "Step", step_id=-1):
+        self.steps[step_id] = step
+        if step_id == -1:
+            step_id = len(self.steps)
+        step.set_step_id(step_id)
