@@ -1,6 +1,9 @@
 from abc import ABC, abstractmethod
 from typing import Any, Dict
 
+import pytorch_lightning as L
+
+from art.core.base_components.base_model import ArtModule
 from art.enums import TrainingStage
 from art.step.step_savers import JSONStepSaver
 
@@ -10,7 +13,9 @@ class Step(ABC):
     description: str
     idx: int = None
 
-    def __init__(self, model, datamodule, trainer):
+    def __init__(
+        self, model: ArtModule, datamodule: L.LightningDataModule, trainer: L.Trainer
+    ):
         self.results = {}
         self.model = model
         self.datamodule = datamodule
@@ -27,11 +32,11 @@ class Step(ABC):
     def do(self, previous_states: Dict):
         pass
 
-    def train(self, trainer_kwargs):
+    def train(self, trainer_kwargs: Dict):
         self.current_stage = TrainingStage.TRAIN
         self.trainer.fit(model=self.model, **trainer_kwargs)
 
-    def validate(self, trainer_kwargs):
+    def validate(self, trainer_kwargs: Dict):
         self.current_stage = TrainingStage.VALIDATION
         result = self.trainer.validate(model=self.model, **trainer_kwargs)
         self.results.update(result[0])
