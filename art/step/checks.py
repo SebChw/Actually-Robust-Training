@@ -81,6 +81,7 @@ class CheckResultExists(CheckScoreExists):
     def __init__(self, key):
         super().__init__(["results"], None, None, -1, None)
         self.required_key = key
+
     def build_required_key(self, step, stage, metric):
         return self.required_key
 

@@ -42,14 +42,20 @@ class Experiment:
                     step_passed = False
                     break
 
-            # TODO implement step changed utility
-            # step_changed = False
-            # if step_changed_utility(step):
-            #   step_changed = True
+            model_changed = False
 
             if step_passed:
-                print(f"Step {step.name}_{step.get_step_id()} was already completed.")
-                continue
+                step_current_hash = step.get_hash()
+                step_saved_hash = step.get_results()["hash"]
+                if step_current_hash != step_saved_hash:
+                    model_changed = True
+                if not model_changed:
+                    print(f"Step {step.name}_{step.get_step_id()} was already completed.")
+                    continue
+                else:
+                    print(f"We've noticed you changed some code in your model in step {step.name}_{step.get_step_id()}. We will rerun it.")
+
+            step.add_result("hash", step.get_hash())
 
             step(self.state.step_states)
             for check in checks:
@@ -57,3 +63,6 @@ class Experiment:
                 if not result.is_positive:
                     raise Exception(f"Check failed for step: {step.name}. Reason: {result.error}")
         self.logger = None
+
+    def get_steps(self):
+        return self.steps

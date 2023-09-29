@@ -6,6 +6,9 @@ import torch.nn
 from art.enums import LOSS, TrainingStage
 from art.metric_calculator import MetricCalculator
 
+import hashlib
+import inspect
+
 
 class ArtModule(pl.LightningModule):
     def __init__(
@@ -14,7 +17,6 @@ class ArtModule(pl.LightningModule):
     ):
         super().__init__()
         self.regularized = True
-        # print(self.device)
         self.metric_calculator = MetricCalculator()
         self.reset_pipelines()
 
@@ -113,3 +115,8 @@ class ArtModule(pl.LightningModule):
             data = func(data)
 
         return data
+
+    def get_hash(self):
+        return hashlib.md5(
+            inspect.getsource(self.__class__).encode("utf-8")
+        ).hexdigest()
