@@ -3,7 +3,7 @@ from typing import Dict
 from lightning.pytorch import LightningDataModule, Trainer
 
 from art.core.base_components.base_model import ArtModule
-from art.enums import TrainingStage
+from art.utils.enums import TrainingStage
 from art.step.step import Step
 
 

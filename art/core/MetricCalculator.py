@@ -1,12 +1,12 @@
-from typing import TYPE_CHECKING, Dict, List, Optional
-
+from art.utils.enums import PREDICTION, TARGET, TrainingStage
 import torch
+from typing import TYPE_CHECKING, Dict, List, Optional, Type, TypeVar, Any
 
-from art.enums import PREDICTION, TARGET, TrainingStage
 
 if TYPE_CHECKING:
     from art.experiment.Experiment import Experiment
     from art.step.steps import Step
+    from art.core.base_components.base_model import ArtModule
 
 
 class DefaultMetric:
@@ -28,8 +28,8 @@ class MetricCalculator:
 
     @classmethod
     def register_prepare(
-        cls,
-        prepare_func,
+        cls: Any,
+        prepare_func: callable,
         metric_classes: List = [DefaultMetric],
         model_classes: List = [DefaultModel],
     ):
@@ -44,11 +44,11 @@ class MetricCalculator:
                 cls.prepare_registry[(first_part, second_part)] = prepare_func
 
     @classmethod
-    def set_experiment(cls, experiment: "Experiment"):
+    def set_experiment(cls: Any, experiment: "Experiment"):
         cls.experiment = experiment
 
     @classmethod
-    def check_if_needed(cls, metric):
+    def check_if_needed(cls: Any, metric: Any):
         metric = metric.__class__.__name__
         step = cls.experiment.state.get_current_step()
         stage = cls.experiment.state.get_current_stage()
@@ -59,10 +59,10 @@ class MetricCalculator:
 
     @classmethod
     def register_metric(
-        cls,
-        metric,
-        exception_steps=None,
-        exception_stages=[TrainingStage.TRAIN.name, TrainingStage.VALIDATION.name],
+        cls: Any,
+        metric: Any,
+        exception_steps: Optional[List] = None,
+        exception_stages: List[str] = [TrainingStage.TRAIN.name, TrainingStage.VALIDATION.name],
     ):
         # TODO maybe we can pass list here?
         cls.metrics.append(metric)
@@ -71,7 +71,7 @@ class MetricCalculator:
                 metrics=[metric], steps=exception_steps, stages=exception_stages
             )
 
-    def register_metrics(self, metrics):
+    def register_metrics(self, metrics: List[Any]):
         for metric in metrics:
             self.register_metric(metric)
 
@@ -85,7 +85,7 @@ class MetricCalculator:
         cls.exceptions_to_be_added.append((metrics, steps, stages))
 
     @classmethod
-    def create_exceptions(cls):
+    def create_exceptions(cls: Any):
         for metrics, steps, stages in cls.exceptions_to_be_added:
             if metrics is None:
                 metrics = cls.metrics
@@ -104,19 +104,19 @@ class MetricCalculator:
         cls.exceptions_to_be_added = []
 
     @classmethod
-    def unify_type(cls, x):
+    def unify_type(cls: Any, x: Any):
         if not isinstance(x, torch.Tensor):
             x = torch.Tensor(x)
 
         return x
 
     @classmethod
-    def default_prepare(cls, data):
+    def default_prepare(cls: Any, data: Dict):
         preds, targets = data[PREDICTION], data[TARGET]
         return cls.unify_type(preds), cls.unify_type(targets)
 
     @classmethod
-    def get_prepare_f(cls, metric, model):
+    def get_prepare_f(cls: Any, metric: Any, model: "ArtModule"):
         metric_name = metric.__class__.__name__
         model_name = model.__class__.__name__
 
@@ -132,7 +132,7 @@ class MetricCalculator:
             return cls.default_prepare
 
     @classmethod
-    def build_name(cls, model, metric):
+    def build_name(cls: Any, model: "ArtModule", metric: Any):
         step, stage = (
             cls.experiment.state.get_current_step(),
             cls.experiment.state.get_current_stage(),
@@ -140,17 +140,17 @@ class MetricCalculator:
         return f"{metric.__class__.__name__}-{model.__class__.__name__}-{stage}-{step}"
 
     @classmethod
-    def to(cls, device):
+    def to(cls: Any, device: str):
         cls.metrics = [metric.to(device) for metric in cls.metrics]
 
     @classmethod
-    def compile(cls, model, stage=None, step=None):
+    def compile(cls: Any, model: "ArtModule", stage=None, step=None):
         # TODO implement this. It should be called before the stage starts
         # TODO I don't know how to pass stage here yet
         # TODO this should be set and used in __call__ instead of looking at many if statements every time.
         cls.current_metrics = []
 
-    def __call__(self, model, data_for_metrics: Dict):
+    def __call__(self, model: "ArtModule", data_for_metrics: Dict):
         for metric in self.metrics:
             if self.check_if_needed(metric):
                 # TODO Instead of this get_prepare and check if needed one should

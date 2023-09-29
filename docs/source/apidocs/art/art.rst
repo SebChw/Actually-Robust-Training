@@ -23,7 +23,7 @@ Submodules
    :titlesonly:
    :maxdepth: 1
 
-   art.enums
+   art.utils.enums
    art.litmodules
    art.networks
    art.train

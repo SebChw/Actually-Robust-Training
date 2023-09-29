@@ -1,11 +1,9 @@
 from lightning.pytorch.loggers import NeptuneLogger, WandbLogger
 import wandb
-# from matplotlib.figure import Figure
-from typing import Union, Type
+from typing import Union, Optional
 import numpy as np
 import os
 import neptune
-
 
 
 # """
@@ -29,19 +27,17 @@ class NeptuneLoggerAdapter(NeptuneLogger):
     def log_figure(self, figure, path: str = "figure"):
         self.experiment[path].upload(figure)
 
-    def download_ckpt(self, id: str, name: str = "", type: str = "last", path: str = "./checkpoints"):
-        if name == "" or name is None:
+    def download_ckpt(self, id: str, name: Optional[str] = None, type: str = "last", path: str = "./checkpoints"):
+        if name is None:
             name = f"{id}"
         if "ckpt" not in name:
             name = f"{name}.ckpt"
-        run = neptune.init_run(with_id = id, mode="read-only")
+        run = neptune.init_run(with_id=id, mode="read-only")
         if type == "last":
             model_path = "last"
         elif type == "best":
             try:
-                model_path = (
-                    run["training/model/best_model_path"].fetch().split("\\")[-1][:-5] # change "\\" to "/" if you are using Linux
-                )
+                model_path = os.path.basename(run["training/model/best_model_path"].fetch())[:-5]
             except neptune.exceptions.MissingFieldException as e:
                 raise Exception(
                     f"Couldn't find Best model under specified id {id}"
@@ -54,7 +50,6 @@ class NeptuneLoggerAdapter(NeptuneLogger):
 
         run.stop()
         return f"{dir}/{name}.ckpt"
-
 
 
 class WandbLoggerAdapter(WandbLogger):
@@ -70,5 +65,5 @@ class WandbLoggerAdapter(WandbLogger):
     def log_image(self, image, path: Union[str, np.ndarray] = "image"):
         wandb.log({path: wandb.Image(image)})
 
-    def log_figure(self, figure, path = "figure"):
+    def log_figure(self, figure, path="figure"):
         wandb.log({path: figure})

@@ -2,7 +2,7 @@
 from collections import defaultdict
 from typing import Dict, Union
 
-from art.enums import TrainingStage
+from art.utils.enums import TrainingStage
 from art.step.step import Step
 
 
