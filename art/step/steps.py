@@ -1,19 +1,14 @@
-from abc import ABC, abstractmethod
-from typing import Any, Dict, List
+from typing import Dict
 
 from lightning.pytorch import Trainer
 
-from art.enums import TRAIN_LOSS, VALIDATION_LOSS, TrainingStage
-from art.step.checks import Check
-from art.step.step import Step
 from art.core.base_components.base_model import ArtModule
+from art.enums import TrainingStage
+from art.step.step import Step
 
 
 class ExploreData(Step):
     """This class checks whether we have some markdown file description of the dataset + we implemented visualizations"""
-
-
-# TODO add something like Trainer kwargs to every step
 
 
 class EvaluateBaseline(Step):
@@ -22,29 +17,13 @@ class EvaluateBaseline(Step):
     name = "Evaluate Baseline"
     description = "Evaluates a baseline on the dataset"
 
-    def __init__(
-        self, baseline: ArtModule, datamodule
-    ):  # Probably all steps could have same init
-        super().__init__()
-        self.datamodule = datamodule
-        self.model = baseline
+    def __init__(self, baseline: ArtModule, datamodule):
+        trainer = Trainer(accelerator=baseline.device.type)
+        super().__init__(baseline, datamodule, trainer)
 
-    def do(
-        self, previous_states
-    ):  # Probably all steps could have same loop and saving results etc.
+    def do(self, previous_states: Dict):
         self.model.ml_train({"dataloader": self.datamodule.train_dataloader()})
-
-        trainer = Trainer(accelerator=self.model.device.type)
-        results = trainer.validate(model=self.model, datamodule=self.datamodule)
-
-        # TODO: how to save results in a best way?
-        # TODO do it on the fly in some files. After every step some results are saved in a file
-        self.results.update(results[0])
-
-    def get_saved_state(self) -> Dict[str, str]:
-        return {
-            f"{self.model.name}_baseline": f"{self.model.name}_baseline/"
-        }
+        self.validate(trainer_kwargs={"datamodule": self.datamodule})
 
 
 class CheckLossOnInit(Step):
@@ -52,17 +31,11 @@ class CheckLossOnInit(Step):
     description = "Checks loss on init"
 
     def __init__(self, model, datamodule):
-        super().__init__()
-        self.model = model
-        self.datamodule = datamodule
+        super().__init__(model, datamodule, trainer=Trainer())
 
-    def do(self, previous_states):
-        trainer = Trainer()
-        self.results.update(
-            trainer.validate(
-                model=self.model, dataloaders=self.datamodule.train_dataloader()
-            )[0]
-        )
+    def do(self, previous_states: Dict):
+        train_loader = self.datamodule.train_dataloader()
+        self.validate(trainer_kwargs={"dataloaders": train_loader})
 
 
 class OverfitOneBatch(Step):
@@ -70,18 +43,14 @@ class OverfitOneBatch(Step):
     description = "Overfits one batch"
 
     def __init__(self, model, datamodule, number_of_steps=100):
-        super().__init__()
-        self.model = model
-        self.datamodule = datamodule
-        self.number_of_steps = number_of_steps
+        trainer = Trainer(overfit_batches=1, max_epochs=number_of_steps)
+        super().__init__(model, datamodule, trainer)
 
-    def do(self, previous_states):
-        trainer = Trainer(overfit_batches=1, max_epochs=self.number_of_steps)
-        trainer.fit(
-            model=self.model, train_dataloaders=self.datamodule.train_dataloader()
-        )
-        for key, value in trainer.logged_metrics.items():
-            if hasattr(value, 'item'):
+    def do(self, previous_states: Dict):
+        train_loader = self.datamodule.train_dataloader()
+        self.train(trainer_kwargs={"train_dataloaders": train_loader})
+        for key, value in self.trainer.logged_metrics.items():
+            if hasattr(value, "item"):
                 self.results[key] = value.item()
             else:
                 self.results[key] = value
@@ -92,50 +61,34 @@ class Overfit(Step):
     description = "Overfits model"
 
     def __init__(self, model, datamodule, max_epochs=1):
-        super().__init__()
-        self.model = model
-        self.datamodule = datamodule
-        self.max_epochs = max_epochs
+        trainer = Trainer(max_epochs=max_epochs)
+        super().__init__(model, datamodule, trainer)
 
-    def do(self, previous_states):
-        # It probably should take some configs
-        trainer = Trainer(max_epochs=self.max_epochs)
-        trainer.fit(
-            model=self.model, train_dataloaders=self.datamodule.train_dataloader()
-        )
+    def validate_train(self, trainer_kwargs):
+        self.current_stage = TrainingStage.TRAIN
+        result = self.trainer.validate(model=self.model, **trainer_kwargs)
+        self.results.update(result[0])
 
-        self.results = trainer.validate(
-            model=self.model, dataloaders=self.datamodule.train_dataloader()
-        )[0]
-        self.experiment.current_stage = TrainingStage.VALIDATION
-        self.results.update(
-            trainer.validate(
-                model=self.model, dataloaders=self.datamodule.val_dataloader()
-            )[0]
-        )
+    def do(self, previous_states: Dict):
+        train_loader = self.datamodule.train_dataloader()
+        self.train(trainer_kwargs={"train_dataloaders": train_loader})
+        self.validate_train(trainer_kwargs={"dataloaders": train_loader})
+        self.validate(trainer_kwargs={"datamodule": self.datamodule})
 
 
 class Regularize(Step):
     name = "Regularize"
     description = "Regularizes model"
 
-    def __init__(self, model, datamodule):
-        super().__init__()
-        self.model = model
-        self.datamodule = datamodule
-
-    def do(self, previous_states):
+    def __init__(self, model, datamodule, trainer_kwargs={}):
+        trainer = Trainer(check_val_every_n_epoch=50, max_epochs=50, **trainer_kwargs)
+        super().__init__(model, datamodule, trainer)
         self.model.turn_on_model_regularizations()
         self.datamodule.turn_on_regularizations()
 
-        trainer = Trainer(
-            check_val_every_n_epoch=50, max_epochs=50
-        )  # TODO It probably should take some configs
-        trainer.fit(model=self.model, datamodule=self.datamodule)
-        self.experiment.current_stage = TrainingStage.VALIDATION
-        self.results = trainer.validate(
-            model=self.model, dataloaders=self.datamodule.val_dataloader()
-        )[0]
+    def do(self, previous_states: Dict):
+        self.train(trainer_kwargs={"datamodule": self.datamodule})
+        self.validate(trainer_kwargs={"datamodule": self.datamodule})
 
 
 class Tune(Step):
@@ -147,7 +100,7 @@ class Tune(Step):
         self.model = model
         self.datamodule = datamodule
 
-    def do(self, previous_states):
+    def do(self, previous_states: Dict):
         trainer = Trainer()  # Here we should write other object for this.
         # TODO how to solve this?
         trainer.tune(model=self.model, datamodule=self.datamodule)
