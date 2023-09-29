@@ -26,7 +26,6 @@ class Experiment:
         self.steps.append(step)
         self.state.step_states[step.get_model_name()][step.get_name_with_id()] = step._get_saved_state()
         step.set_step_id(len(self.steps))
-        step.set_experiment(self)
         self.checks.append(checks)
 
     def run_all(self):

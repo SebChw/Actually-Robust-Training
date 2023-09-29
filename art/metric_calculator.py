@@ -4,10 +4,9 @@ import torch
 
 from art.enums import PREDICTION, TARGET, TrainingStage
 
-
 if TYPE_CHECKING:
-    from art.step.steps import Step
     from art.experiment.Experiment import Experiment
+    from art.step.steps import Step
 
 
 class DefaultMetric:
@@ -51,10 +50,8 @@ class MetricCalculator:
     @classmethod
     def check_if_needed(cls, metric):
         metric = metric.__class__.__name__
-        step, stage = (
-            cls.experiment.state.get_current_step(),
-            cls.experiment.state.get_current_stage(),
-        )
+        step = cls.experiment.state.get_current_step()
+        stage = cls.experiment.state.get_current_stage()
         if frozenset([metric, step, stage]) in cls.exceptions:
             return False
 
