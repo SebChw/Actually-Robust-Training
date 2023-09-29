@@ -7,7 +7,7 @@ BASE_PATH = Path("checkpoints")
 
 class StepSaver(ABC):
     @abstractmethod
-    def save(self, obj: any, step_id: str, step_name: str, filename: str):
+    def save(self, obj: any, step_id: str, step_name: str, filename: str = ""):
         pass
 
     @abstractmethod
@@ -22,12 +22,13 @@ class StepSaver(ABC):
 
 
 class JSONStepSaver(StepSaver):
-    def save(self, obj: any, step_id: str, step_name: str, filename: str):
+    RESULT_NAME = "results.json"
+
+    def save(self, obj: any, step_id: str, step_name: str, filename: str = RESULT_NAME):
         self.ensure_directory(step_id, step_name)
         with open(self.get_path(step_id, step_name, filename), "w") as f:
             json.dump(obj, f)
 
-    def load(self, step_id: str, step_name: str, filename: str):
+    def load(self, step_id: str, step_name: str, filename: str = RESULT_NAME):
         with open(self.get_path(step_id, step_name, filename), "r") as f:
             return json.load(f)
-        

@@ -43,7 +43,11 @@ class Step(ABC):
         return self.model.__class__.__name__
 
     def get_step_id(self) -> str:
-        return f"{self.get_model_name()}_{self.idx}" if self.get_model_name() != "" else f"{self.idx}"
+        return (
+            f"{self.get_model_name()}_{self.idx}"
+            if self.get_model_name() != ""
+            else f"{self.idx}"
+        )
 
     def get_name_with_id(self) -> str:
         return f"{self.idx}_{self.name}"
@@ -57,5 +61,14 @@ class Step(ABC):
     def add_result(self, name: str, value: Any):
         self.results[name] = value
 
-    def get_results(self):
+    def get_results(self) -> Dict:
         return self.results
+
+    def load_results(self):
+        self.results = JSONStepSaver().load(self.get_step_id(), self.name)
+
+    def was_run(self):
+        path = JSONStepSaver().get_path(
+            self.get_step_id(), self.name, JSONStepSaver.RESULT_NAME
+        )
+        return path.exists()
