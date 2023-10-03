@@ -1,7 +1,7 @@
 from typing import TYPE_CHECKING, List
 
 from art.experiment.experiment_state import ExperimentState
-from art.metric_calculator import MetricCalculator
+from art.core.MetricCalculator import MetricCalculator
 from art.step.checks import Check
 
 if TYPE_CHECKING:

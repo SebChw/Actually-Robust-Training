@@ -4,7 +4,7 @@ from typing import Any, Dict
 import pytorch_lightning as L
 
 from art.core.base_components.base_model import ArtModule
-from art.enums import TrainingStage
+from art.utils.enums import TrainingStage
 from art.step.step_savers import JSONStepSaver
 
 

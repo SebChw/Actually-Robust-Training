@@ -3,8 +3,8 @@ from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
 from typing import Dict, List
 
-from art.core import ArtModule
-from art.enums import TrainingStage
+from art.core.base_components.base_model import ArtModule
+from art.utils.enums import TrainingStage
 
 
 @dataclass
@@ -72,8 +72,8 @@ class CheckScoreCloseTo(Check):
         required_key_metric,  # This requires an object which was used to calculate metric
         required_key_stage: TrainingStage,
         required_value: float,
-        rel_tol=1e-09,
-        abs_tol=0.0,
+        rel_tol: float=1e-09,
+        abs_tol: float=0.0,
     ):
         super().__init__(required_key_metric, required_key_stage, required_value)
         self.rel_tol = rel_tol

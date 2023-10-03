@@ -1,10 +1,11 @@
-from typing import Any, Optional
+from typing import Union, Dict
 
 import lightning.pytorch as pl
 import torch.nn
+from torch.utils.data import DataLoader
 
-from art.enums import LOSS, TrainingStage
-from art.metric_calculator import MetricCalculator
+from art.utils.enums import LOSS
+from art.core.MetricCalculator import MetricCalculator
 
 import hashlib
 import inspect
@@ -13,7 +14,6 @@ import inspect
 class ArtModule(pl.LightningModule):
     def __init__(
         self,
-        # device="cpu",
     ):
         super().__init__()
         self.regularized = True
@@ -77,40 +77,40 @@ class ArtModule(pl.LightningModule):
 
             self.regularized = False
 
-    def parse_data(self, data):
+    def parse_data(self, data: Dict):
         return data
 
-    def predict(self, data):
+    def predict(self, data: Dict):
         return data
 
     # I wonder if compute_loss could be somehow passed to compute_metrics.
     # But I see some limitations.
-    def compute_loss(self, data):
+    def compute_loss(self, data: Dict):
         return data
 
-    def compute_metrics(self, data):
+    def compute_metrics(self, data: Dict):
         self.metric_calculator(self, data)
         return data
 
-    def validation_step(self, batch, batch_idx):
+    def validation_step(self, batch: Union[Dict[str, any], DataLoader, torch.Tensor], batch_idx: int):
         data = {"batch": batch, "batch_idx": batch_idx}
         for func in self.validation_step_pipeline:
             data = func(data)
 
-    def training_step(self, batch, batch_idx):
+    def training_step(self, batch: Union[Dict[str, any], DataLoader, torch.Tensor], batch_idx: int):
         data = {"batch": batch, "batch_idx": batch_idx}
         for func in self.train_step_pipeline:
             data = func(data)
 
         return data[LOSS]
 
-    def ml_parse_data(self, data):
+    def ml_parse_data(self, data: Dict):
         return data
 
-    def baseline_train(self, data):
+    def baseline_train(self, data: Dict):
         return data
 
-    def ml_train(self, data):
+    def ml_train(self, data: Dict):
         for func in self.ml_train_pipeline:
             data = func(data)
 
