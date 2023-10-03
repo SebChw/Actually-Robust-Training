@@ -1,0 +1,14 @@
+{
+    "succesfull": [],
+    "failed": [
+        {
+            "hash": "80330a4f522bbe9235dbfea35a7b888b",
+            "MulticlassAccuracy-MNISTModel-VALIDATION-Check Loss On Init": 0.10000000149011612,
+            "CrossEntropyLoss-MNISTModel-VALIDATION-Check Loss On Init": 23.924314498901367,
+            "commit_id": "asdx"
+        }
+    ],
+    "goals": [
+        {}
+    ]
+}

@@ -1,0 +1,15 @@
+{
+    "succesfull": [
+        {
+            "hash": "1474645a5f016d20e56ce61f6caa4dfc",
+            "MulticlassAccuracy-AlreadyExistingSolutionBaseline-VALIDATION-Evaluate Baseline": 0.9883000254631042,
+            "commit_id": "123"
+        }
+    ],
+    "failed": [
+        {}
+    ],
+    "goals": [
+        {}
+    ]
+}
