@@ -1,12 +1,13 @@
-from art.utils.enums import PREDICTION, TARGET, TrainingStage
-import torch
-from typing import TYPE_CHECKING, Dict, List, Optional, Type, TypeVar, Any
+from typing import TYPE_CHECKING, Any, Dict, List, Optional, Type, TypeVar
 
+import torch
+
+from art.utils.enums import PREDICTION, TARGET, TrainingStage
 
 if TYPE_CHECKING:
+    from art.core.base_components.base_model import ArtModule
     from art.experiment.Experiment import Experiment
     from art.step.steps import Step
-    from art.core.base_components.base_model import ArtModule
 
 
 class DefaultMetric:
@@ -62,7 +63,10 @@ class MetricCalculator:
         cls: Any,
         metric: Any,
         exception_steps: Optional[List] = None,
-        exception_stages: List[str] = [TrainingStage.TRAIN.name, TrainingStage.VALIDATION.name],
+        exception_stages: List[str] = [
+            TrainingStage.TRAIN.name,
+            TrainingStage.VALIDATION.name,
+        ],
     ):
         # TODO maybe we can pass list here?
         cls.metrics.append(metric)
@@ -159,7 +163,7 @@ class MetricCalculator:
                 prepared_data = prepare_f(data_for_metrics)
                 metric_val = metric(*prepared_data)
                 metric_name = self.build_name(model, metric)
-                model.log(metric_name, metric_val)
+                model.log(metric_name, metric_val, on_step=False, on_epoch=True)
 
                 data_for_metrics[metric.__class__.__name__] = metric_val
 
