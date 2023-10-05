@@ -4,8 +4,9 @@ from typing import Any, Dict
 import pytorch_lightning as L
 
 from art.core.base_components.base_model import ArtModule
-from art.utils.enums import TrainingStage
+from art.core.MetricCalculator import MetricCalculator
 from art.step.step_savers import JSONStepSaver
+from art.utils.enums import TrainingStage
 
 
 class Step(ABC):
@@ -13,17 +14,20 @@ class Step(ABC):
     description: str
     idx: int = None
 
-    def __init__(
-        self, model: ArtModule, datamodule: L.LightningDataModule, trainer: L.Trainer
-    ):
+    def __init__(self, model: ArtModule, trainer: L.Trainer):
         self.results = {}
         self.model = model
-        self.datamodule = datamodule
         self.trainer = trainer
         self.results = {}
 
+    def __call__(
+        self,
+        previous_states: Dict,
         datamodule: L.LightningDataModule,
+        metric_calculator: MetricCalculator,
+    ):
         self.datamodule = datamodule
+        self.model.set_metric_calculator(metric_calculator)
         self.do(previous_states)
         JSONStepSaver().save(
             self.results, self.get_step_id(), self.name, "results.json"

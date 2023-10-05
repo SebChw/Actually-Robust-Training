@@ -2,11 +2,11 @@
 from collections import defaultdict
 from typing import Dict, Union
 
-from art.utils.enums import TrainingStage
 from art.step.step import Step
+from art.utils.enums import TrainingStage
 
 
-class ExperimentState:
+class ArtProjectState:
     current_step: Union[Step, None]
     current_stage: TrainingStage = TrainingStage.TRAIN
     step_states: Dict[str, Dict[str, Dict[str, str]]]
