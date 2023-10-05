@@ -76,7 +76,7 @@ class Experiment:
 
             step.add_result("hash", step.get_hash())
 
-            step(self.state.step_states)
+            step(self.state.step_states, self.datamodule, self.metric_calculator)
 
             self.check_checks(step, checks)
             self.fill_step_states(step)

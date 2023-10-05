@@ -22,7 +22,8 @@ class Step(ABC):
         self.trainer = trainer
         self.results = {}
 
-    def __call__(self, previous_states: Dict):
+        datamodule: L.LightningDataModule,
+        self.datamodule = datamodule
         self.do(previous_states)
         JSONStepSaver().save(
             self.results, self.get_step_id(), self.name, "results.json"
