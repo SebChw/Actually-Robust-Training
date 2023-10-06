@@ -43,8 +43,8 @@ class MetricCalculator:
     def to(self: Any, device: str):
         self.metrics = [metric.to(device) for metric in self.metrics]
 
-    def add_metric(self: Any, metric: Any):
-        self.metrics.append(metric)
+    def add_metrics(self: Any, metric: Any):
+        self.metrics.extend(metric)
 
     def compile(self, skipped_metrics: List[SkippedMetric]):
         self.compiled_metrics = {
