@@ -111,3 +111,6 @@ class ArtProject:
 
     def to(self: Any, device: str):
         self.metric_calculator.to(device)
+
+    def update_datamodule(self, datamodule: L.LightningDataModule):
+        self.datamodule = datamodule
