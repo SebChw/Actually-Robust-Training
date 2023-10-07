@@ -38,12 +38,16 @@ class Step(ABC):
         pass
 
     def train(self, trainer_kwargs: Dict):
-        self.current_stage = TrainingStage.TRAIN
         self.trainer.fit(model=self.model, **trainer_kwargs)
+        logged_metrics = {k: v.item() for k, v in self.trainer.logged_metrics.items()}
+        self.results.update(logged_metrics)
 
     def validate(self, trainer_kwargs: Dict):
-        self.current_stage = TrainingStage.VALIDATION
         result = self.trainer.validate(model=self.model, **trainer_kwargs)
+        self.results.update(result[0])
+
+    def test(self, trainer_kwargs: Dict):
+        result = self.trainer.test(model=self.model, **trainer_kwargs)
         self.results.update(result[0])
 
     def set_step_id(self, idx: int):
@@ -77,8 +81,14 @@ class Step(ABC):
     def load_results(self):
         self.results = JSONStepSaver().load(self.get_step_id(), self.name)
 
+    def get_current_stage(self) -> str:
+        return self.trainer.state.stage.value
+
     def was_run(self):
         path = JSONStepSaver().get_path(
             self.get_step_id(), self.name, JSONStepSaver.RESULT_NAME
         )
         return path.exists()
+
+    def get_check_stage(self) -> str:
+        return TrainingStage.VALIDATION.value

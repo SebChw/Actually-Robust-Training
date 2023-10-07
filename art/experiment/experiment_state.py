@@ -27,7 +27,6 @@ class ArtProjectState:
         self.step_states = defaultdict(lambda: defaultdict(lambda: defaultdict(str)))
         self.status = "created"
         self.current_step = None
-        self.current_stage = TrainingStage.TRAIN
 
     def get_steps(self):
         return self.step_states
@@ -39,4 +38,4 @@ class ArtProjectState:
         return self.current_step.name
 
     def get_current_stage(self):
-        return self.current_step.current_stage.name
+        return self.current_step.get_current_stage()

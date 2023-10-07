@@ -48,13 +48,16 @@ class MetricCalculator:
 
     def compile(self, skipped_metrics: List[SkippedMetric]):
         self.compiled_metrics = {
-            TrainingStage.TRAIN.name: [],
-            TrainingStage.VALIDATION.name: [],
-            TrainingStage.TEST.name: [],
+            TrainingStage.TRAIN.value: [],
+            TrainingStage.VALIDATION.value: [],
+            TrainingStage.TEST.value: [],
+            TrainingStage.SANITY_CHECK.value: [],
         }
 
         skipped_metrics_dict = {sm.metric: sm.stages for sm in skipped_metrics}
         for metric in self.metrics:
+            if hasattr(metric, "reset"):
+                metric.reset()  # to make sure state is forgetten between steps
             metric_name = metric.__class__.__name__
             if metric_name not in skipped_metrics_dict.keys():
                 for stage in self.compiled_metrics.keys():

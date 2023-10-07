@@ -66,6 +66,9 @@ class OverfitOneBatch(Step):
             else:
                 self.results[key] = value
 
+    def get_check_stage(self):
+        return TrainingStage.TRAIN.value
+
 
 class Overfit(Step):
     name = "Overfit"
@@ -80,16 +83,13 @@ class Overfit(Step):
         trainer = Trainer(max_epochs=max_epochs, logger=logger)
         super().__init__(model, trainer)
 
-    def validate_train(self, trainer_kwargs: Dict):
-        self.current_stage = TrainingStage.TRAIN
-        result = self.trainer.validate(model=self.model, **trainer_kwargs)
-        self.results.update(result[0])
-
     def do(self, previous_states: Dict):
         train_loader = self.datamodule.train_dataloader()
         self.train(trainer_kwargs={"train_dataloaders": train_loader})
-        self.validate_train(trainer_kwargs={"dataloaders": train_loader})
         self.validate(trainer_kwargs={"datamodule": self.datamodule})
+
+    def get_check_stage(self):
+        return TrainingStage.TRAIN.value
 
 
 class Regularize(Step):
@@ -102,16 +102,13 @@ class Regularize(Step):
         logger: Optional[Union[Logger, Iterable[Logger], bool]] = None,
         trainer_kwargs: Dict = {},
     ):
-        trainer = Trainer(
-            check_val_every_n_epoch=50, max_epochs=50, **trainer_kwargs, logger=logger
-        )
+        trainer = Trainer(**trainer_kwargs, logger=logger)
         super().__init__(model, trainer)
 
     def do(self, previous_states: Dict):
         self.model.turn_on_model_regularizations()
         self.datamodule.turn_on_regularizations()
         self.train(trainer_kwargs={"datamodule": self.datamodule})
-        self.validate(trainer_kwargs={"datamodule": self.datamodule})
 
 
 class Tune(Step):

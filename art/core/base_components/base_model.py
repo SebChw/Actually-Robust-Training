@@ -113,6 +113,13 @@ class ArtModule(L.LightningModule):
 
         return data[LOSS]
 
+    def test_step(
+        self, batch: Union[Dict[str, any], DataLoader, torch.Tensor], batch_idx: int
+    ):
+        data = {"batch": batch, "batch_idx": batch_idx}
+        for func in self.validation_step_pipeline:
+            data = func(data)
+
     def ml_parse_data(self, data: Dict):
         return data
 
