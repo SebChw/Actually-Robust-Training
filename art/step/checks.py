@@ -21,32 +21,31 @@ class Check(ABC):
     def __init__(
         self,
         metric,  # This requires an object which was used to calculate metric
-        stage: TrainingStage,
         value: float,
     ):
         self.metric = metric
-        self.stage = stage
         self.value = value
 
     @abstractmethod
     def _check_method(self, result) -> ResultOfCheck:
         pass
 
-    def build_required_key(self, step, stage, metric):
+    def build_required_key(self, step, metric):
         metric = metric.__class__.__name__
         model_name = step.get_model_name()
         step_name = step.name
-        self.required_key = f"{metric}-{model_name}-{stage.name}-{step_name}"
+        stage = step.get_check_stage()
+        self.required_key = f"{metric}-{model_name}-{stage}-{step_name}"
 
     def check(self, step) -> ResultOfCheck:
         result = step.get_results()
-        self.build_required_key(step, self.stage, self.metric)
+        self.build_required_key(step, self.metric)
         return self._check_method(result)
 
 
 class CheckScoreExists(Check):
-    def __init__(self, metric, stage: TrainingStage):
-        super().__init__(metric, stage, None)
+    def __init__(self, metric):
+        super().__init__(metric, None)
 
     def _check_method(self, result) -> ResultOfCheck:
         if self.required_key in result:
@@ -73,12 +72,11 @@ class CheckScoreCloseTo(Check):
     def __init__(
         self,
         metric,  # This requires an object which was used to calculate metric
-        stage: TrainingStage,
         value: float,
         rel_tol: float = 1e-09,
         abs_tol: float = 0.0,
     ):
-        super().__init__(metric, stage, value)
+        super().__init__(metric, value)
         self.rel_tol = rel_tol
         self.abs_tol = abs_tol
 
