@@ -2,7 +2,7 @@ import hashlib
 import inspect
 from typing import Any, Dict, Union
 
-import pytorch_lightning as L
+import lightning as L
 import torch.nn
 from torch.utils.data import DataLoader
 

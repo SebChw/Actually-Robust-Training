@@ -1,7 +1,7 @@
 from typing import Dict, Iterable, Optional, Union
 
-from pytorch_lightning import LightningDataModule, Trainer
-from pytorch_lightning.loggers import Logger
+from lightning import LightningDataModule, Trainer
+from lightning.pytorch.loggers import Logger
 
 from art.core.base_components.base_model import ArtModule
 from art.step.step import Step

@@ -1,7 +1,7 @@
 from abc import ABC, abstractmethod
 from typing import Any, Dict
 
-import pytorch_lightning as L
+import lightning as L
 
 from art.core.base_components.base_model import ArtModule
 from art.core.MetricCalculator import MetricCalculator
