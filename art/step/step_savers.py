@@ -1,6 +1,7 @@
 import json
 from abc import ABC, abstractmethod
 from pathlib import Path
+import matplotlib.pyplot as plt
 
 BASE_PATH = Path("checkpoints")
 
@@ -20,6 +21,9 @@ class StepSaver(ABC):
     def get_path(self, step_id: str, step_name: str, filename: str):
         return BASE_PATH / f"{step_id}_{step_name}" / filename
 
+    def exists(self, step_id: str, step_name: str, filename: str):
+        return self.get_path(step_id, step_name, filename).exists()
+
 
 class JSONStepSaver(StepSaver):
     RESULT_NAME = "results.json"
@@ -32,3 +36,18 @@ class JSONStepSaver(StepSaver):
     def load(self, step_id: str, step_name: str, filename: str = RESULT_NAME):
         with open(self.get_path(step_id, step_name, filename), "r") as f:
             return json.load(f)
+
+    def exists(self, step_id: str, step_name: str, filename: str):
+        self.exists(step_id, step_name, RESULT_NAME)
+
+
+class MatplotLibSaver(StepSaver):
+    def save(self, obj: plt.Figure, step_id: str, step_name: str, filename: str = ""):
+        self.ensure_directory(step_id, step_name)
+        filepath = self.get_path(step_id, step_name, filename)
+        filepath.parent.mkdir(exist_ok=True)
+        obj.savefig(filepath)
+        plt.close(obj)
+
+    def load(self, step_id, step_name: str, filename: str):
+        raise NotImplementedError()

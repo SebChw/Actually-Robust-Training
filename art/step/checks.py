@@ -18,6 +18,36 @@ class Check(ABC):
     description: str
     required_files: List[str]
 
+    @abstractmethod
+    def check(self, step) -> ResultOfCheck:
+        pass
+
+
+class CheckResult(Check):
+
+    @abstractmethod
+    def _check_method(self, result) -> ResultOfCheck:
+        pass
+
+    def check(self, step) -> ResultOfCheck:
+        result = step.get_results()
+        return self._check_method(result)
+
+
+class CheckResultExists(CheckResult):
+    def __init__(self, required_key):
+        self.required_key = required_key
+    def _check_method(self, result) -> ResultOfCheck:
+        if self.required_key in result:
+            return ResultOfCheck(is_positive=True)
+        else:
+            return ResultOfCheck(
+                is_positive=False,
+                error=f"Score {self.required_key} is not in results.json",
+            )
+
+
+class CheckScore(CheckResult):
     def __init__(
         self,
         metric,  # This requires an object which was used to calculate metric
@@ -26,9 +56,6 @@ class Check(ABC):
         self.metric = metric
         self.value = value
 
-    @abstractmethod
-    def _check_method(self, result) -> ResultOfCheck:
-        pass
 
     def build_required_key(self, step, metric):
         metric = metric.__class__.__name__
@@ -42,8 +69,7 @@ class Check(ABC):
         self.build_required_key(step, self.metric)
         return self._check_method(result)
 
-
-class CheckScoreExists(Check):
+class CheckScoreExists(CheckScore):
     def __init__(self, metric):
         super().__init__(metric, None)
 
@@ -57,7 +83,7 @@ class CheckScoreExists(Check):
             )
 
 
-class CheckScoreEqualsTo(Check):
+class CheckScoreEqualsTo(CheckScore):
     def _check_method(self, result) -> ResultOfCheck:
         if result[self.required_key] == self.value:
             return ResultOfCheck(is_positive=True)
@@ -68,7 +94,7 @@ class CheckScoreEqualsTo(Check):
             )
 
 
-class CheckScoreCloseTo(Check):
+class CheckScoreCloseTo(CheckScore):
     def __init__(
         self,
         metric,  # This requires an object which was used to calculate metric
@@ -95,7 +121,7 @@ class CheckScoreCloseTo(Check):
             )
 
 
-class CheckScoreGreaterThan(Check):
+class CheckScoreGreaterThan(CheckScore):
     def _check_method(self, result) -> ResultOfCheck:
         if result[self.required_key] > self.value:
             return ResultOfCheck(is_positive=True)
@@ -106,7 +132,7 @@ class CheckScoreGreaterThan(Check):
             )
 
 
-class CheckScoreLessThan(Check):
+class CheckScoreLessThan(CheckScore):
     def _check_method(self, result) -> ResultOfCheck:
         if result[self.required_key] < self.value:
             return ResultOfCheck(is_positive=True)
