@@ -1,9 +1,10 @@
 import os
 from typing import Optional, Union
 
-import neptune
+from neptune import init_run
+from neptune.exceptions import MissingFieldException
 import numpy as np
-import wandb
+from wandb import log, save, Image
 from lightning.pytorch.loggers import NeptuneLogger, WandbLogger
 
 # """
@@ -22,7 +23,7 @@ class NeptuneLoggerAdapter(NeptuneLogger):
     # def log_model(self, model: LightningModule, path: str = "model"):
     #     self.experiment[path].track_files(model)
 
-    def log_image(self, image, path: str = "image"):
+    def log_img(self, image, path: str = "image"):
         self.experiment[path].upload(image)
 
     def log_figure(self, figure, path: str = "figure"):
@@ -39,7 +40,7 @@ class NeptuneLoggerAdapter(NeptuneLogger):
             name = f"{id}"
         if "ckpt" not in name:
             name = f"{name}.ckpt"
-        run = neptune.init_run(with_id=id, mode="read-only")
+        run = init_run(with_id=id, mode="read-only")
         if type == "last":
             model_path = "last"
         elif type == "best":
@@ -47,7 +48,7 @@ class NeptuneLoggerAdapter(NeptuneLogger):
                 model_path = os.path.basename(
                     run["training/model/best_model_path"].fetch()
                 )[:-5]
-            except neptune.exceptions.MissingFieldException as e:
+            except MissingFieldException as e:
                 raise Exception(
                     f"Couldn't find Best model under specified id {id}"
                 ).with_traceback(e.__traceback__)
@@ -72,10 +73,10 @@ class WandbLoggerAdapter(WandbLogger):
         """Works only when run as an admin."""
         # yaml_data = open(configFile, 'r')
         # yaml_data = yaml.load(yaml_data, Loader=yaml.SafeLoader)
-        wandb.save(configFile)
+        save(configFile)
 
-    def log_image(self, image, path: Union[str, np.ndarray] = "image"):
-        wandb.log({path: wandb.Image(image)})
+    def log_img(self, image, path: Union[str, np.ndarray] = "image"):
+        log({path: Image(image)})
 
     def log_figure(self, figure, path="figure"):
-        wandb.log({path: figure})
+        log({path: figure})

@@ -1,7 +1,6 @@
 import typer
 import os
 import shutil
-from typing import List
 from cookiecutter.main import cookiecutter
 from art.cli.utils import get_git_user_info
 

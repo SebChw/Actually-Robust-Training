@@ -10,7 +10,7 @@ from art.utils.enums import TrainingStage
 @dataclass
 class ResultOfCheck:
     is_positive: bool = field(default=True)
-    error: str = field(default=None)
+    error: str = field(default="")
 
 
 class Check(ABC):

@@ -9,14 +9,17 @@ from torch.utils.data import DataLoader
 from art.core.MetricCalculator import MetricCalculator
 from art.utils.enums import LOSS, PREDICTION, TARGET
 
+from abc import ABC, abstractmethod
 
-class ArtModule(L.LightningModule):
+
+class ArtModule(L.LightningModule, ABC):
     def __init__(
         self,
     ):
         super().__init__()
         self.regularized = True
         self.reset_pipelines()
+        self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
     """
     I think in case of models we can easily write some general purpose function that will do the job.
@@ -29,6 +32,10 @@ class ArtModule(L.LightningModule):
     4. Set all dropouts to 0
     5. Normalization layers probably should stay untouched.
     """
+
+    @abstractmethod
+    def log(self, metric_name: str, metric_val: str, on_step: Any = False, on_epoch: Any = True):
+        pass
 
     def set_metric_calculator(self, metric_calculator: MetricCalculator):
         self.metric_calculator = metric_calculator
@@ -98,14 +105,14 @@ class ArtModule(L.LightningModule):
         return data
 
     def validation_step(
-        self, batch: Union[Dict[str, any], DataLoader, torch.Tensor], batch_idx: int
+        self, batch: Union[Dict[str, Any], DataLoader, torch.Tensor], batch_idx: int
     ):
         data = {"batch": batch, "batch_idx": batch_idx}
         for func in self.validation_step_pipeline:
             data = func(data)
 
     def training_step(
-        self, batch: Union[Dict[str, any], DataLoader, torch.Tensor], batch_idx: int
+        self, batch: Union[Dict[str, Any], DataLoader, torch.Tensor], batch_idx: int
     ):
         data = {"batch": batch, "batch_idx": batch_idx}
         for func in self.train_step_pipeline:
@@ -114,7 +121,7 @@ class ArtModule(L.LightningModule):
         return data[LOSS]
 
     def test_step(
-        self, batch: Union[Dict[str, any], DataLoader, torch.Tensor], batch_idx: int
+        self, batch: Union[Dict[str, Any], DataLoader, torch.Tensor], batch_idx: int
     ):
         data = {"batch": batch, "batch_idx": batch_idx}
         for func in self.validation_step_pipeline:
