@@ -61,6 +61,7 @@ class ArtProject:
             try:
                 self.check_checks(step, checks)
             except Exception as e:
+                print(e)
                 return True
 
         step_current_hash = step.get_hash()

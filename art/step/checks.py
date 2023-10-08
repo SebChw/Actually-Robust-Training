@@ -1,10 +1,7 @@
 import math
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
-from typing import Dict, List
-
-from art.core.base_components.base_model import ArtModule
-from art.utils.enums import TrainingStage
+from typing import List
 
 
 @dataclass

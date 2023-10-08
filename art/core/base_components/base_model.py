@@ -46,7 +46,7 @@ class ArtModule(L.LightningModule, ABC):
 
     def reset_pipelines(self):
         # THIS FUNCTION IS NECESSARY AS WE MAY DECORATE AND DECORATED FUNCTIONS WON'T BE USED!
-        #! This probably should be splitted into 2 classes. One for model another for baseline.
+        # This probably should be splitted into 2 classes. One for model another for baseline.
         self.train_step_pipeline = [
             self.parse_data,
             self.predict,
