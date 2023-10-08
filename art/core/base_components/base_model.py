@@ -1,23 +1,21 @@
-from typing import Union, Dict
+import hashlib
+import inspect
+from typing import Any, Dict, Union
 
-import lightning.pytorch as pl
+import lightning as L
 import torch.nn
 from torch.utils.data import DataLoader
 
-from art.utils.enums import LOSS
 from art.core.MetricCalculator import MetricCalculator
-
-import hashlib
-import inspect
+from art.utils.enums import LOSS, PREDICTION, TARGET
 
 
-class ArtModule(pl.LightningModule):
+class ArtModule(L.LightningModule):
     def __init__(
         self,
     ):
         super().__init__()
         self.regularized = True
-        self.metric_calculator = MetricCalculator()
         self.reset_pipelines()
 
     """
@@ -31,6 +29,13 @@ class ArtModule(pl.LightningModule):
     4. Set all dropouts to 0
     5. Normalization layers probably should stay untouched.
     """
+
+    def set_metric_calculator(self, metric_calculator: MetricCalculator):
+        self.metric_calculator = metric_calculator
+
+    def check_setup(self):
+        if not hasattr(self, "metric_calculator"):
+            raise ValueError("You need to set metric calculator first!")
 
     def reset_pipelines(self):
         # THIS FUNCTION IS NECESSARY AS WE MAY DECORATE AND DECORATED FUNCTIONS WON'T BE USED!
@@ -92,17 +97,28 @@ class ArtModule(pl.LightningModule):
         self.metric_calculator(self, data)
         return data
 
-    def validation_step(self, batch: Union[Dict[str, any], DataLoader, torch.Tensor], batch_idx: int):
+    def validation_step(
+        self, batch: Union[Dict[str, any], DataLoader, torch.Tensor], batch_idx: int
+    ):
         data = {"batch": batch, "batch_idx": batch_idx}
         for func in self.validation_step_pipeline:
             data = func(data)
 
-    def training_step(self, batch: Union[Dict[str, any], DataLoader, torch.Tensor], batch_idx: int):
+    def training_step(
+        self, batch: Union[Dict[str, any], DataLoader, torch.Tensor], batch_idx: int
+    ):
         data = {"batch": batch, "batch_idx": batch_idx}
         for func in self.train_step_pipeline:
             data = func(data)
 
         return data[LOSS]
+
+    def test_step(
+        self, batch: Union[Dict[str, any], DataLoader, torch.Tensor], batch_idx: int
+    ):
+        data = {"batch": batch, "batch_idx": batch_idx}
+        for func in self.validation_step_pipeline:
+            data = func(data)
 
     def ml_parse_data(self, data: Dict):
         return data
@@ -120,3 +136,14 @@ class ArtModule(pl.LightningModule):
         return hashlib.md5(
             inspect.getsource(self.__class__).encode("utf-8")
         ).hexdigest()
+
+    def unify_type(self: Any, x: Any):
+        if not isinstance(x, torch.Tensor):
+            x = torch.Tensor(x)
+
+        return x
+
+    def prepare_for_metric(self: Any, data: Dict):
+        preds, targets = data[PREDICTION], data[TARGET]
+
+        return self.unify_type(preds), self.unify_type(targets)

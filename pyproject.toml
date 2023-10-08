@@ -24,7 +24,7 @@ dependencies = [
   "torchmetrics>=0.11.0",
   "torch>=1.13.1",
   "hydra-core>=1.3.2",
-  "neptune-client>=1.1.1",
+  "neptune>=1.6.2",
   "matplotlib~=3.6",
   "lovely-tensors",
   "cookiecutter>=2.3.1",

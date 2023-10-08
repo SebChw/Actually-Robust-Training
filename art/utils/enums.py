@@ -10,6 +10,7 @@ VALIDATION_LOSS = "validation_loss"
 
 
 class TrainingStage(Enum):
-    TRAIN = 0
-    VALIDATION = 1
-    TEST = 2
+    TRAIN = "train"
+    VALIDATION = "validate"
+    TEST = "test"
+    SANITY_CHECK = "sanity_check"

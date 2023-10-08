@@ -1,15 +1,16 @@
-from lightning.pytorch.loggers import NeptuneLogger, WandbLogger
-import wandb
-from typing import Union, Optional
-import numpy as np
 import os
-import neptune
+from typing import Optional, Union
 
+import neptune
+import numpy as np
+import wandb
+from lightning.pytorch.loggers import NeptuneLogger, WandbLogger
 
 # """
 #     This is a wrapper for LightningLogger for simplifying basic functionalities between different loggers.
 #     Logging plots in Wandb supports Plotly only. If you want to log matplotlib figures, you need to convert them to Plotly first or log them as images.
 # """
+
 
 class NeptuneLoggerAdapter(NeptuneLogger):
     def __init__(self, *args, **kwargs):
@@ -27,7 +28,13 @@ class NeptuneLoggerAdapter(NeptuneLogger):
     def log_figure(self, figure, path: str = "figure"):
         self.experiment[path].upload(figure)
 
-    def download_ckpt(self, id: str, name: Optional[str] = None, type: str = "last", path: str = "./checkpoints"):
+    def download_ckpt(
+        self,
+        id: str,
+        name: Optional[str] = None,
+        type: str = "last",
+        path: str = "./checkpoints",
+    ):
         if name is None:
             name = f"{id}"
         if "ckpt" not in name:
@@ -37,19 +44,24 @@ class NeptuneLoggerAdapter(NeptuneLogger):
             model_path = "last"
         elif type == "best":
             try:
-                model_path = os.path.basename(run["training/model/best_model_path"].fetch())[:-5]
+                model_path = os.path.basename(
+                    run["training/model/best_model_path"].fetch()
+                )[:-5]
             except neptune.exceptions.MissingFieldException as e:
                 raise Exception(
                     f"Couldn't find Best model under specified id {id}"
                 ).with_traceback(e.__traceback__)
         else:
-            raise Exception(f"Unknown type {type}. Use \"last\" or \"best\".")
+            raise Exception(f'Unknown type {type}. Use "last" or "best".')
 
         print(model_path)
         run[f"/training/model/checkpoints/{model_path}"].download(f"{path}/{name}")
 
         run.stop()
         return f"{dir}/{name}.ckpt"
+
+    def stop(self):
+        self.run.stop()
 
 
 class WandbLoggerAdapter(WandbLogger):

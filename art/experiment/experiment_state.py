@@ -2,11 +2,11 @@
 from collections import defaultdict
 from typing import Dict, Union
 
-from art.utils.enums import TrainingStage
 from art.step.step import Step
+from art.utils.enums import TrainingStage
 
 
-class ExperimentState:
+class ArtProjectState:
     current_step: Union[Step, None]
     current_stage: TrainingStage = TrainingStage.TRAIN
     step_states: Dict[str, Dict[str, Dict[str, str]]]
@@ -27,7 +27,6 @@ class ExperimentState:
         self.step_states = defaultdict(lambda: defaultdict(lambda: defaultdict(str)))
         self.status = "created"
         self.current_step = None
-        self.current_stage = TrainingStage.TRAIN
 
     def get_steps(self):
         return self.step_states
@@ -39,4 +38,4 @@ class ExperimentState:
         return self.current_step.name
 
     def get_current_stage(self):
-        return self.current_step.current_stage.name
+        return self.current_step.get_current_stage()

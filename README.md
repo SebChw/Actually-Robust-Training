@@ -1,6 +1,6 @@
 # audio-research-toolkit
 
-Import lightning consistent as `lightning.pytorch`
+Import lightning consistent as `lightning`
 
 
 ![Tests](https://github.com/SebChw/audio-research-toolkit/actions/workflows/tests.yml/badge.svg)
