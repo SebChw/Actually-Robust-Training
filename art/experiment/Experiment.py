@@ -87,7 +87,7 @@ class ArtProject:
 
         return False
 
-    def run_all(self):
+    def run_all(self, force_rerun=False):
         steps_status = defaultdict(lambda: StepStatus("Not run", None))
         
         for step in self.steps:
@@ -96,7 +96,7 @@ class ArtProject:
 
             self.state.current_step = step
 
-            if not self.check_if_must_be_run(step, checks):
+            if not self.check_if_must_be_run(step, checks) and not force_rerun:
                 steps_status[step.get_full_step_name()] = StepStatus("Skipped", step.get_results())
                 self.fill_step_states(step)
                 continue
