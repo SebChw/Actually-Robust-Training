@@ -5,7 +5,6 @@ from art.utils.enums import TrainingStage
 if TYPE_CHECKING:
     from art.core.base_components.base_model import ArtModule
     from art.experiment.Experiment import ArtProject
-    from art.step.steps import Step
 
 
 class DefaultMetric:
@@ -30,7 +29,7 @@ class MetricCalculator:
     """Thanks to this preparing templates for different kinds of project will be very easy."""
 
     def __init__(self, experiment: "ArtProject"):
-        self.metrics = []
+        self.metrics: List[Any] = []
         self.experiment = experiment
 
     def build_name(self: Any, model: "ArtModule", metric: Any):
@@ -47,7 +46,7 @@ class MetricCalculator:
         self.metrics.extend(metric)
 
     def compile(self, skipped_metrics: List[SkippedMetric]):
-        self.compiled_metrics = {
+        self.compiled_metrics: Dict = {
             TrainingStage.TRAIN.value: [],
             TrainingStage.VALIDATION.value: [],
             TrainingStage.TEST.value: [],

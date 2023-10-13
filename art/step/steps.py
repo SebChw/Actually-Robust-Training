@@ -1,6 +1,6 @@
 from typing import Dict, Iterable, Optional, Union
 
-from lightning import LightningDataModule, Trainer
+from lightning import Trainer
 from lightning.pytorch.loggers import Logger
 
 from art.core.base_components.base_model import ArtModule
@@ -120,8 +120,8 @@ class Tune(Step):
         model: ArtModule,
         logger: Optional[Union[Logger, Iterable[Logger], bool]] = None,
     ):
-        super().__init__()
-        self.model = model
+        super().__init__(model=model, trainer=Trainer(logger=logger))
+        self.logger = logger
 
     def do(self, previous_states: Dict):
         trainer = Trainer(
