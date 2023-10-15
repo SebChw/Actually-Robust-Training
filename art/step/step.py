@@ -3,6 +3,7 @@ from typing import Any, Dict
 import hashlib
 import inspect
 import lightning as L
+from lightning import Trainer
 
 from art.core.base_components.base_model import ArtModule
 from art.core.MetricCalculator import MetricCalculator
@@ -13,7 +14,7 @@ from art.utils.enums import TrainingStage
 class Step(ABC):
     name: str
     description: str
-    idx: int = None
+    idx: int = -1
 
     def __init__(self):
         self.results = {}
