@@ -98,6 +98,10 @@ class ArtProject:
     def get_steps(self):
         return self.steps
 
+    def get_step(self, step_id):
+        return self.steps[step_id]["step"]
+
+
     def replace_step(self, step: "Step", step_id=-1):
         self.steps[step_id]["step"] = step
         if step_id == -1:

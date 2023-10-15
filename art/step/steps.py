@@ -1,18 +1,22 @@
 from typing import Dict, Iterable, Optional, Union
-
-from lightning import Trainer
+from lightning import LightningDataModule, Trainer
 from lightning.pytorch.loggers import Logger
 
 from art.core.base_components.base_model import ArtModule
-from art.step.step import Step
+from art.step.step import Step, ModelStep
 from art.utils.enums import TrainingStage
 
 
 class ExploreData(Step):
     """This class checks whether we have some markdown file description of the dataset + we implemented visualizations"""
+    name = "Data analysis"
+    description = "This step allows you to perform data analysis and extract information that is necessery in next steps"
+
+    def get_step_id(self) -> str:
+        return f"data_analysis"
 
 
-class EvaluateBaseline(Step):
+class EvaluateBaseline(ModelStep):
     """This class takes a baseline and evaluates/trains it on the dataset"""
 
     name = "Evaluate Baseline"
@@ -30,7 +34,7 @@ class EvaluateBaseline(Step):
         self.validate(trainer_kwargs={"datamodule": self.datamodule})
 
 
-class CheckLossOnInit(Step):
+class CheckLossOnInit(ModelStep):
     name = "Check Loss On Init"
     description = "Checks loss on init"
 
@@ -45,7 +49,7 @@ class CheckLossOnInit(Step):
         self.validate(trainer_kwargs={"dataloaders": train_loader})
 
 
-class OverfitOneBatch(Step):
+class OverfitOneBatch(ModelStep):
     name = "Overfit One Batch"
     description = "Overfits one batch"
 
@@ -70,7 +74,7 @@ class OverfitOneBatch(Step):
         return TrainingStage.TRAIN.value
 
 
-class Overfit(Step):
+class Overfit(ModelStep):
     name = "Overfit"
     description = "Overfits model"
 
@@ -92,7 +96,7 @@ class Overfit(Step):
         return TrainingStage.TRAIN.value
 
 
-class Regularize(Step):
+class Regularize(ModelStep):
     name = "Regularize"
     description = "Regularizes model"
 
@@ -111,7 +115,7 @@ class Regularize(Step):
         self.train(trainer_kwargs={"datamodule": self.datamodule})
 
 
-class Tune(Step):
+class Tune(ModelStep):
     name = "Tune"
     description = "Tunes model"
 
@@ -131,5 +135,5 @@ class Tune(Step):
         trainer.tune(model=self.model, datamodule=self.datamodule)
 
 
-class Squeeze(Step):
+class Squeeze(ModelStep):
     pass
