@@ -3,12 +3,12 @@ requires = ["hatchling"]
 build-backend = "hatchling.build"
 
 [project]
-name = "audio_research_toolkit"
+name = "art"
 version = "0.0.1"
 authors = [
   { name="GHOST", email="ghost@put.poznan.pl" },
 ]
-description = "Audio Package"
+description = "ART - Actually Robust Training framework"
 readme = "README.md"
 requires-python = ">=3.8"
 classifiers = [
@@ -45,8 +45,8 @@ dev = [
 ]
 
 [project.urls]
-"Homepage" = "https://github.com/pypa/audioresearchtoolkit"
-"Bug Tracker" = "https://github.com/pypa/audioresearchtoolkit/issues"
+"Homepage" = "https://github.com/pypa/art"
+"Bug Tracker" = "https://github.com/pypa/art/issues"
 
 [tool.pytest.ini_options]
 addopts = "--cov=art"
