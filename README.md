@@ -1,6 +1,8 @@
 # ART - Actually Robust Training framework
 
 ![Tests](https://github.com/SebChw/art/actions/workflows/tests.yml/badge.svg)
+![Docs](
+https://readthedocs.org/projects/audio-research-toolkit/badge/?version=latest&style=flat)
 
 ----
 
