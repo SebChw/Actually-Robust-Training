@@ -10,6 +10,9 @@ VALIDATION_LOSS = "validation_loss"
 
 
 class TrainingStage(Enum):
+    """
+    Training stage enum
+    """
     TRAIN = "train"
     VALIDATION = "validate"
     TEST = "test"

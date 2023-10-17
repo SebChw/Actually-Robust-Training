@@ -12,6 +12,15 @@ app = typer.Typer()
 
 @app.command()
 def create_project(project_name: str, keep_as_repo: bool = False, branch: str = "main") -> None:
+    """
+    Create a new project using a specified Cookiecutter template.
+
+    Args:
+        project_name (str): The name of the new project.
+        keep_as_repo (bool, optional): Whether to keep the `.git` directory. Defaults to False.
+        branch (str, optional): The branch of the template to use. Defaults to "main".
+    """
+
     git_username, git_email = get_git_user_info()
 
     try:
@@ -59,34 +68,8 @@ def create_project(project_name: str, keep_as_repo: bool = False, branch: str = 
 
 @app.command()
 def get_started():
+    """Create a project named 'mnist_tutorial' using the 'mnist_tutorial_cookiecutter' branch."""
     create_project(project_name="mnist_tutorial", branch="mnist_tutorial_cookiecutter")
-
-
-@app.command()
-def run_training(project_name: str, args):
-    pass
-
-
-@app.command()
-def run_evaluation(project_name: str, args):
-    pass
-
-
-@app.command()
-def run_checks(project_name: str, args):
-    pass
-
-
-@app.command()
-def do_step(project_name: str, step_name: str, args):
-    pass
-
-
-@app.command()
-def add_component():
-    # One can add Mlbaseline etc. to the codebase
-    # python -m art add ml_baseline -> in local folder new file is created.
-    pass
 
 
 if __name__ == "__main__":

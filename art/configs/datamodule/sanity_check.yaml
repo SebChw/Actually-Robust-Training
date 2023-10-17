@@ -1,8 +1,0 @@
-_target_: art.data.utils.SanityCheckDataModule
-dataset_generator:
-  _target_: art.data.utils.dummy_generator
-  sample_gen:
-    _target_: art.data.utils.dummy_source_separation_sample
-
-collate:
-  _target_: art.data.collate.SourceSeparationCollate
