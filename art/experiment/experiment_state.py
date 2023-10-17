@@ -11,8 +11,8 @@ class ArtProjectState:
     step_states: Dict[str, Dict[str, Dict[str, str]]]
     status: str
     """
-    Singleton that knows the current experiment state + have information about the world around
-    steps:{
+    A class for managing the state of a project.
+        steps:{
         "model_name": {
             "step_name": {/*step state*/},
             "step_name2": {/*step state*/},
