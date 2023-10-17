@@ -18,13 +18,11 @@ class ArtModule(L.LightningModule, ABC):
         super().__init__()
         self.regularized = True
         self.reset_pipelines()
-        self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
     """
     A module for managing the training process and application of various model configurations.
     """
 
-    @abstractmethod
     def log(self, metric_name: str, metric_val: str, on_step: Any = False, on_epoch: Any = True):
         """
         Abstract logging method to be implemented by subclasses.
