@@ -23,18 +23,6 @@ class ArtModule(L.LightningModule, ABC):
     A module for managing the training process and application of various model configurations.
     """
 
-    def log(self, metric_name: str, metric_val: str, on_step: Any = False, on_epoch: Any = True):
-        """
-        Abstract logging method to be implemented by subclasses.
-
-        Args:
-            metric_name (str): Name of the metric.
-            metric_val (str): Value of the metric.
-            on_step (bool): Whether to log on step.
-            on_epoch (bool): Whether to log on epoch.
-        """
-        pass
-
     def set_metric_calculator(self, metric_calculator: MetricCalculator):
         """
         Set metric calculator.
