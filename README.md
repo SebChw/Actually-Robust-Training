@@ -1,7 +1,4 @@
-# audio-research-toolkit
-
-Import lightning consistent as `lightning`
-
+# Actually-Robust-Training
 
 ![Tests](https://github.com/SebChw/audio-research-toolkit/actions/workflows/tests.yml/badge.svg)
 
@@ -15,7 +12,7 @@ To get started, at first clone the repo
 git clone https://github.com/SebChw/art.git
 ```
 
-Install audio-research-toolkit in editable mode, also you need to download extras for development if you want to contribute see `[dev]`
+Install Actually Robust Training in editable mode, also you need to download extras for development if you want to contribute see `[dev]`
 
 ```sh
 pip install -e .[dev]
