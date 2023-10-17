@@ -44,7 +44,7 @@ dev = [
   "mypy>=1.1.1",
   "black>=23.1.0",
   "myst_nb==0.17.2",
-  "sphinx-autodoc2==0.4.2"
+  "sphinx-autodoc2==0.4.2",
   "nbmake>=0.5"
 ]
 
