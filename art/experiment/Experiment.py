@@ -1,14 +1,31 @@
 from typing import TYPE_CHECKING, Any, List
 
+from collections import defaultdict
+from dataclasses import dataclass
+
 import lightning as L
 
 from art.core.MetricCalculator import MetricCalculator, SkippedMetric
 from art.experiment.experiment_state import ArtProjectState
 from art.step.checks import Check
 
+import json
+
 if TYPE_CHECKING:
     from art.step.step import Step
 
+
+@dataclass
+class StepStatus:
+    status: str
+    results: Dict[str, Any]
+
+    def __repr__(self):
+        result_repr = "\n".join(f"\t{k}: {v}" for k, v in self.results.items() if k != 'hash')
+        return f"{self.status}. Results:\n{result_repr}"
+    
+    def to_dict(self):
+        return {"status": self.status, "results": self.results}
 
 class ArtProject:
     name: str
@@ -74,26 +91,47 @@ class ArtProject:
             )
             return True
 
-        print(f"Step {step.name}_{step.get_step_id()} was already completed.")
         return False
 
-    def run_all(self):
+    def save_state(self, status: dict, path: str = 'checkpoints/state.json'):
+        with open(path, 'w') as f:
+            serializable_steps_status = {k: v.to_dict() for k, v in status.items()}
+            json.dump(serializable_steps_status, f)
+
+    def run_all(self, force_rerun=False):
+        steps_status = defaultdict(lambda: StepStatus("Not run", None))
+        
         for step in self.steps:
             self.metric_calculator.compile(step["skipped_metrics"])
             step, checks = step["step"], step["checks"]
 
             self.state.current_step = step
 
-            if not self.check_if_must_be_run(step, checks):
+            if not self.check_if_must_be_run(step, checks) and not force_rerun:
+                steps_status[step.get_full_step_name()] = StepStatus("Skipped", step.get_results())
                 self.fill_step_states(step)
+                self.save_state(steps_status)
                 continue
 
             step.add_result("hash", step.get_hash())
+            
+            try:
+                step(self.state.step_states, self.datamodule, self.metric_calculator)
+                self.check_checks(step, checks)
+                steps_status[step.get_full_step_name()] = StepStatus("Completed", step.get_results())
+            except Exception as e:
+                steps_status[step.get_full_step_name()] = StepStatus("Failed", step.get_results())
+                print(f"Step {step.get_full_step_name()} failed with error: {str(e)}")
+                self.fill_step_states(step)
+                self.save_state(steps_status)
+                break
 
-            step(self.state.step_states, self.datamodule, self.metric_calculator)
-
-            self.check_checks(step, checks)
             self.fill_step_states(step)
+
+        print("Steps status:")
+        for step_name, step_status in steps_status.items():
+            print(f"{step_name}: {step_status}")
+        self.save_state(steps_status)
 
     def get_steps(self):
         return self.steps
