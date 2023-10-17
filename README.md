@@ -29,13 +29,7 @@ To use most of art's features we encourage you to create a new folder for your p
 python -m art.cli create_project --name my_project
 ```
 
-This will create a new folder `my_project` with a basic structure for your project. To learn more about ART we encourage you to read our [documentation](#api-cheatsheet--documentation), and check our [tutorials](#tutorials)!
-
-## API Cheatsheet & Documentation
-#TODO
-
-## Implemented Karpathy's steps
-#TODO - table with steps and links to docs
+This will create a new folder `my_project` with a basic structure for your project. To learn more about ART we encourage you to read our [documentation](https://audio-research-toolkit.readthedocs.io/en/latest/), and check our [tutorials](#tutorials)!
 
 ## Tutorials
 1. A showcase of ART's features. To check it out type:
