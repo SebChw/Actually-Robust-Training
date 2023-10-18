@@ -112,6 +112,8 @@ class Overfit(ModelStep):
         logger: Optional[Union[Logger, Iterable[Logger], bool]] = None,
         max_epochs: int = 1,
     ):
+        if logger is not None:
+            logger.run["sys/tags"].add("overfit")
         trainer = Trainer(max_epochs=max_epochs, logger=logger)
         super().__init__(model, trainer)
 
@@ -142,6 +144,8 @@ class Regularize(ModelStep):
         logger: Optional[Union[Logger, Iterable[Logger], bool]] = None,
         trainer_kwargs: Dict = {},
     ):
+        if logger is not None:
+            logger.run["sys/tags"].add("regularize")        
         trainer = Trainer(**trainer_kwargs, logger=logger)
         super().__init__(model, trainer)
 
@@ -167,6 +171,8 @@ class Tune(ModelStep):
         model: ArtModule,
         logger: Optional[Union[Logger, Iterable[Logger], bool]] = None,
     ):
+        if logger is not None:
+            logger.run["sys/tags"].add("tune")
         super().__init__(model=model, trainer=Trainer(logger=logger))
         self.logger = logger
 
