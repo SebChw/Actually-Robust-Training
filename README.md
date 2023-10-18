@@ -20,8 +20,7 @@ https://readthedocs.org/projects/audio-research-toolkit/badge/?version=latest&st
 ## Installation
 To get started, first clone the repo and install our package in editable mode:
 ```sh
-git clone https://github.com/SebChw/art.git && cd art
-pip install -e .
+pip install art-training
 ```
 ## Project creation
 To use most of art's features we encourage you to create a new folder for your project using the CLI tool:
