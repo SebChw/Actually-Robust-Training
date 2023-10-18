@@ -1,4 +1,3 @@
-"""Singleton that knows the current experiment state + have information about the world around"""
 from collections import defaultdict
 from typing import Dict, Union
 
@@ -12,7 +11,8 @@ class ArtProjectState:
     step_states: Dict[str, Dict[str, Dict[str, str]]]
     status: str
     """
-    steps:{
+    A class for managing the state of a project.
+        steps:{
         "model_name": {
             "step_name": {/*step state*/},
             "step_name2": {/*step state*/},
@@ -29,13 +29,37 @@ class ArtProjectState:
         self.current_step = None
 
     def get_steps(self):
+        """
+        Returns all steps that were run
+
+        Returns:
+            Dict[str, Dict[str, Dict[str, str]]]: [description]
+        """
         return self.step_states
 
     def add_step(self, step):
+        """
+        Adds step to the state
+
+        Args:
+            step (Step): A step to be add the the project
+        """
         self.step_states.append(step)
 
     def get_current_step(self):
+        """
+        Gets current step
+
+        Returns:
+            Step: Current step
+        """
         return self.current_step.name
 
     def get_current_stage(self):
+        """
+        Gets current stage
+
+        Returns:
+            TrainingStage: Current stage
+        """
         return self.current_step.get_current_stage()

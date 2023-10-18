@@ -7,26 +7,43 @@ import numpy as np
 from wandb import log, save, Image
 from lightning.pytorch.loggers import NeptuneLogger, WandbLogger
 
-# """
-#     This is a wrapper for LightningLogger for simplifying basic functionalities between different loggers.
-#     Logging plots in Wandb supports Plotly only. If you want to log matplotlib figures, you need to convert them to Plotly first or log them as images.
-# """
-
 
 class NeptuneLoggerAdapter(NeptuneLogger):
+    """
+    This is a wrapper for LightningLogger for simplifying basic functionalities between different loggers.
+    """
+
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
     def log_config(self, configFile, path: str = "hydra/config"):
+        """
+        Logs a config file to Neptune.
+
+        Args:
+            configFile (str): Path to config file.
+            path (str, optional): Path to log config file to. Defaults to "hydra/config".
+        """
         self.experiment[path].upload(configFile)
 
-    # def log_model(self, model: LightningModule, path: str = "model"):
-    #     self.experiment[path].track_files(model)
-
     def log_img(self, image, path: str = "image"):
+        """
+        Logs an image to Neptune.
+
+        Args:
+            image (np.ndarray): Image to log.
+            path (str, optional): Path to log image to. Defaults to "image".
+        """
         self.experiment[path].upload(image)
 
     def log_figure(self, figure, path: str = "figure"):
+        """
+        Logs a figure to Neptune.
+
+        Args:
+            figure (Any): Figure to log.
+            path (str, optional): Path to log figure to. Defaults to "figure".
+        """
         self.experiment[path].upload(figure)
 
     def download_ckpt(
@@ -36,6 +53,22 @@ class NeptuneLoggerAdapter(NeptuneLogger):
         type: str = "last",
         path: str = "./checkpoints",
     ):
+        """
+        Downloads a checkpoint from Neptune.
+
+        Args:
+            id (str): Run ID.
+            name (str, optional): Name of the checkpoint. Defaults to None.
+            type (str, optional): Type of the checkpoint. Defaults to "last".
+            path (str, optional): Path to download checkpoint to. Defaults to "./checkpoints".
+
+        Raises:
+            Exception: If the checkpoint does not exist.
+            Exception: If the type is not "last" or "best".
+
+        Returns:
+            str: Path to downloaded checkpoint.
+        """
         if name is None:
             name = f"{id}"
         if "ckpt" not in name:
@@ -66,17 +99,42 @@ class NeptuneLoggerAdapter(NeptuneLogger):
 
 
 class WandbLoggerAdapter(WandbLogger):
+    """
+    This is a wrapper for LightningLogger for simplifying basic functionalities between different loggers.
+    Logging plots in Wandb supports Plotly only. If you want to log matplotlib figures, you need to convert them to Plotly first or log them as images.
+    """
+
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
     def log_config(self, configFile: str):
-        """Works only when run as an admin."""
+        """
+        Logs a config file to Wandb.
+
+        Works only when run as an admin.
+
+        Args:
+            configFile (str): Path to config file.
+        """
         # yaml_data = open(configFile, 'r')
         # yaml_data = yaml.load(yaml_data, Loader=yaml.SafeLoader)
         save(configFile)
 
     def log_img(self, image, path: Union[str, np.ndarray] = "image"):
+        """
+        Logs an image to Wandb.
+
+        Args:
+            image (np.ndarray): Image to log.
+            path (str, optional): Path to log image to. Defaults to "image"."""
         log({path: Image(image)})
 
     def log_figure(self, figure, path="figure"):
+        """
+        Logs a figure to Wandb.
+
+        Args:
+            figure (Any): Figure to log.
+            path (str, optional): Path to log figure to. Defaults to "figure".
+        """
         log({path: figure})

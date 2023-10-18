@@ -9,8 +9,30 @@ Idea is as follows:
 
 
 def visualize(visualizing_function_in=None, visualizing_function_out=None):
+    """
+    Decorator for visualizing input and output of a function.
+
+    Args:
+        visualizing_function_in (function, optional): Function to visualize input. Defaults to None.
+        visualizing_function_out (function, optional): Function to visualize output. Defaults to None.
+
+    Returns:
+        function: Decorated function.
+    """
     def decorator_visualize_input(func):
+        """
+        Decorator for visualizing input of a function.
+
+        Args:
+            func (function): Function to decorate.
+        """
         def wrapper_visualize_input(*args, **kwargs):
+            """
+            Wrapper for visualizing input of a function.
+
+            Returns:
+                function: Decorated function.
+            """
             if visualizing_function_in is not None:
                 visualizing_function_in(*args, **kwargs)
             output = func(*args, **kwargs)
@@ -28,6 +50,14 @@ def set_visualization(
     visualizing_function_in=None,
     visualizing_function_out=None,
 ):
+    """
+    Set visualization for a list of functions.
+
+    Args:
+        functions (List[Tuple[object, str]]): List of tuples of objects and methods to decorate.
+        visualizing_function_in (function, optional): Function to visualize input. Defaults to None.
+        visualizing_function_out (function, optional): Function to visualize output. Defaults to None.
+    """
     for obj, method in functions:
         decorated = visualize(visualizing_function_in, visualizing_function_out)(
             getattr(obj, method)
@@ -36,24 +66,3 @@ def set_visualization(
 
         if hasattr(obj, "reset_pipelines"):
             obj.reset_pipelines()
-
-
-if __name__ == "__main__":
-    """Just to test how this works."""
-
-    def visualize_img_on_input(X):
-        print("Visualizing input")
-
-    def visualize_img_on_output(X):
-        print("Visualizing output")
-
-    class Model:
-        def forward(self, X):
-            print("Running foward")
-            return X
-
-    my_net = Model()
-    set_visualization(
-        [(my_net, "forward")], visualize_img_on_input, visualize_img_on_output
-    )
-    my_net.forward(1)
