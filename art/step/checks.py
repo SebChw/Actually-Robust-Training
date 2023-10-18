@@ -1,6 +1,7 @@
 import math
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
+from typing import List
 
 
 @dataclass
@@ -25,6 +26,9 @@ class Check(ABC):
         description (str): Description of the check.
         required_files (List[str]): List of files that are required for this check.
     """
+    name: str
+    description: str
+    required_files: List[str]
 
     @abstractmethod
     def check(self, step) -> ResultOfCheck:
