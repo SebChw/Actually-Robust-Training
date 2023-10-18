@@ -167,10 +167,13 @@ class ArtProject:
                 steps_status[step.get_full_step_name()] = StepStatus("Completed", step.get_results())
             except Exception as e:
                 steps_status[step.get_full_step_name()] = StepStatus("Failed", step.get_results())
-                print(f"Step {step.get_full_step_name()} failed with error: {str(e)}")
                 self.fill_step_states(step)
                 self.save_state(steps_status)
-                break
+                exception_msg = f"Step {step.get_full_step_name()} failed: {e}"
+                exception_msg += "\n\nSteps status:"
+                for step_name, step_status in steps_status.items():
+                    exception_msg += f"\n{step_name}: {step_status}"
+                raise Exception(exception_msg)
 
             self.fill_step_states(step)
 
