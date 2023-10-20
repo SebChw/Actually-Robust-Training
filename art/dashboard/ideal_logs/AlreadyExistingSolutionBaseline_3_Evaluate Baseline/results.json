@@ -1,14 +1,20 @@
 {
-    "succesfull": [
-        {
-            "hash": "1474645a5f016d20e56ce61f6caa4dfc",
-            "MulticlassAccuracy-AlreadyExistingSolutionBaseline-VALIDATION-Evaluate Baseline": 0.9883000254631042,
-            "commit_id": "123"
-        }
-    ],
-    "failed": [
-        {}
-    ],
+    "model": "Already Existing Solution",
+    "step": "Evaluate Baseline",
+    "best_run": {
+        "model_hash": "1474645a5f016d20e56ce61f6caa4dfc",
+        "scores": [
+            {
+                "metric": "MulticlassAccuracy",
+                "state": "VALIDATION",
+                "value": 0.9883000254631042
+            }
+        ],
+        "commit_hash": "123",
+        "timestamp": 1,
+        "successfull": true
+    },
+    "other_runs": [],
     "goals": [
         {}
     ]

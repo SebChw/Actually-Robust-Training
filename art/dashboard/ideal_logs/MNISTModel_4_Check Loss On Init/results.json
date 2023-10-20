@@ -1,11 +1,42 @@
 {
-    "succesfull": [],
-    "failed": [
+    "model": "MNISTModel",
+    "step": "Check Loss On Init",
+    "best_run": {
+        "model_hash": "123jqkadshahzve3u412984uqwjiasdz",
+        "scores": [
+            {
+                "metric": "MulticlassAccuracy",
+                "state": "VALIDATION",
+                "value": 0.1
+            },
+            {
+                "metric": "CrossEntropyLoss",
+                "state": "VALIDATION",
+                "value": 0.132
+            }
+        ],
+        "commit_hash": "asdzxc",
+        "timestamp": 1,
+        "successfull": false
+    },
+    "other_runs": [
         {
-            "hash": "80330a4f522bbe9235dbfea35a7b888b",
-            "MulticlassAccuracy-MNISTModel-VALIDATION-Check Loss On Init": 0.10000000149011612,
-            "CrossEntropyLoss-MNISTModel-VALIDATION-Check Loss On Init": 23.924314498901367,
-            "commit_id": "asdx"
+            "model_hash": "80330a4f522bbe9235dbfea35a7b888b",
+            "scores": [
+                {
+                    "metric": "MulticlassAccuracy",
+                    "state": "VALIDATION",
+                    "value": 0.1
+                },
+                {
+                    "metric": "CrossEntropyLoss",
+                    "state": "VALIDATION",
+                    "value": 23.92
+                }
+            ],
+            "commit_hash": "asdx",
+            "timestamp": 0,
+            "successfull": false
         }
     ],
     "goals": [
