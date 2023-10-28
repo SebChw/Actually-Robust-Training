@@ -1,1 +1,0 @@
-{"hash": "80330a4f522bbe9235dbfea35a7b888b", "MulticlassAccuracy-MNISTModel-train-Regularize": 0.9704999923706055, "CrossEntropyLoss-MNISTModel-train-Regularize": 0.11222819238901138, "MulticlassAccuracy-MNISTModel-validate-Regularize": 0.9035999774932861, "CrossEntropyLoss-MNISTModel-validate-Regularize": 0.3212013244628906}
