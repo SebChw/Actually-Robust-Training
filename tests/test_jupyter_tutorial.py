@@ -38,7 +38,7 @@ def run_jupyter_notebook():
         notebook_content = nbformat.read(notebook_file, as_version=4)
 
     # Create an ExecutePreprocessor instance
-    executor = ExecutePreprocessor(timeout=800, kernel_name='python3')
+    executor = ExecutePreprocessor(timeout=800)
     try:
         executor.preprocess(notebook_content, {'metadata': {'path': '.'}})
     except Exception as e:
