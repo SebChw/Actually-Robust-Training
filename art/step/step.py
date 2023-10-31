@@ -1,6 +1,7 @@
 import datetime
 import hashlib
 import inspect
+import subprocess
 from abc import ABC, abstractmethod
 from typing import Any, Dict, Iterable, Optional, Union
 
@@ -55,7 +56,7 @@ class Step(ABC):
             metric_calculator (MetricCalculator): Metric calculator for this step.
         """
         self.datamodule = datamodule
-        self.results["hash"] = self.get_hash()
+        self.fill_basic_results()
         self.do(previous_states)
         self.log_params()
         self.finalized = True
@@ -68,6 +69,17 @@ class Step(ABC):
             idx (int): Index to set as step ID.
         """
         self.idx = idx
+
+    def fill_basic_results(self):
+        self.results["hash"] = self.get_hash()
+        try:
+            self.results["commit_id"] = (
+                subprocess.check_output(["git", "rev-parse", "HEAD"])
+                .decode("ascii")
+                .strip()
+            )
+        except Exception:
+            print("Error while getting commit id!")
 
     def get_step_id(self) -> str:
         """
