@@ -184,12 +184,8 @@ class ModelStep(Step):
             datamodule (L.LightningDataModule): Data module to be used.
             metric_calculator (MetricCalculator): Metric calculator for this step.
         """
-        self.datamodule = datamodule
         self.model.set_metric_calculator(metric_calculator)
-        self.do(previous_states)
-        JSONStepSaver().save(
-            self.results, self.get_step_id(), self.name, "results.json"
-        )
+        super().__call__(previous_states, datamodule, metric_calculator)
 
     @abstractmethod
     def do(self, previous_states: Dict):
