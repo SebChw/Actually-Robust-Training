@@ -56,6 +56,7 @@ class Step(ABC):
         self.datamodule = datamodule
         self.results["hash"] = self.get_hash()
         self.do(previous_states)
+        self.log_params()
         JSONStepSaver().save(self, "results.json")
 
     def set_step_id(self, idx: int):
@@ -154,6 +155,12 @@ class Step(ABC):
 
     def is_succesfull(self):
         return self.results["succesfull"]
+
+    @abstractmethod
+    def log_params(
+        self,
+    ):
+        pass
 
 
 class ModelStep(Step):
@@ -289,3 +296,21 @@ class ModelStep(Step):
             str: Validation stage value.
         """
         return TrainingStage.VALIDATION.value
+
+    def log_params(self):
+        if hasattr(self.model, "log_params"):
+            model_params = self.model.log_params()
+            self.results["parameters"].update(model_params)
+
+        else:
+            raise MissingLogParamsException(
+                "Model does not have log_params method. You don't want to regret lack of logs :)"
+            )
+
+        if hasattr(self.datamodule, "log_params"):
+            data_params = self.datamodule.log_params()
+            self.results["parameters"].update(data_params)
+        else:
+            raise MissingLogParamsException(
+                "Datamodule does not have log_params method. You don't want to regret lack of logs :)"
+            )

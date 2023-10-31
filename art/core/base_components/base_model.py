@@ -248,7 +248,7 @@ class ArtModule(L.LightningModule, ABC):
             x (Any): Data to unify type.
 
         Returns:
-            torch.Tensor: Data with unified type."""
+        torch.Tensor: Data with unified type."""
         if not isinstance(x, torch.Tensor):
             x = torch.Tensor(x)
 
@@ -267,3 +267,7 @@ class ArtModule(L.LightningModule, ABC):
         preds, targets = data[PREDICTION], data[TARGET]
 
         return self.unify_type(preds), self.unify_type(targets)
+
+    @abstractmethod
+    def log_params(self):
+        pass

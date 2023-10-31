@@ -102,6 +102,10 @@ class OverfitOneBatch(ModelStep):
         """Returns check stage"""
         return TrainingStage.TRAIN.value
 
+    def log_params(self):
+        self.results["parameters"]["number_of_steps"] = self.number_of_steps
+        super().log_params()
+
 
 class Overfit(ModelStep):
     """This step tries to overfit the model"""
@@ -134,6 +138,10 @@ class Overfit(ModelStep):
         """Returns check stage"""
         return TrainingStage.TRAIN.value
 
+    def log_params(self):
+        self.results["parameters"]["max_epochs"] = self.max_epochs
+        super().log_params()
+
 
 class Regularize(ModelStep):
     """This step tries applying regularization to the model"""
@@ -161,9 +169,14 @@ class Regularize(ModelStep):
         self.datamodule.turn_on_regularizations()
         self.train(trainer_kwargs={"datamodule": self.datamodule})
 
+    def log_params(self):
+        self.results["parameters"].update(self.trainer_kwargs)
+        super().log_params()
+
 
 class Tune(ModelStep):
     """This step tunes the model"""
+
     name = "Tune"
     description = "Tunes model"
 
@@ -181,11 +194,7 @@ class Tune(ModelStep):
         Args:
             previous_states (Dict): previous states
         """
-        trainer = Trainer(
-            logger=self.logger
-        )  # Here we should write other object for this.
         # TODO how to solve this?
-        trainer.tune(model=self.model, datamodule=self.datamodule)
 
 
 class Squeeze(ModelStep):
