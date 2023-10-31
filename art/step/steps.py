@@ -1,14 +1,15 @@
-from typing import Dict, Iterable, Optional, Union
-from lightning import Trainer
+from typing import Any, Dict, Iterable, Optional, Union
+
 from lightning.pytorch.loggers import Logger
 
 from art.core.base_components.base_model import ArtModule
-from art.step.step import Step, ModelStep
+from art.step.step import ModelStep, Step
 from art.utils.enums import TrainingStage
 
 
 class ExploreData(Step):
     """This class checks whether we have some markdown file description of the dataset + we implemented visualizations"""
+
     name = "Data analysis"
     description = "This step allows you to perform data analysis and extract information that is necessery in next steps"
 
@@ -32,8 +33,7 @@ class EvaluateBaseline(ModelStep):
         self,
         baseline: ArtModule,
     ):
-        trainer = Trainer(accelerator=baseline.device.type)
-        super().__init__(baseline, trainer)
+        super().__init__(baseline, {"accelerator": baseline.device.type})
 
     def do(self, previous_states: Dict):
         """
@@ -48,6 +48,7 @@ class EvaluateBaseline(ModelStep):
 
 class CheckLossOnInit(ModelStep):
     """This step checks whether the loss on init is as expected"""
+
     name = "Check Loss On Init"
     description = "Checks loss on init"
 
@@ -55,7 +56,7 @@ class CheckLossOnInit(ModelStep):
         self,
         model: ArtModule,
     ):
-        super().__init__(model, trainer=Trainer())
+        super().__init__(model)
 
     def do(self, previous_states: Dict):
         """
@@ -70,6 +71,7 @@ class CheckLossOnInit(ModelStep):
 
 class OverfitOneBatch(ModelStep):
     """This step tries to one batch"""
+
     name = "Overfit One Batch"
     description = "Overfits one batch"
 
@@ -78,8 +80,8 @@ class OverfitOneBatch(ModelStep):
         model: ArtModule,
         number_of_steps: int = 100,
     ):
-        trainer = Trainer(overfit_batches=1, max_epochs=number_of_steps)
-        super().__init__(model, trainer)
+        self.number_of_steps = number_of_steps
+        super().__init__(model, {"overfit_batches": 1, "max_epochs": number_of_steps})
 
     def do(self, previous_states: Dict):
         """
@@ -103,6 +105,7 @@ class OverfitOneBatch(ModelStep):
 
 class Overfit(ModelStep):
     """This step tries to overfit the model"""
+
     name = "Overfit"
     description = "Overfits model"
 
@@ -112,10 +115,9 @@ class Overfit(ModelStep):
         logger: Optional[Union[Logger, Iterable[Logger], bool]] = None,
         max_epochs: int = 1,
     ):
-        if logger is not None:
-            logger.run["sys/tags"].add("overfit")
-        trainer = Trainer(max_epochs=max_epochs, logger=logger)
-        super().__init__(model, trainer)
+        self.max_epochs = max_epochs
+
+        super().__init__(model, {"max_epochs": max_epochs}, logger=logger)
 
     def do(self, previous_states: Dict):
         """
@@ -135,6 +137,7 @@ class Overfit(ModelStep):
 
 class Regularize(ModelStep):
     """This step tries applying regularization to the model"""
+
     name = "Regularize"
     description = "Regularizes model"
 
@@ -144,10 +147,8 @@ class Regularize(ModelStep):
         logger: Optional[Union[Logger, Iterable[Logger], bool]] = None,
         trainer_kwargs: Dict = {},
     ):
-        if logger is not None:
-            logger.run["sys/tags"].add("regularize")        
-        trainer = Trainer(**trainer_kwargs, logger=logger)
-        super().__init__(model, trainer)
+        self.trainer_kwargs = trainer_kwargs
+        super().__init__(model, trainer_kwargs, logger=logger)
 
     def do(self, previous_states: Dict):
         """
@@ -171,10 +172,7 @@ class Tune(ModelStep):
         model: ArtModule,
         logger: Optional[Union[Logger, Iterable[Logger], bool]] = None,
     ):
-        if logger is not None:
-            logger.run["sys/tags"].add("tune")
-        super().__init__(model=model, trainer=Trainer(logger=logger))
-        self.logger = logger
+        super().__init__(model=model, logger=logger)
 
     def do(self, previous_states: Dict):
         """

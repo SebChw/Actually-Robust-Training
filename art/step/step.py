@@ -2,11 +2,14 @@ import datetime
 import hashlib
 import inspect
 from abc import ABC, abstractmethod
-from typing import Any, Dict
+from typing import Any, Dict, Iterable, Optional, Union
 
 import lightning as L
+from lightning import Trainer
+from lightning.pytorch.loggers import Logger
 
 from art.core.base_components.base_model import ArtModule
+from art.core.exceptions import MissingLogParamsException
 from art.core.MetricCalculator import MetricCalculator
 from art.step.step_savers import JSONStepSaver
 from art.utils.enums import TrainingStage
@@ -158,7 +161,12 @@ class ModelStep(Step):
     A specialized step in the project, representing a model-based step.
     """
 
-    def __init__(self, model: ArtModule, trainer: L.Trainer):
+    def __init__(
+        self,
+        model: ArtModule,
+        trainer_kwargs: Dict = {},
+        logger: Optional[Union[Logger, Iterable[Logger], bool]] = None,
+    ):
         """
         Initialize a model-based step.
 
@@ -167,8 +175,12 @@ class ModelStep(Step):
             trainer (L.Trainer): Trainer to train and validate the model.
         """
         super().__init__()
+        if logger is not None:
+            # TODO implement this
+            logger.add_tags(self.name)
+
         self.model = model
-        self.trainer = trainer
+        self.trainer = Trainer(**trainer_kwargs, logger=logger)
 
     def __call__(
         self,
