@@ -38,6 +38,7 @@ class Step(ABC):
             "succesfull": False,
         }
         self.param_logger = None
+        self.finalized = False
 
     def __call__(
         self,
@@ -57,7 +58,7 @@ class Step(ABC):
         self.results["hash"] = self.get_hash()
         self.do(previous_states)
         self.log_params()
-        JSONStepSaver().save(self, "results.json")
+        self.finalized = True
 
     def set_step_id(self, idx: int):
         """
@@ -118,8 +119,10 @@ class Step(ABC):
 
     def get_latest_run(self):
         """
-        Load results for the step from saved storage.
+        If step was run returns itself, otherwise returns the latest run from the JSONStepSaver.
         """
+        if self.finalized:
+            return self.results
         return JSONStepSaver().load(self.get_step_id(), self.name)["runs"][0]
 
     def was_run(self) -> bool:
@@ -161,6 +164,9 @@ class Step(ABC):
         self,
     ):
         pass
+
+    def save_to_disk(self):
+        JSONStepSaver().save(self, "results.json")
 
 
 class ModelStep(Step):

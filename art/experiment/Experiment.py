@@ -136,9 +136,11 @@ class ArtProject:
                 self.check_checks(step, checks)
             except CheckFailedException as e:
                 print(f"\n\n{e}\n\n")
+                step.save_to_disk()
                 break
 
             self.fill_step_states(step)
+            step.save_to_disk()
 
         self.print_summary()
 
