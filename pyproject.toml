@@ -48,6 +48,7 @@ dev = [
   "black>=23.1.0",
   "myst_nb==0.17.2",
   "sphinx-autodoc2==0.4.2",
+  "ipykernel>=6.26.0",
   "nbconvert>=7.9.2",
 ]
 
