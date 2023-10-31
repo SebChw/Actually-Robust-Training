@@ -96,7 +96,7 @@ class ArtProject:
         for check in checks:
             result = check.check(step)
             if not result.is_positive:
-                raise Exception(
+                raise CheckFailedException(
                     f"Check failed for step: {step.name}. Reason: {result.error}"
                 )
 
@@ -164,16 +164,7 @@ class ArtProject:
             try:
                 step(self.state.step_states, self.datamodule, self.metric_calculator)
                 self.check_checks(step, checks)
-                steps_status[step.get_full_step_name()] = StepStatus("Completed", step.get_results())
-            except Exception as e:
-                steps_status[step.get_full_step_name()] = StepStatus("Failed", step.get_results())
-                self.fill_step_states(step)
-                self.save_state(steps_status)
-                exception_msg = f"Step {step.get_full_step_name()} failed: {e}"
-                exception_msg += "\n\nSteps status:"
-                for step_name, step_status in steps_status.items():
-                    exception_msg += f"\n{step_name}: {step_status}"
-                raise Exception(exception_msg)
+            except CheckFailedException as e:
 
             self.fill_step_states(step)
 
