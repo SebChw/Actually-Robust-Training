@@ -13,6 +13,7 @@ class ResultOfCheck:
         is_positive (bool): Indicates if the check was successful. Defaults to True.
         error (str): Error message if the check was not successful. Defaults to an empty string.
     """
+
     is_positive: bool = field(default=True)
     error: str = field(default="")
 
@@ -26,6 +27,7 @@ class Check(ABC):
         description (str): Description of the check.
         required_files (List[str]): List of files that are required for this check.
     """
+
     name: str
     description: str
     required_files: List[str]
@@ -72,7 +74,8 @@ class CheckResult(Check):
         Returns:
             ResultOfCheck: The result of the check.
         """
-        result = step.get_results()
+        last_run = step.get_latest_run()
+        result = last_run["scores"] | last_run["parameters"] | last_run
         return self._check_method(result)
 
 
@@ -103,6 +106,7 @@ class CheckResultExists(CheckResult):
         Returns:
             ResultOfCheck: The result of the check, indicating success if the required_key exists.
         """
+
         if self.required_key in result:
             return ResultOfCheck(is_positive=True)
         else:
@@ -139,10 +143,8 @@ class CheckScore(CheckResult):
             metric: The metric object.
         """
         metric = metric.__class__.__name__
-        model_name = step.get_model_name()
-        step_name = step.name
         stage = step.get_check_stage()
-        self.required_key = f"{metric}-{model_name}-{stage}-{step_name}"
+        self.required_key = f"{metric}-{stage}"
 
     def check(self, step) -> ResultOfCheck:
         """
@@ -154,7 +156,8 @@ class CheckScore(CheckResult):
         Returns:
             ResultOfCheck: The result of the check.
         """
-        result = step.get_results()
+        last_run = step.get_latest_run()
+        result = last_run["scores"]
         self.build_required_key(step, self.metric)
         return self._check_method(result)
 

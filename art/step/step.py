@@ -1,7 +1,9 @@
-from abc import ABC, abstractmethod
-from typing import Any, Dict
+import datetime
 import hashlib
 import inspect
+from abc import ABC, abstractmethod
+from typing import Any, Dict
+
 import lightning as L
 
 from art.core.base_components.base_model import ArtModule
@@ -10,16 +12,29 @@ from art.step.step_savers import JSONStepSaver
 from art.utils.enums import TrainingStage
 
 
+class NoModelUsed:
+    pass
+
+
 class Step(ABC):
     """
     An abstract base class representing a generic step in a project.
     """
 
+    name = "Data analysis"
+    model = NoModelUsed()
+
     def __init__(self):
         """
         Initialize the step with an empty results dictionary.
         """
-        self.results = {}
+        self.results = {
+            "scores": {},
+            "parameters": {},
+            "timestamp": str(datetime.datetime.now()),
+            "succesfull": False,
+        }
+        self.param_logger = None
 
     def __call__(
         self,
@@ -37,7 +52,7 @@ class Step(ABC):
         """
         self.datamodule = datamodule
         self.do(previous_states)
-        JSONStepSaver().save(
+        JSONStepSaver().save(self, "results.json")
             self.results, self.get_step_id(), self.name, "results.json"
         )
 
@@ -98,20 +113,11 @@ class Step(ABC):
         """
         self.results[name] = value
 
-    def get_results(self) -> Dict:
-        """
-        Retrieve the results of the step.
-
-        Returns:
-            Dict: Dictionary containing step results.
-        """
-        return self.results
-
-    def load_results(self):
+    def get_latest_run(self):
         """
         Load results for the step from saved storage.
         """
-        self.results = JSONStepSaver().load(self.get_step_id(), self.name)
+        return JSONStepSaver().load(self.get_step_id(), self.name)["runs"][0]
 
     def was_run(self) -> bool:
         """
@@ -192,7 +198,7 @@ class ModelStep(Step):
         """
         self.trainer.fit(model=self.model, **trainer_kwargs)
         logged_metrics = {k: v.item() for k, v in self.trainer.logged_metrics.items()}
-        self.results.update(logged_metrics)
+        self.results["scores"].update(logged_metrics)
 
     def validate(self, trainer_kwargs: Dict):
         """
@@ -203,7 +209,7 @@ class ModelStep(Step):
         """
         print(f"Validating model {self.get_model_name()}")
         result = self.trainer.validate(model=self.model, **trainer_kwargs)
-        self.results.update(result[0])
+        self.results["scores"].update(result[0])
 
     def test(self, trainer_kwargs: Dict):
         """
@@ -213,7 +219,7 @@ class ModelStep(Step):
             trainer_kwargs (Dict): Arguments to be passed to the trainer for testing the model.
         """
         result = self.trainer.test(model=self.model, **trainer_kwargs)
-        self.results.update(result[0])
+        self.results["scores"].update(result[0])
 
     def get_model_name(self) -> str:
         """

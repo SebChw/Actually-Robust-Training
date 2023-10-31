@@ -80,7 +80,7 @@ class ArtProject:
         """
         self.state.step_states[step.get_model_name()][
             step.get_name_with_id()
-        ] = step.get_results()
+        ] = step.get_latest_run()
 
     def check_checks(self, step: "Step", checks: List[Check]):
         """

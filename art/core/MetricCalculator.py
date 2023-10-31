@@ -9,11 +9,13 @@ if TYPE_CHECKING:
 
 class DefaultMetric:
     """Placeholder for a default metric."""
+
     pass
 
 
 class DefaultModel:
     """Placeholder for a default model."""
+
     pass
 
 
@@ -23,7 +25,7 @@ class SkippedMetric:
     def __init__(
         self,
         metric,
-        stages: List[str] = [TrainingStage.TRAIN.name, TrainingStage.VALIDATION.name]
+        stages: List[str] = [TrainingStage.TRAIN.name, TrainingStage.VALIDATION.name],
     ):
         self.metric = metric.__class__.__name__
         self.stages = stages
@@ -40,19 +42,16 @@ class MetricCalculator:
         self.metrics: List[Any] = []
         self.experiment = experiment
 
-    def build_name(self, model: "ArtModule", metric: Any) -> str:
+    def build_name(self, metric: Any) -> str:
         """
-        Builds a unique name for the metric based on its type, the model, current stage, and step.
+        Builds a name for the metric based on its type, current stage.
 
         Args:
-            model (ArtModule): The model for which the metric is being calculated.
             metric (Any): The metric being calculated.
         """
-        step, stage = (
-            self.experiment.state.get_current_step(),
-            self.experiment.state.get_current_stage()
-        )
-        return f"{metric.__class__.__name__}-{model.__class__.__name__}-{stage}-{step}"
+        stage = self.experiment.state.get_current_stage()
+
+        return f"{metric.__class__.__name__}-{stage}"
 
     def to(self, device: str):
         """
@@ -84,7 +83,7 @@ class MetricCalculator:
             TrainingStage.TRAIN.value: [],
             TrainingStage.VALIDATION.value: [],
             TrainingStage.TEST.value: [],
-            TrainingStage.SANITY_CHECK.value: []
+            TrainingStage.SANITY_CHECK.value: [],
         }
 
         # Convert the list of SkippedMetric instances into a dictionary for easier access
@@ -119,7 +118,7 @@ class MetricCalculator:
         for metric in self.compiled_metrics[stage]:
             prepared_data = model.prepare_for_metric(data_for_metrics)
             metric_val = metric(*prepared_data)
-            metric_name = self.build_name(model, metric)
+            metric_name = self.build_name(metric)
             model.log(metric_name, metric_val, on_step=False, on_epoch=True)
             data_for_metrics[metric.__class__.__name__] = metric_val
 
