@@ -51,10 +51,9 @@ class Step(ABC):
             metric_calculator (MetricCalculator): Metric calculator for this step.
         """
         self.datamodule = datamodule
+        self.results["hash"] = self.get_hash()
         self.do(previous_states)
         JSONStepSaver().save(self, "results.json")
-            self.results, self.get_step_id(), self.name, "results.json"
-        )
 
     def set_step_id(self, idx: int):
         """
@@ -139,6 +138,19 @@ class Step(ABC):
             str: Model name.
         """
         return ""
+
+    def __repr__(self):
+        result_repr = "\n".join(
+            f"\t{k}: {v}" for k, v in self.results["scores"].items()
+        )
+        model = self.model.__class__.__name__
+        return f"Step: {self.name}, Model: {model}, Passed: {self.results['succesfull']}. Results:\n{result_repr}"
+
+    def set_succesfull(self):
+        self.results["succesfull"] = True
+
+    def is_succesfull(self):
+        return self.results["succesfull"]
 
 
 class ModelStep(Step):

@@ -1,8 +1,9 @@
 import json
 from abc import ABC, abstractmethod
 from pathlib import Path
-import matplotlib.pyplot as plt
 from typing import Any
+
+import matplotlib.pyplot as plt
 
 BASE_PATH = Path("checkpoints")
 

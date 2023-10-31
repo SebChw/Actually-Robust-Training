@@ -1,31 +1,14 @@
-from typing import TYPE_CHECKING, Any, List, Dict
-
-from collections import defaultdict
-from dataclasses import dataclass
+from typing import TYPE_CHECKING, Any, List
 
 import lightning as L
 
+from art.core.exceptions import CheckFailedException
 from art.core.MetricCalculator import MetricCalculator, SkippedMetric
 from art.experiment.experiment_state import ArtProjectState
 from art.step.checks import Check
 
-import json
-
 if TYPE_CHECKING:
     from art.step.step import Step
-
-
-@dataclass
-class StepStatus:
-    status: str
-    results: Dict[str, Any]
-
-    def __repr__(self):
-        result_repr = "\n".join(f"\t{k}: {v}" for k, v in self.results.items() if k != 'hash')
-        return f"{self.status}. Results:\n{result_repr}"
-
-    def to_dict(self):
-        return {"status": self.status, "results": self.results}
 
 
 class ArtProject:
@@ -99,6 +82,7 @@ class ArtProject:
                 raise CheckFailedException(
                     f"Check failed for step: {step.name}. Reason: {result.error}"
                 )
+        step.set_succesfull()
 
     def check_if_must_be_run(self, step: "Step", checks: List[Check]) -> bool:
         """
@@ -114,7 +98,6 @@ class ArtProject:
         if not step.was_run():
             return True
         else:
-            step.load_results()
             try:
                 self.check_checks(step, checks)
             except Exception as e:
@@ -122,7 +105,7 @@ class ArtProject:
                 return True
 
         step_current_hash = step.get_hash()
-        step_saved_hash = step.get_results()["hash"]
+        step_saved_hash = step.get_latest_run()["hash"]
         model_changed = True if step_current_hash != step_saved_hash else False
 
         if model_changed:
@@ -133,45 +116,41 @@ class ArtProject:
 
         return False
 
-    def save_state(self, status: dict, path: str = 'checkpoints/state.json'):
-        with open(path, 'w') as f:
-            serializable_steps_status = {k: v.to_dict() for k, v in status.items()}
-            json.dump(serializable_steps_status, f)
-
     def run_all(self, force_rerun=False):
         """
-            Execute all steps in the project.
+        Execute all steps in the project.
 
-            Args:
-                force_rerun (bool): Whether to force rerun all steps.
+        Args:
+            force_rerun (bool): Whether to force rerun all steps.
         """
-        steps_status = defaultdict(lambda: StepStatus("Not run", None))
-
         for step in self.steps:
             self.metric_calculator.compile(step["skipped_metrics"])
             step, checks = step["step"], step["checks"]
-
             self.state.current_step = step
 
             if not self.check_if_must_be_run(step, checks) and not force_rerun:
-                steps_status[step.get_full_step_name()] = StepStatus("Skipped", step.get_results())
                 self.fill_step_states(step)
-                self.save_state(steps_status)
                 continue
-
-            step.add_result("hash", step.get_hash())
-
             try:
                 step(self.state.step_states, self.datamodule, self.metric_calculator)
                 self.check_checks(step, checks)
             except CheckFailedException as e:
+                print(f"\n\n{e}\n\n")
+                break
 
             self.fill_step_states(step)
 
-        print("Steps status:")
-        for step_name, step_status in steps_status.items():
-            print(f"{step_name}: {step_status}")
-        self.save_state(steps_status)
+        self.print_summary()
+
+    def print_summary(self):
+        """
+        Prints a summary of the project.
+        """
+        print("Summary: ")
+        for step in self.steps:
+            print(step["step"])
+            if not step["step"].is_succesfull():
+                break
 
     def get_steps(self):
         """
