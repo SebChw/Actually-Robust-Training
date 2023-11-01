@@ -1,11 +1,14 @@
 import dash_mantine_components as dmc
 
+from art.dashboard.const import DF
+
 
 def shorten_result(result):
     n_succsesfull = result["successfull"].sum()
     n_failed = len(result) - n_succsesfull
-    models_tried = len(result['model'].unique())
+    models_tried = len(result["model"].unique())
     return f"n_succesfull: {n_succsesfull}, n_failed: {n_failed} models_tried: {models_tried}"
+
 
 def create_timeline_item(step_name, result):
     return dmc.TimelineItem(
@@ -20,12 +23,13 @@ def create_timeline_item(step_name, result):
     )
 
 
-def build_timeline(ordered_steps, outer_dfs):
+def build_timeline(ordered_steps, steps_info):
     timeline_items = []
     last_successful = 0
     for i, step_name in enumerate(ordered_steps):
-        timeline_items.append(create_timeline_item(step_name, outer_dfs[step_name]))
-        if outer_dfs[step_name]["successfull"].any():
+        df = steps_info[step_name][DF]
+        timeline_items.append(create_timeline_item(step_name, df))
+        if df.successfull.any():
             last_successful = i
 
     return dmc.Timeline(

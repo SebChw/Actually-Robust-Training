@@ -1,17 +1,53 @@
-from pathlib import Path
-from art.step.step_state import parse_step_trials, dataframemize
 import json
+from collections import defaultdict
+from pathlib import Path
 
-def prepare_dframes(logs_path):
-    step_trials = []
+import pandas as pd
+
+from art.dashboard.const import DF, PARAM_ATTR, SCORE_ATTRS
+
+
+def prepare_steps_info(logs_path):
+    steps_info = defaultdict(
+        lambda: {
+            SCORE_ATTRS: [],
+            PARAM_ATTR: ["hash", "commit_id"],
+            DF: [],
+        }
+    )
     for path in Path(logs_path).glob("*/*.json"):
         with open(path) as f:
-            step_trials.append(parse_step_trials(json.load(f)))
+            step_info = json.load(f)
+            step_name = step_info["name"]
+            step_model = step_info["model"]
+            for run in step_info["runs"]:
+                new_sample = {
+                    "model": step_model,
+                    **run["scores"],
+                    **run["parameters"],
+                    "timestamp": run["timestamp"],
+                    "hash": run["hash"],
+                    "commit_id": run["commit_id"],
+                    "successfull": run["succesfull"],
+                }
+                steps_info[step_name][DF].append(new_sample)
+                steps_info[step_name][SCORE_ATTRS] = list(run["scores"].keys())
+                steps_info[step_name][PARAM_ATTR] = list(run["parameters"].keys())
 
-    outer_dfs, inner_dfs = dataframemize(step_trials)
-    return outer_dfs, inner_dfs
+    for step_info in steps_info.values():
+        step_info[DF] = pd.DataFrame(step_info[DF])
+        step_info[DF] = step_info[DF].reset_index()
+
+    return steps_info
+
 
 def prepare_steps(logs_path):
     # TODO to order which steps were first is another issue for me. Should we stick to the integer inside a directory name?
-    return ["Evaluate Baseline", "Check Loss On Init"]
-
+    return [
+        "Data analysis",
+        "Evaluate Baseline",
+        "Check Loss On Init",
+        "Overfit One Batch",
+        "Overfit",
+        "Regularize",
+    ]

@@ -1,21 +1,30 @@
-import json
+import argparse
 from pathlib import Path
-import dash_bootstrap_components as dbc
-from dash import Dash, Input, Output, callback
-from art.dashboard.timeline import build_timeline
-from art.dashboard.backend import prepare_dframes, prepare_steps 
-from art.dashboard.layout import get_layout
-import plotly.express as px
 
-LOGS_PATH = Path("ideal_logs")
+import dash_bootstrap_components as dbc
+import plotly.express as px
+from dash import Dash, Input, Output
+
+from art.dashboard.backend import prepare_steps, prepare_steps_info
+from art.dashboard.const import DF, PARAM_ATTR, SCORE_ATTRS
+from art.dashboard.layout import get_layout
+from art.dashboard.timeline import build_timeline
+
+parser = argparse.ArgumentParser()
+parser.add_argument(
+    "--logs_path",
+    type=str,
+    default="../../../art_template/{{cookiecutter.project_slug}}/exp1/checkpoints",
+)
+args = parser.parse_args()
+
+LOGS_PATH = Path(args.logs_path)
 app = Dash(__name__, external_stylesheets=[dbc.themes.BOOTSTRAP])
 ORDERED_STEPS = prepare_steps(LOGS_PATH)
-OUTER_DFS, INNER_DFS = prepare_dframes(LOGS_PATH)
-TIMELINE = build_timeline(ORDERED_STEPS, OUTER_DFS)
-
+STEPS_INFO = prepare_steps_info(LOGS_PATH)
+TIMELINE = build_timeline(ORDERED_STEPS, STEPS_INFO)
 app.layout = get_layout(ORDERED_STEPS, TIMELINE)
 
-WANTED_OUTER_COLUMNS = ["model_hash", "commit_hash", "model", "best_run"]
 
 @app.callback(
     [
@@ -26,9 +35,8 @@ WANTED_OUTER_COLUMNS = ["model_hash", "commit_hash", "model", "best_run"]
     Input("dropdown-selection", "value"),
 )
 def updateTable(step_name):
-    df = OUTER_DFS[step_name]
+    df = STEPS_INFO[step_name][DF]
     df.successfull = df.successfull.astype(int)
-
     conditional = [
         {
             "if": {
@@ -44,38 +52,75 @@ def updateTable(step_name):
         },
     ]
 
-    columnDefs = [{"name": i, "id": i} for i in WANTED_OUTER_COLUMNS]
+    ordered_names = (
+        STEPS_INFO[step_name][SCORE_ATTRS]
+        + STEPS_INFO[step_name][PARAM_ATTR]
+        + ["timestamp"]
+    )
+    columnDefs = [{"name": i, "id": i} for i in ordered_names]
     return (
         df.to_dict("records"),
         columnDefs,
         conditional,
     )
 
-@callback(
-    Output("checklist1", "options"),
+
+@app.callback(
+    [
+        Output("checklist_x", "options"),
+        Output("checklist_y", "options"),
+    ],
     Input("dropdown-selection", "value"),
 )
 def update_possible_options(step_name):
-    df = INNER_DFS[step_name]
-    return list(df.metric.unique())
+    scores = STEPS_INFO[step_name][SCORE_ATTRS]
+    return scores, scores
 
-@callback(
+
+@app.callback(
     Output("graph", "figure"),
-    [Input("checklist1", "value"),
-    Input("dropdown-selection", "value"),]
+    [
+        Input("checklist_x", "value"),
+        Input("checklist_y", "value"),
+        Input("dropdown-selection", "value"),
+        Input("table", "selected_rows"),
+    ],
 )
-def update_figure(metric_names, step_name):
-    df = INNER_DFS[step_name]
-    df = df[df.metric.isin(metric_names)]
-    return px.scatter(df, x='timestamp', y='value', color='model', symbol='metric')
+def update_figure(x_attr, y_attr, step_name, selected_row):
+    df = STEPS_INFO[step_name][DF]
+    parameters = STEPS_INFO[step_name][PARAM_ATTR]
+    if selected_row is None:
+        df["size"] = 1
+        hover_params = parameters
+    else:
+        selected_row = selected_row[0]
+        df["size"] = [10 if i == selected_row else 1 for i in df.index]
 
+        tooltips = []
+        samples = df.to_dict("records")
+        selected_params = {key: samples[selected_row][key] for key in parameters}
+        for row in samples:
+            if row["index"] == selected_row:
+                params = parameters
+            else:
+                params = [
+                    param
+                    for param in parameters
+                    if row[param] != selected_params[param]
+                ]
+            tooltips.append("<br>".join([f"{param}: {row[param]}" for param in params]))
 
-# @callback(
-#     Output("log-display", "children"),
-#     Input("dropdown-selection", "value"),
-# )
-# def update_log(step_name):
-#     return steps[step_name]["log"]
+        df["description"] = tooltips
+        hover_params = ["description"]
+
+    if x_attr is None and y_attr is None:
+        return {}
+    elif x_attr is None:
+        x_attr = y_attr
+    elif y_attr is None:
+        y_attr = x_attr
+
+    return px.scatter(df, x=x_attr, y=y_attr, size="size", hover_data=hover_params)
 
 
 if __name__ == "__main__":
