@@ -25,7 +25,7 @@ class SkippedMetric:
     def __init__(
         self,
         metric,
-        stages: List[str] = [TrainingStage.TRAIN.name, TrainingStage.VALIDATION.name],
+        stages: List[str] = [TrainingStage.TRAIN.value, TrainingStage.VALIDATION.value],
     ):
         self.metric = metric.__class__.__name__
         self.stages = stages
