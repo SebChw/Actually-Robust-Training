@@ -1,13 +1,22 @@
 import json
 from collections import defaultdict
 from pathlib import Path
+from typing import Dict
 
 import pandas as pd
 
 from art.dashboard.const import DF, PARAM_ATTR, SCORE_ATTRS
 
 
-def prepare_steps_info(logs_path):
+def prepare_steps_info(logs_path: Path) -> Dict[str, Dict]:
+    """Given logs path it returns dictionary with steps information.
+
+    Args:
+        logs_path (Path): Path to the logs.
+
+    Returns:
+        Dict[str, Dict]: Dictionary with steps information.
+    """
     steps_info = defaultdict(
         lambda: {
             SCORE_ATTRS: [],

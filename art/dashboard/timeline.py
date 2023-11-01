@@ -1,16 +1,28 @@
+from typing import Dict, List
+
 import dash_mantine_components as dmc
+import pandas as pd
 
 from art.dashboard.const import DF
 
 
-def shorten_result(result):
+def shorten_result(result: pd.DataFrame) -> str:
+    """Shorten result of a Step to one line.
+
+    Args:
+        result (pd.DataFrame): All runs of a Step.
+
+    Returns:
+        str: Shortened result.
+    """
     n_succsesfull = result["successfull"].sum()
     n_failed = len(result) - n_succsesfull
     models_tried = len(result["model"].unique())
     return f"n_succesfull: {n_succsesfull}, n_failed: {n_failed} models_tried: {models_tried}"
 
 
-def create_timeline_item(step_name, result):
+def create_timeline_item(step_name: str, result: pd.DataFrame) -> dmc.TimelineItem:
+    """Given step name and dataframe with all step runs it returns timeline item."""
     return dmc.TimelineItem(
         title=step_name,
         children=[
@@ -23,7 +35,10 @@ def create_timeline_item(step_name, result):
     )
 
 
-def build_timeline(ordered_steps, steps_info):
+def build_timeline(
+    ordered_steps: List[str], steps_info: Dict[str, Dict]
+) -> dmc.Timeline:
+    """Given ordered steps and steps information it returns timeline."""
     timeline_items = []
     last_successful = 0
     for i, step_name in enumerate(ordered_steps):

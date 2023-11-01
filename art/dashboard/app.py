@@ -1,5 +1,6 @@
 import argparse
 from pathlib import Path
+from typing import Any, Dict, List, Tuple
 
 import dash_bootstrap_components as dbc
 import plotly.express as px
@@ -34,7 +35,17 @@ app.layout = get_layout(ORDERED_STEPS, TIMELINE)
     ],
     Input("dropdown-selection", "value"),
 )
-def updateTable(step_name):
+def updateTable(
+    step_name: str,
+) -> Tuple[List[Dict[str, Any]], List[Dict[str, Any]], List[Dict[str, Any]]]:
+    """Given selected Step name it returns data for the table.
+
+    Args:
+        step_name (str): Name of the step.
+
+    Returns:
+        Tuple[List[Dict[str, Any]], List[Dict[str, Any]], List[Dict[str, Any]]]: List of data for the table, columns and style_data_conditional.
+    """
     df = STEPS_INFO[step_name][DF]
     df.successfull = df.successfull.astype(int)
     conditional = [
@@ -67,12 +78,20 @@ def updateTable(step_name):
 
 @app.callback(
     [
-        Output("checklist_x", "options"),
-        Output("checklist_y", "options"),
+        Output("radio_x", "options"),
+        Output("radio_y", "options"),
     ],
     Input("dropdown-selection", "value"),
 )
-def update_possible_options(step_name):
+def update_possible_options(step_name: str) -> Tuple[List[str], List[str]]:
+    """Given selected Step name it returns possible options for x and y axis.
+
+    Args:
+        step_name (str): Name of the step.
+
+    Returns:
+        Tuple[List[str], List[str]] : Possible options for x and y axis.
+    """
     scores = STEPS_INFO[step_name][SCORE_ATTRS]
     return scores, scores
 
@@ -80,13 +99,16 @@ def update_possible_options(step_name):
 @app.callback(
     Output("graph", "figure"),
     [
-        Input("checklist_x", "value"),
-        Input("checklist_y", "value"),
+        Input("radio_x", "value"),
+        Input("radio_y", "value"),
         Input("dropdown-selection", "value"),
         Input("table", "selected_rows"),
     ],
 )
-def update_figure(x_attr, y_attr, step_name, selected_row):
+def update_figure(
+    x_attr: str, y_attr: str, step_name: str, selected_row: List[int]
+) -> px.scatter:
+    """Creates figure for the graph."""
     df = STEPS_INFO[step_name][DF]
     parameters = STEPS_INFO[step_name][PARAM_ATTR]
     if selected_row is None:
