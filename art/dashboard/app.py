@@ -13,13 +13,12 @@ from art.dashboard.timeline import build_timeline
 
 parser = argparse.ArgumentParser()
 parser.add_argument(
-    "--logs_path",
+    "--exp_path",
     type=str,
-    default="../../../art_template/{{cookiecutter.project_slug}}/exp1/checkpoints",
 )
 args = parser.parse_args()
 
-LOGS_PATH = Path(args.logs_path)
+LOGS_PATH = Path(args.exp_path) / "checkpoints"
 app = Dash(__name__, external_stylesheets=[dbc.themes.BOOTSTRAP])
 ORDERED_STEPS = prepare_steps(LOGS_PATH)
 STEPS_INFO = prepare_steps_info(LOGS_PATH)
