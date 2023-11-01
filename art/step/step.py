@@ -38,7 +38,6 @@ class Step(ABC):
             "timestamp": str(datetime.datetime.now()),
             "succesfull": False,
         }
-        self.param_logger = None
         self.finalized = False
 
     def __call__(
@@ -71,6 +70,7 @@ class Step(ABC):
         self.idx = idx
 
     def fill_basic_results(self):
+        """Fill basic results like hash and commit id"""
         self.results["hash"] = self.get_hash()
         try:
             self.results["commit_id"] = (
@@ -129,9 +129,12 @@ class Step(ABC):
         """
         self.results[name] = value
 
-    def get_latest_run(self):
+    def get_latest_run(self) -> Dict:
         """
         If step was run returns itself, otherwise returns the latest run from the JSONStepSaver.
+
+        Returns:
+            Dict: The latest run.
         """
         if self.finalized:
             return self.results
@@ -158,7 +161,8 @@ class Step(ABC):
         """
         return ""
 
-    def __repr__(self):
+    def __repr__(self) -> str:
+        """Representation of the step"""
         result_repr = "\n".join(
             f"\t{k}: {v}" for k, v in self.results["scores"].items()
         )
@@ -197,11 +201,11 @@ class ModelStep(Step):
 
         Args:
             model (ArtModule): The model associated with this step.
-            trainer (L.Trainer): Trainer to train and validate the model.
+            trainer_kwargs (Dict, optional): Arguments to be passed to the trainer. Defaults to {}.
+            logger (Optional[Union[Logger, Iterable[Logger], bool]], optional): Logger to be used. Defaults to None.
         """
         super().__init__()
         if logger is not None:
-            # TODO implement this
             logger.add_tags(self.name)
 
         self.model = model

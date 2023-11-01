@@ -248,7 +248,7 @@ class ArtModule(L.LightningModule, ABC):
             x (Any): Data to unify type.
 
         Returns:
-        torch.Tensor: Data with unified type."""
+            torch.Tensor: Data with unified type."""
         if not isinstance(x, torch.Tensor):
             x = torch.Tensor(x)
 

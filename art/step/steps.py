@@ -70,7 +70,7 @@ class CheckLossOnInit(ModelStep):
 
 
 class OverfitOneBatch(ModelStep):
-    """This step tries to one batch"""
+    """This step tries to Overfit one train batch"""
 
     name = "Overfit One Batch"
     description = "Overfits one batch"

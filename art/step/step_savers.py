@@ -95,9 +95,7 @@ class JSONStepSaver(StepSaver):
         Save an object as a JSON file.
 
         Args:
-            obj (Any): The object to save.
-            step_id (str): The ID of the step.
-            step_name (str): The name of the step.
+            step (Step): The step to save.
             filename (str, optional): The name of the JSON file. Defaults to "results.json".
         """
         step_id = step.get_step_id()
