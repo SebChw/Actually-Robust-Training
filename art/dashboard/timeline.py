@@ -18,7 +18,9 @@ def shorten_result(result: pd.DataFrame) -> str:
     n_succsesfull = result["successfull"].sum()
     n_failed = len(result) - n_succsesfull
     models_tried = len(result["model"].unique())
-    return f"n_succesfull: {n_succsesfull}, n_failed: {n_failed} models_tried: {models_tried}"
+    return (
+        f"Succesfull: {n_succsesfull}, Failed: {n_failed} models Used: {models_tried}"
+    )
 
 
 def create_timeline_item(step_name: str, result: pd.DataFrame) -> dmc.TimelineItem:

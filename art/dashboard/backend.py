@@ -20,7 +20,7 @@ def prepare_steps_info(logs_path: Path) -> Dict[str, Dict]:
     steps_info = defaultdict(
         lambda: {
             SCORE_ATTRS: [],
-            PARAM_ATTR: ["hash", "commit_id"],
+            PARAM_ATTR: [],
             DF: [],
         }
     )
@@ -41,7 +41,10 @@ def prepare_steps_info(logs_path: Path) -> Dict[str, Dict]:
                 }
                 steps_info[step_name][DF].append(new_sample)
                 steps_info[step_name][SCORE_ATTRS] = list(run["scores"].keys())
-                steps_info[step_name][PARAM_ATTR] = list(run["parameters"].keys())
+                steps_info[step_name][PARAM_ATTR] = list(run["parameters"].keys()) + [
+                    "commit_id",
+                    "hash",
+                ]
 
     for step_info in steps_info.values():
         step_info[DF] = pd.DataFrame(step_info[DF])

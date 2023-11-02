@@ -2,7 +2,12 @@ from typing import List
 
 import dash_bootstrap_components as dbc
 import dash_mantine_components as dmc
-from dash import dash_table, dcc, html
+from dash import dash_table, dcc, get_asset_url, html
+
+from art.dashboard.help import HELP
+
+RADIUS_AROUND = {"border-radius": "25px", "border": "2px solid #a87332"}
+PAD = {"padding": "15px"}
 
 
 def get_radio(axis: str = "x") -> dbc.Row:
@@ -18,18 +23,77 @@ def get_radio(axis: str = "x") -> dbc.Row:
         [
             dbc.Col(
                 html.P(
-                    f"What to put on {axis} axis",
-                    className="text-xl-center text-success p-2",
-                )
+                    f"What to put on the {axis} axis",
+                    className="text-xl-center fs-5",
+                ),
+                width=3,
             ),
             dbc.Col(
                 dcc.RadioItems(
                     options=[],
                     inline=True,
                     id=f"radio_{axis}",
+                    className="fs-5 text-center",
+                    style={
+                        "display": "flex",
+                        "justify-content": "left",
+                        "gap": "20px",
+                        "align-items": "center",
+                    },
+                    inputStyle={"margin-right": "10px"},
                 )
             ),
         ]
+    )
+
+
+def get_navbar():
+    return dbc.Navbar(
+        dbc.Container(
+            [
+                html.A(
+                    dbc.Row(
+                        [
+                            dbc.Col(
+                                html.Img(
+                                    src=get_asset_url("pallet.jpg"), height="60ex"
+                                ),
+                                width=3,
+                            ),
+                            dbc.Col(
+                                html.Div(
+                                    "Actually Robust Training",
+                                    className="text-xl-center fs-5 fw-bold",
+                                    style={"color": "#a87332"},
+                                ),
+                                width=9,
+                                align="center",
+                            ),
+                        ],
+                        justify="center",
+                        align="left",
+                    )
+                ),
+                dbc.Button("Help", id="open", n_clicks=0),
+                dbc.Modal(
+                    [
+                        dbc.ModalHeader(
+                            dbc.ModalTitle("Welcome to the Art Dashboard"),
+                            style={"align": "center"},
+                        ),
+                        dbc.ModalBody(HELP),
+                        dbc.ModalFooter(dbc.Button("Close", id="close", n_clicks=0)),
+                    ],
+                    id="modal",
+                    size="xl",
+                    scrollable=True,
+                    is_open=False,
+                ),
+            ]
+        ),
+        color="#FFFFFF",
+        class_name="m-3",
+        style=RADIUS_AROUND,
     )
 
 
@@ -37,19 +101,12 @@ def get_layout(ordered_steps: List[str], timeline: dmc.Timeline) -> dbc.Containe
     """Given ordered steps and timeline it returns layout of the dashboard"""
     return dbc.Container(
         [
-            html.H1(children="ART dashboard", style={"textAlign": "center"}),
+            get_navbar(),
             dbc.Row(
                 [
-                    dbc.Col(
-                        timeline,
-                        width=3,
-                    ),
+                    dbc.Col(timeline, width=3, style=RADIUS_AROUND | PAD),
                     dbc.Col(
                         [
-                            html.H3(
-                                children="Choose step to visualize",
-                                className="text-xl-center text-success p-2",
-                            ),
                             dcc.Dropdown(
                                 ordered_steps,
                                 ordered_steps[0],
@@ -66,14 +123,21 @@ def get_layout(ordered_steps: List[str], timeline: dmc.Timeline) -> dbc.Containe
                                 sort_mode="multi",
                             ),
                         ],
+                        style=RADIUS_AROUND | PAD,
                         width=9,
                     ),
                 ],
-                className="m-5",
+                justify="between",
+                class_name="m-3",
             ),
-            get_radio("x"),
-            get_radio("y"),
-            dbc.Row(dcc.Graph(id="graph")),
-            dbc.Row(html.Div([html.H1(children="footer")], id="footer")),
+            dbc.Stack(
+                [
+                    get_radio("x"),
+                    get_radio("y"),
+                    dbc.Row(dcc.Graph(id="graph")),
+                ],
+                style=RADIUS_AROUND | PAD,
+                class_name="m-3",
+            ),
         ]
     )
