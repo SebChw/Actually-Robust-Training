@@ -83,7 +83,7 @@ def get_started():
 
 
 @app.command()
-def run_dashboard(experiment_folder: str):
+def run_dashboard(experiment_folder: str = "."):
     """Run dashboard for a given experiment folder."""
     os.system(f"python -m art.dashboard.app --exp_path {experiment_folder}")
 
