@@ -4,7 +4,7 @@ from typing import Any, Dict, List, Tuple
 
 import dash_bootstrap_components as dbc
 import plotly.express as px
-from dash import Dash, Input, Output
+from dash import Dash, Input, Output, State
 
 from art.dashboard.backend import prepare_steps, prepare_steps_info
 from art.dashboard.const import DF, PARAM_ATTR, SCORE_ATTRS
@@ -19,6 +19,8 @@ parser.add_argument(
 args = parser.parse_args()
 
 LOGS_PATH = Path(args.exp_path) / "checkpoints"
+if not LOGS_PATH.exists():
+    raise ValueError(f"Path {LOGS_PATH} does not exist.")
 app = Dash(__name__, external_stylesheets=[dbc.themes.BOOTSTRAP])
 ORDERED_STEPS = prepare_steps(LOGS_PATH)
 STEPS_INFO = prepare_steps_info(LOGS_PATH)
@@ -142,6 +144,17 @@ def update_figure(
         y_attr = x_attr
 
     return px.scatter(df, x=x_attr, y=y_attr, size="size", hover_data=hover_params)
+
+
+@app.callback(
+    Output("modal", "is_open"),
+    [Input("open", "n_clicks"), Input("close", "n_clicks")],
+    [State("modal", "is_open")],
+)
+def toggle_modal(n1, n2, is_open):
+    if n1 or n2:
+        return not is_open
+    return is_open
 
 
 if __name__ == "__main__":
