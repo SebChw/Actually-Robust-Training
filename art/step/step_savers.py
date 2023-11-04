@@ -1,8 +1,9 @@
 import json
 from abc import ABC, abstractmethod
 from pathlib import Path
-import matplotlib.pyplot as plt
 from typing import Any
+
+import matplotlib.pyplot as plt
 
 BASE_PATH = Path("checkpoints")
 
@@ -86,21 +87,32 @@ class JSONStepSaver(StepSaver):
     """
     Class to save and load steps in JSON format.
     """
+
     RESULT_NAME = "results.json"
 
-    def save(self, obj: Any, step_id: str, step_name: str, filename: str = RESULT_NAME):
+    def save(self, step: "Step", filename: str = RESULT_NAME):
         """
         Save an object as a JSON file.
 
         Args:
-            obj (Any): The object to save.
-            step_id (str): The ID of the step.
-            step_name (str): The name of the step.
+            step (Step): The step to save.
             filename (str, optional): The name of the JSON file. Defaults to "results.json".
         """
+        step_id = step.get_step_id()
+        step_name = step.name
+
         self.ensure_directory(step_id, step_name)
-        with open(self.get_path(step_id, step_name, filename), "w") as f:
-            json.dump(obj, f)
+        results_file = self.get_path(step_id, step_name, filename)
+        if results_file.exists():
+            current_results = self.load(step_id, step_name, filename)
+        else:
+            model = step.model.__class__.__name__
+            current_results = {"name": step_name, "model": model, "runs": []}
+
+        current_results["runs"].insert(0, step.results)
+
+        with open(results_file, "w") as f:
+            json.dump(current_results, f)
 
     def load(self, step_id: str, step_name: str, filename: str = RESULT_NAME):
         """

@@ -1,13 +1,23 @@
-from abc import ABC, abstractmethod
-from typing import Any, Dict
+import datetime
 import hashlib
 import inspect
+import subprocess
+from abc import ABC, abstractmethod
+from typing import Any, Dict, Iterable, Optional, Union
+
 import lightning as L
+from lightning import Trainer
+from lightning.pytorch.loggers import Logger
 
 from art.core.base_components.base_model import ArtModule
+from art.core.exceptions import MissingLogParamsException
 from art.core.MetricCalculator import MetricCalculator
 from art.step.step_savers import JSONStepSaver
 from art.utils.enums import TrainingStage
+
+
+class NoModelUsed:
+    pass
 
 
 class Step(ABC):
@@ -15,11 +25,20 @@ class Step(ABC):
     An abstract base class representing a generic step in a project.
     """
 
+    name = "Data analysis"
+    model = NoModelUsed()
+
     def __init__(self):
         """
         Initialize the step with an empty results dictionary.
         """
-        self.results = {}
+        self.results = {
+            "scores": {},
+            "parameters": {},
+            "timestamp": str(datetime.datetime.now()),
+            "succesfull": False,
+        }
+        self.finalized = False
 
     def __call__(
         self,
@@ -36,10 +55,10 @@ class Step(ABC):
             metric_calculator (MetricCalculator): Metric calculator for this step.
         """
         self.datamodule = datamodule
+        self.fill_basic_results()
         self.do(previous_states)
-        JSONStepSaver().save(
-            self.results, self.get_step_id(), self.name, "results.json"
-        )
+        self.log_params()
+        self.finalized = True
 
     def set_step_id(self, idx: int):
         """
@@ -49,6 +68,18 @@ class Step(ABC):
             idx (int): Index to set as step ID.
         """
         self.idx = idx
+
+    def fill_basic_results(self):
+        """Fill basic results like hash and commit id"""
+        self.results["hash"] = self.get_hash()
+        try:
+            self.results["commit_id"] = (
+                subprocess.check_output(["git", "rev-parse", "HEAD"])
+                .decode("ascii")
+                .strip()
+            )
+        except Exception:
+            print("Error while getting commit id!")
 
     def get_step_id(self) -> str:
         """
@@ -98,20 +129,16 @@ class Step(ABC):
         """
         self.results[name] = value
 
-    def get_results(self) -> Dict:
+    def get_latest_run(self) -> Dict:
         """
-        Retrieve the results of the step.
+        If step was run returns itself, otherwise returns the latest run from the JSONStepSaver.
 
         Returns:
-            Dict: Dictionary containing step results.
+            Dict: The latest run.
         """
-        return self.results
-
-    def load_results(self):
-        """
-        Load results for the step from saved storage.
-        """
-        self.results = JSONStepSaver().load(self.get_step_id(), self.name)
+        if self.finalized:
+            return self.results
+        return JSONStepSaver().load(self.get_step_id(), self.name)["runs"][0]
 
     def was_run(self) -> bool:
         """
@@ -134,23 +161,55 @@ class Step(ABC):
         """
         return ""
 
+    def __repr__(self) -> str:
+        """Representation of the step"""
+        result_repr = "\n".join(
+            f"\t{k}: {v}" for k, v in self.results["scores"].items()
+        )
+        model = self.model.__class__.__name__
+        return f"Step: {self.name}, Model: {model}, Passed: {self.results['succesfull']}. Results:\n{result_repr}"
+
+    def set_succesfull(self):
+        self.results["succesfull"] = True
+
+    def is_succesfull(self):
+        return self.results["succesfull"]
+
+    @abstractmethod
+    def log_params(
+        self,
+    ):
+        pass
+
+    def save_to_disk(self):
+        JSONStepSaver().save(self, "results.json")
+
 
 class ModelStep(Step):
     """
     A specialized step in the project, representing a model-based step.
     """
 
-    def __init__(self, model: ArtModule, trainer: L.Trainer):
+    def __init__(
+        self,
+        model: ArtModule,
+        trainer_kwargs: Dict = {},
+        logger: Optional[Union[Logger, Iterable[Logger], bool]] = None,
+    ):
         """
         Initialize a model-based step.
 
         Args:
             model (ArtModule): The model associated with this step.
-            trainer (L.Trainer): Trainer to train and validate the model.
+            trainer_kwargs (Dict, optional): Arguments to be passed to the trainer. Defaults to {}.
+            logger (Optional[Union[Logger, Iterable[Logger], bool]], optional): Logger to be used. Defaults to None.
         """
         super().__init__()
+        if logger is not None:
+            logger.add_tags(self.name)
+
         self.model = model
-        self.trainer = trainer
+        self.trainer = Trainer(**trainer_kwargs, logger=logger)
 
     def __call__(
         self,
@@ -166,12 +225,8 @@ class ModelStep(Step):
             datamodule (L.LightningDataModule): Data module to be used.
             metric_calculator (MetricCalculator): Metric calculator for this step.
         """
-        self.datamodule = datamodule
         self.model.set_metric_calculator(metric_calculator)
-        self.do(previous_states)
-        JSONStepSaver().save(
-            self.results, self.get_step_id(), self.name, "results.json"
-        )
+        super().__call__(previous_states, datamodule, metric_calculator)
 
     @abstractmethod
     def do(self, previous_states: Dict):
@@ -192,7 +247,7 @@ class ModelStep(Step):
         """
         self.trainer.fit(model=self.model, **trainer_kwargs)
         logged_metrics = {k: v.item() for k, v in self.trainer.logged_metrics.items()}
-        self.results.update(logged_metrics)
+        self.results["scores"].update(logged_metrics)
 
     def validate(self, trainer_kwargs: Dict):
         """
@@ -203,7 +258,7 @@ class ModelStep(Step):
         """
         print(f"Validating model {self.get_model_name()}")
         result = self.trainer.validate(model=self.model, **trainer_kwargs)
-        self.results.update(result[0])
+        self.results["scores"].update(result[0])
 
     def test(self, trainer_kwargs: Dict):
         """
@@ -213,7 +268,7 @@ class ModelStep(Step):
             trainer_kwargs (Dict): Arguments to be passed to the trainer for testing the model.
         """
         result = self.trainer.test(model=self.model, **trainer_kwargs)
-        self.results.update(result[0])
+        self.results["scores"].update(result[0])
 
     def get_model_name(self) -> str:
         """
@@ -263,3 +318,21 @@ class ModelStep(Step):
             str: Validation stage value.
         """
         return TrainingStage.VALIDATION.value
+
+    def log_params(self):
+        if hasattr(self.model, "log_params"):
+            model_params = self.model.log_params()
+            self.results["parameters"].update(model_params)
+
+        else:
+            raise MissingLogParamsException(
+                "Model does not have log_params method. You don't want to regret lack of logs :)"
+            )
+
+        if hasattr(self.datamodule, "log_params"):
+            data_params = self.datamodule.log_params()
+            self.results["parameters"].update(data_params)
+        else:
+            raise MissingLogParamsException(
+                "Datamodule does not have log_params method. You don't want to regret lack of logs :)"
+            )

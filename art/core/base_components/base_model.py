@@ -267,3 +267,7 @@ class ArtModule(L.LightningModule, ABC):
         preds, targets = data[PREDICTION], data[TARGET]
 
         return self.unify_type(preds), self.unify_type(targets)
+
+    @abstractmethod
+    def log_params(self):
+        pass
