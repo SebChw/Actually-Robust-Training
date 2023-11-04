@@ -54,7 +54,6 @@ def prepare_steps_info(logs_path: Path) -> Dict[str, Dict]:
 
 
 def prepare_steps(logs_path):
-    # TODO to order which steps were first is another issue for me. Should we stick to the integer inside a directory name?
     return [
         "Data analysis",
         "Evaluate Baseline",

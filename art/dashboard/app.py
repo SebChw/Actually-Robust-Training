@@ -47,8 +47,8 @@ def updateTable(
     Returns:
         Tuple[List[Dict[str, Any]], List[Dict[str, Any]], List[Dict[str, Any]]]: List of data for the table, columns and style_data_conditional.
     """
-    df = STEPS_INFO[step_name][DF]
-    df.successfull = df.successfull.astype(int)
+    step_runs_df = STEPS_INFO[step_name][DF]
+    step_runs_df.successfull = step_runs_df.successfull.astype(int)
     conditional = [
         {
             "if": {
@@ -71,7 +71,7 @@ def updateTable(
     )
     columnDefs = [{"name": i, "id": i} for i in ordered_names]
     return (
-        df.to_dict("records"),
+        step_runs_df.to_dict("records"),
         columnDefs,
         conditional,
     )
@@ -107,34 +107,43 @@ def update_possible_options(step_name: str) -> Tuple[List[str], List[str]]:
     ],
 )
 def update_figure(
-    x_attr: str, y_attr: str, step_name: str, selected_row: List[int]
+    x_attr: str, y_attr: str, step_name: str, selected_row_id: List[int]
 ) -> px.scatter:
     """Creates figure for the graph."""
-    df = STEPS_INFO[step_name][DF]
-    parameters = STEPS_INFO[step_name][PARAM_ATTR]
-    if selected_row is None:
-        df["size"] = 1
-        hover_params = parameters
+    step_runs_df = STEPS_INFO[step_name][DF]
+    all_parameters_names = STEPS_INFO[step_name][PARAM_ATTR]
+    if selected_row_id is None:
+        step_runs_df["size"] = 1
+        hover_parameters_names = all_parameters_names
     else:
-        selected_row = selected_row[0]
-        df["size"] = [10 if i == selected_row else 1 for i in df.index]
+        selected_row_id = selected_row_id[0]
+        run_sizes = [10 if i == selected_row_id else 1 for i in step_runs_df.index]
+        step_runs_df["size"] = run_sizes
+
+        step_runs_dict = step_runs_df.to_dict("records")
+        selected_run_params = {
+            param_name: step_runs_dict[selected_row_id][param_name]
+            for param_name in all_parameters_names
+        }
 
         tooltips = []
-        samples = df.to_dict("records")
-        selected_params = {key: samples[selected_row][key] for key in parameters}
-        for row in samples:
-            if row["index"] == selected_row:
-                params = parameters
+        for run in step_runs_dict:
+            if run["index"] == selected_row_id:
+                sample_parameters_names = all_parameters_names
             else:
-                params = [
+                sample_parameters_names = [
                     param
-                    for param in parameters
-                    if row[param] != selected_params[param]
+                    for param in all_parameters_names
+                    if run[param] != selected_run_params[param]
                 ]
-            tooltips.append("<br>".join([f"{param}: {row[param]}" for param in params]))
+            tooltips.append(
+                "<br>".join(
+                    [f"{param}: {run[param]}" for param in sample_parameters_names]
+                )
+            )
 
-        df["description"] = tooltips
-        hover_params = ["description"]
+        step_runs_df["description"] = tooltips
+        hover_parameters_names = ["description"]
 
     if x_attr is None and y_attr is None:
         return {}
@@ -143,7 +152,9 @@ def update_figure(
     elif y_attr is None:
         y_attr = x_attr
 
-    return px.scatter(df, x=x_attr, y=y_attr, size="size", hover_data=hover_params)
+    return px.scatter(
+        step_runs_df, x=x_attr, y=y_attr, size="size", hover_data=hover_parameters_names
+    )
 
 
 @app.callback(

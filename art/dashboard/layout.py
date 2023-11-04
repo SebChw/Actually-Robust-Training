@@ -4,10 +4,8 @@ import dash_bootstrap_components as dbc
 import dash_mantine_components as dmc
 from dash import dash_table, dcc, get_asset_url, html
 
+from art.dashboard.const import PAD_STYLE, RADIUS_AROUND_STYLE
 from art.dashboard.help import HELP
-
-RADIUS_AROUND = {"border-radius": "25px", "border": "2px solid #a87332"}
-PAD = {"padding": "15px"}
 
 
 def get_radio(axis: str = "x") -> dbc.Row:
@@ -93,7 +91,7 @@ def get_navbar():
         ),
         color="#FFFFFF",
         class_name="m-3",
-        style=RADIUS_AROUND,
+        style=RADIUS_AROUND_STYLE,
     )
 
 
@@ -104,7 +102,7 @@ def get_layout(ordered_steps: List[str], timeline: dmc.Timeline) -> dbc.Containe
             get_navbar(),
             dbc.Row(
                 [
-                    dbc.Col(timeline, width=3, style=RADIUS_AROUND | PAD),
+                    dbc.Col(timeline, width=3, style=RADIUS_AROUND_STYLE | PAD_STYLE),
                     dbc.Col(
                         [
                             dcc.Dropdown(
@@ -123,7 +121,7 @@ def get_layout(ordered_steps: List[str], timeline: dmc.Timeline) -> dbc.Containe
                                 sort_mode="multi",
                             ),
                         ],
-                        style=RADIUS_AROUND | PAD,
+                        style=RADIUS_AROUND_STYLE | PAD_STYLE,
                         width=9,
                     ),
                 ],
@@ -136,7 +134,7 @@ def get_layout(ordered_steps: List[str], timeline: dmc.Timeline) -> dbc.Containe
                     get_radio("y"),
                     dbc.Row(dcc.Graph(id="graph")),
                 ],
-                style=RADIUS_AROUND | PAD,
+                style=RADIUS_AROUND_STYLE | PAD_STYLE,
                 class_name="m-3",
             ),
         ]
