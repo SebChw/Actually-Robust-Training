@@ -5,7 +5,9 @@ import lightning as L
 from art.core.exceptions import CheckFailedException
 from art.core.MetricCalculator import MetricCalculator, SkippedMetric
 from art.experiment.experiment_state import ArtProjectState
+from art.paths import LOG_PATH
 from art.step.checks import Check
+from art.art_logger import logger, log_to_file
 
 if TYPE_CHECKING:
     from art.step.step import Step
@@ -101,7 +103,7 @@ class ArtProject:
             try:
                 self.check_checks(step, checks)
             except Exception as e:
-                print(e)
+                logger.exception(e)
                 return True
 
         step_current_hash = step.get_hash()
@@ -123,34 +125,35 @@ class ArtProject:
         Args:
             force_rerun (bool): Whether to force rerun all steps.
         """
-        for step in self.steps:
-            self.metric_calculator.compile(step["skipped_metrics"])
-            step, checks = step["step"], step["checks"]
-            self.state.current_step = step
+        with log_to_file(LOG_PATH / f"{self.name}.log"):
+            for step in self.steps:
+                self.metric_calculator.compile(step["skipped_metrics"])
+                step, checks = step["step"], step["checks"]
+                self.state.current_step = step
 
-            if not self.check_if_must_be_run(step, checks) and not force_rerun:
+                if not self.check_if_must_be_run(step, checks) and not force_rerun:
+                    self.fill_step_states(step)
+                    continue
+                try:
+                    step(self.state.step_states, self.datamodule, self.metric_calculator)
+                    self.check_checks(step, checks)
+                except CheckFailedException as e:
+                    logger.exception(e)
+                    step.save_to_disk()
+                    break
+
                 self.fill_step_states(step)
-                continue
-            try:
-                step(self.state.step_states, self.datamodule, self.metric_calculator)
-                self.check_checks(step, checks)
-            except CheckFailedException as e:
-                print(f"\n\n{e}\n\n")
                 step.save_to_disk()
-                break
 
-            self.fill_step_states(step)
-            step.save_to_disk()
-
-        self.print_summary()
+            self.print_summary()
 
     def print_summary(self):
         """
         Prints a summary of the project.
         """
-        print("Summary: ")
+        logger.info("Summary: ")
         for step in self.steps:
-            print(step["step"])
+            logger.info(step["step"])
             if not step["step"].is_succesfull():
                 break
 

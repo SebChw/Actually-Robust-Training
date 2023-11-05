@@ -9,9 +9,11 @@ import lightning as L
 from lightning import Trainer
 from lightning.pytorch.loggers import Logger
 
+from art.art_logger import log_to_file
 from art.core.base_components.base_model import ArtModule
 from art.core.exceptions import MissingLogParamsException
 from art.core.MetricCalculator import MetricCalculator
+from art.paths import get_checkpoint_step_dir_path
 from art.step.step_savers import JSONStepSaver
 from art.utils.enums import TrainingStage
 
@@ -54,11 +56,12 @@ class Step(ABC):
             datamodule (L.LightningDataModule): Data module to be used.
             metric_calculator (MetricCalculator): Metric calculator for this step.
         """
-        self.datamodule = datamodule
-        self.fill_basic_results()
-        self.do(previous_states)
-        self.log_params()
-        self.finalized = True
+        with log_to_file(get_checkpoint_step_dir_path(self.get_step_id(), self.name) / f"logs.log"):
+            self.datamodule = datamodule
+            self.fill_basic_results()
+            self.do(previous_states)
+            self.log_params()
+            self.finalized = True
 
     def set_step_id(self, idx: int):
         """
