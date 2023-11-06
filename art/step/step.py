@@ -259,7 +259,7 @@ class ModelStep(Step):
         Args:
             trainer_kwargs (Dict): Arguments to be passed to the trainer for validating the model.
         """
-        print(f"Validating model {self.get_model_name()}")
+        logger.info(f"Validating model {self.get_model_name()}")
         result = self.trainer.validate(model=self.model, **trainer_kwargs)
         self.results["scores"].update(result[0])
 

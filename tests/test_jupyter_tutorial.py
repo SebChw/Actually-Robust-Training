@@ -79,8 +79,8 @@ def test_tutorial():
     run_jupyter_notebook()
     print("Checking outputs...")
     check_outputs()
-    print("Cleaning up...")
-    clean_up()
+    # print("Cleaning up...")
+    # clean_up()
 
 
 if __name__ == "__main__":
