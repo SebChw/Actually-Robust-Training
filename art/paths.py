@@ -2,6 +2,7 @@ from pathlib import Path
 
 CHECKPOINTS_PATH = Path("checkpoints")
 LOG_PATH = Path("logs")
+EXPERIMENT_LOG_PATH = CHECKPOINTS_PATH/"experiment"/"logs"
 
 
 def get_checkpoint_step_dir_path(step_id: str, step_name: str) -> Path:
@@ -16,3 +17,11 @@ def get_checkpoint_step_dir_path(step_id: str, step_name: str) -> Path:
         str: The name of the directory.
     """
     return CHECKPOINTS_PATH/f"{step_id}_{step_name}"
+
+
+def get_checkpoint_logs_folder_path(step_id: str, step_name: str) -> Path:
+    return get_checkpoint_step_dir_path(step_id, step_name)/"logs"
+
+
+#mkdirs
+EXPERIMENT_LOG_PATH.mkdir(parents=True, exist_ok=True)
