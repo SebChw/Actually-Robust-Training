@@ -185,7 +185,7 @@ class Tune(ModelStep):
         model: ArtModule,
         logger: Optional[Union[Logger, Iterable[Logger], bool]] = None,
     ):
-        super().__init__(model=model, logger=logger)
+        super().__init__(model_func=model, logger=logger)
 
     def do(self, previous_states: Dict):
         """

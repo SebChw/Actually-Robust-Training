@@ -1,18 +1,20 @@
 import datetime
+import gc
 import hashlib
 import inspect
 import subprocess
 from abc import ABC, abstractmethod
-from typing import Any, Dict, Iterable, Optional, Union
+from typing import Any, Dict, Iterable, Optional, Union, Callable
 
 import lightning as L
+import torch
 from lightning import Trainer
 from lightning.pytorch.loggers import Logger
 
 from art.core.base_components.base_model import ArtModule
 from art.core.exceptions import MissingLogParamsException
 from art.core.MetricCalculator import MetricCalculator
-from art.step.step_savers import JSONStepSaver
+from art.step.step_savers import JSONStepSaver, ModelSaver
 from art.utils.enums import TrainingStage
 
 
@@ -192,7 +194,7 @@ class ModelStep(Step):
 
     def __init__(
         self,
-        model: ArtModule,
+        model_func: Callable[[], ArtModule],
         trainer_kwargs: Dict = {},
         logger: Optional[Union[Logger, Iterable[Logger], bool]] = None,
     ):
@@ -200,15 +202,15 @@ class ModelStep(Step):
         Initialize a model-based step.
 
         Args:
-            model (ArtModule): The model associated with this step.
+            model_func (ArtModule): The model associated with this step.
             trainer_kwargs (Dict, optional): Arguments to be passed to the trainer. Defaults to {}.
             logger (Optional[Union[Logger, Iterable[Logger], bool]], optional): Logger to be used. Defaults to None.
         """
         super().__init__()
         if logger is not None:
             logger.add_tags(self.name)
-
-        self.model = model
+        assert isinstance(model_func, Callable)
+        self.model = model_func()
         self.trainer = Trainer(**trainer_kwargs, logger=logger)
 
     def __call__(
@@ -227,6 +229,12 @@ class ModelStep(Step):
         """
         self.model.set_metric_calculator(metric_calculator)
         super().__call__(previous_states, datamodule, metric_calculator)
+        #save model to file
+        ModelSaver().save(self.model, self.get_step_id(), self.name)
+        del self.model
+        if torch.cuda.is_available():
+            torch.cuda.empty_cache()
+        gc.collect()
 
     @abstractmethod
     def do(self, previous_states: Dict):
