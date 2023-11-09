@@ -1,4 +1,9 @@
+<<<<<<< Updated upstream
 import datetime
+=======
+from abc import ABC, abstractmethod
+from typing import Any, Dict, Optional
+>>>>>>> Stashed changes
 import hashlib
 import inspect
 import subprocess
@@ -190,12 +195,16 @@ class ModelStep(Step):
     A specialized step in the project, representing a model-based step.
     """
 
+<<<<<<< Updated upstream
     def __init__(
         self,
         model: ArtModule,
         trainer_kwargs: Dict = {},
         logger: Optional[Union[Logger, Iterable[Logger], bool]] = None,
     ):
+=======
+    def __init__(self, model: ArtModule, trainer: L.Trainer, freeze: Optional[list[str]] = None):
+>>>>>>> Stashed changes
         """
         Initialize a model-based step.
 
@@ -209,7 +218,14 @@ class ModelStep(Step):
             logger.add_tags(self.name)
 
         self.model = model
+<<<<<<< Updated upstream
         self.trainer = Trainer(**trainer_kwargs, logger=logger)
+=======
+        self.trainer = trainer
+        self.freeze_model = freeze
+        if self.freeze_model is not None:
+            self.freeze(self.freeze_model)
+>>>>>>> Stashed changes
 
     def __call__(
         self,
@@ -227,6 +243,19 @@ class ModelStep(Step):
         """
         self.model.set_metric_calculator(metric_calculator)
         super().__call__(previous_states, datamodule, metric_calculator)
+
+    def freeze(self, name_to_freeze: list[str]):
+        """
+        Freeze the model's parameters.
+
+        Args:
+            name_to_freeze (list[str]): List of parameters to freeze.
+        """
+        for name in name_to_freeze:
+            for param in self.model.named_parameters():
+                if name in param[0]:
+                    print(f"Freezing {param[0]}")
+                    param[1].requires_grad = False
 
     @abstractmethod
     def do(self, previous_states: Dict):

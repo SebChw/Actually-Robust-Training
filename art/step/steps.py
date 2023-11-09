@@ -55,8 +55,13 @@ class CheckLossOnInit(ModelStep):
     def __init__(
         self,
         model: ArtModule,
+        freeze: Optional[list[str]] = None,
     ):
+<<<<<<< Updated upstream
         super().__init__(model)
+=======
+        super().__init__(model, trainer=Trainer(), freeze=freeze)
+>>>>>>> Stashed changes
 
     def do(self, previous_states: Dict):
         """
@@ -79,9 +84,15 @@ class OverfitOneBatch(ModelStep):
         self,
         model: ArtModule,
         number_of_steps: int = 100,
+        freeze: Optional[list[str]] = None,
     ):
+<<<<<<< Updated upstream
         self.number_of_steps = number_of_steps
         super().__init__(model, {"overfit_batches": 1, "max_epochs": number_of_steps})
+=======
+        trainer = Trainer(overfit_batches=1, max_epochs=number_of_steps)
+        super().__init__(model, trainer, freeze=freeze)
+>>>>>>> Stashed changes
 
     def do(self, previous_states: Dict):
         """
@@ -118,10 +129,18 @@ class Overfit(ModelStep):
         model: ArtModule,
         logger: Optional[Union[Logger, Iterable[Logger], bool]] = None,
         max_epochs: int = 1,
+        freeze: Optional[list[str]] = None,
     ):
+<<<<<<< Updated upstream
         self.max_epochs = max_epochs
 
         super().__init__(model, {"max_epochs": max_epochs}, logger=logger)
+=======
+        if logger is not None:
+            logger.run["sys/tags"].add("overfit")
+        trainer = Trainer(max_epochs=max_epochs, logger=logger)
+        super().__init__(model, trainer, freeze=freeze)
+>>>>>>> Stashed changes
 
     def do(self, previous_states: Dict):
         """
@@ -154,9 +173,17 @@ class Regularize(ModelStep):
         model: ArtModule,
         logger: Optional[Union[Logger, Iterable[Logger], bool]] = None,
         trainer_kwargs: Dict = {},
+        freeze: Optional[list[str]] = None,
     ):
+<<<<<<< Updated upstream
         self.trainer_kwargs = trainer_kwargs
         super().__init__(model, trainer_kwargs, logger=logger)
+=======
+        if logger is not None:
+            logger.run["sys/tags"].add("regularize")
+        trainer = Trainer(**trainer_kwargs, logger=logger)
+        super().__init__(model, trainer, freeze=freeze)
+>>>>>>> Stashed changes
 
     def do(self, previous_states: Dict):
         """
@@ -184,8 +211,16 @@ class Tune(ModelStep):
         self,
         model: ArtModule,
         logger: Optional[Union[Logger, Iterable[Logger], bool]] = None,
+        freeze: Optional[list[str]] = None,
     ):
+<<<<<<< Updated upstream
         super().__init__(model=model, logger=logger)
+=======
+        if logger is not None:
+            logger.run["sys/tags"].add("tune")
+        super().__init__(model=model, trainer=Trainer(logger=logger), freeze=freeze)
+        self.logger = logger
+>>>>>>> Stashed changes
 
     def do(self, previous_states: Dict):
         """
@@ -199,3 +234,34 @@ class Tune(ModelStep):
 
 class Squeeze(ModelStep):
     pass
+
+
+class TransferLearning(ModelStep):
+    """This step tries applying regularization to the model"""
+    name = "Regularize"
+    description = "Regularizes model"
+
+    def __init__(
+        self,
+        model: ArtModule,
+        logger: Optional[Union[Logger, Iterable[Logger], bool]] = None,
+        trainer_kwargs: Dict = {},
+        freeze: Optional[list[str]] = None,
+    ):
+        if logger is not None:
+            logger.run["sys/tags"].add("regularize")
+        trainer = Trainer(**trainer_kwargs, logger=logger)
+        super().__init__(model, trainer)
+        self.model_to_freeze = freeze
+
+    def do(self, previous_states: Dict):
+        """
+        This method regularizes the model
+
+        Args:
+            previous_states (Dict): previous states
+        """
+        train_loader = self.datamodule.train_dataloader()
+        self.freeze(self.model_to_freeze)
+        self.train(trainer_kwargs={"train_dataloaders": train_loader})
+        self.validate(trainer_kwargs={"datamodule": self.datamodule})
