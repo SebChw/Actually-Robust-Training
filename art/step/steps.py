@@ -57,11 +57,7 @@ class CheckLossOnInit(ModelStep):
         model: ArtModule,
         freeze: Optional[list[str]] = None,
     ):
-<<<<<<< Updated upstream
-        super().__init__(model)
-=======
-        super().__init__(model, trainer=Trainer(), freeze=freeze)
->>>>>>> Stashed changes
+        super().__init__(model, freeze=freeze)
 
     def do(self, previous_states: Dict):
         """
@@ -86,13 +82,8 @@ class OverfitOneBatch(ModelStep):
         number_of_steps: int = 100,
         freeze: Optional[list[str]] = None,
     ):
-<<<<<<< Updated upstream
         self.number_of_steps = number_of_steps
-        super().__init__(model, {"overfit_batches": 1, "max_epochs": number_of_steps})
-=======
-        trainer = Trainer(overfit_batches=1, max_epochs=number_of_steps)
-        super().__init__(model, trainer, freeze=freeze)
->>>>>>> Stashed changes
+        super().__init__(model, {"overfit_batches": 1, "max_epochs": number_of_steps}, freeze=freeze)
 
     def do(self, previous_states: Dict):
         """
@@ -131,16 +122,9 @@ class Overfit(ModelStep):
         max_epochs: int = 1,
         freeze: Optional[list[str]] = None,
     ):
-<<<<<<< Updated upstream
         self.max_epochs = max_epochs
 
-        super().__init__(model, {"max_epochs": max_epochs}, logger=logger)
-=======
-        if logger is not None:
-            logger.run["sys/tags"].add("overfit")
-        trainer = Trainer(max_epochs=max_epochs, logger=logger)
-        super().__init__(model, trainer, freeze=freeze)
->>>>>>> Stashed changes
+        super().__init__(model, {"max_epochs": max_epochs}, logger=logger, freeze=freeze)
 
     def do(self, previous_states: Dict):
         """
@@ -175,15 +159,8 @@ class Regularize(ModelStep):
         trainer_kwargs: Dict = {},
         freeze: Optional[list[str]] = None,
     ):
-<<<<<<< Updated upstream
         self.trainer_kwargs = trainer_kwargs
-        super().__init__(model, trainer_kwargs, logger=logger)
-=======
-        if logger is not None:
-            logger.run["sys/tags"].add("regularize")
-        trainer = Trainer(**trainer_kwargs, logger=logger)
-        super().__init__(model, trainer, freeze=freeze)
->>>>>>> Stashed changes
+        super().__init__(model, trainer_kwargs, logger=logger, freeze=freeze)
 
     def do(self, previous_states: Dict):
         """
@@ -213,14 +190,7 @@ class Tune(ModelStep):
         logger: Optional[Union[Logger, Iterable[Logger], bool]] = None,
         freeze: Optional[list[str]] = None,
     ):
-<<<<<<< Updated upstream
-        super().__init__(model=model, logger=logger)
-=======
-        if logger is not None:
-            logger.run["sys/tags"].add("tune")
-        super().__init__(model=model, trainer=Trainer(logger=logger), freeze=freeze)
-        self.logger = logger
->>>>>>> Stashed changes
+        super().__init__(model=model, logger=logger, freeze=freeze)
 
     def do(self, previous_states: Dict):
         """

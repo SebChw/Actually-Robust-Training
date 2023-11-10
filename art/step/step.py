@@ -1,9 +1,6 @@
-<<<<<<< Updated upstream
 import datetime
-=======
 from abc import ABC, abstractmethod
 from typing import Any, Dict, Optional
->>>>>>> Stashed changes
 import hashlib
 import inspect
 import subprocess
@@ -195,16 +192,13 @@ class ModelStep(Step):
     A specialized step in the project, representing a model-based step.
     """
 
-<<<<<<< Updated upstream
     def __init__(
         self,
         model: ArtModule,
         trainer_kwargs: Dict = {},
         logger: Optional[Union[Logger, Iterable[Logger], bool]] = None,
+        freeze: Optional[list[str]] = None
     ):
-=======
-    def __init__(self, model: ArtModule, trainer: L.Trainer, freeze: Optional[list[str]] = None):
->>>>>>> Stashed changes
         """
         Initialize a model-based step.
 
@@ -218,14 +212,10 @@ class ModelStep(Step):
             logger.add_tags(self.name)
 
         self.model = model
-<<<<<<< Updated upstream
         self.trainer = Trainer(**trainer_kwargs, logger=logger)
-=======
-        self.trainer = trainer
         self.freeze_model = freeze
         if self.freeze_model is not None:
             self.freeze(self.freeze_model)
->>>>>>> Stashed changes
 
     def __call__(
         self,
