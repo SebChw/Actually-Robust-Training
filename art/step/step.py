@@ -9,7 +9,7 @@ import lightning as L
 from lightning import Trainer
 from lightning.pytorch.loggers import Logger
 
-from art.art_logger import logger_contextualize, logger
+from art.art_logger import art_logger, add_logger, remove_logger, get_new_log_file_name
 from art.core.base_components.base_model import ArtModule
 from art.core.exceptions import MissingLogParamsException
 from art.core.MetricCalculator import MetricCalculator
@@ -56,12 +56,20 @@ class Step(ABC):
             datamodule (L.LightningDataModule): Data module to be used.
             metric_calculator (MetricCalculator): Metric calculator for this step.
         """
-        with logger_contextualize(get_checkpoint_logs_folder_path(self.get_step_id(), self.name)):
+        log_file_name = get_new_log_file_name()
+        logger_id = add_logger(get_checkpoint_logs_folder_path(self.get_step_id(), self.name)/get_new_log_file_name())
+        try:
             self.datamodule = datamodule
             self.fill_basic_results()
             self.do(previous_states)
             self.log_params()
             self.finalized = True
+        except Exception as e:
+            art_logger.exception(f"Error while executing step {self.name}!")
+            raise e
+        finally:
+            remove_logger(logger_id)
+        self.results["log_file_name"] = log_file_name
 
     def set_step_id(self, idx: int):
         """
@@ -82,7 +90,7 @@ class Step(ABC):
                 .strip()
             )
         except Exception:
-            logger.exception("Error while getting commit id!")
+            art_logger.exception("Error while getting commit id!")
 
     def get_step_id(self) -> str:
         """
@@ -259,7 +267,7 @@ class ModelStep(Step):
         Args:
             trainer_kwargs (Dict): Arguments to be passed to the trainer for validating the model.
         """
-        logger.info(f"Validating model {self.get_model_name()}")
+        art_logger.info(f"Validating model {self.get_model_name()}")
         result = self.trainer.validate(model=self.model, **trainer_kwargs)
         self.results["scores"].update(result[0])
 
