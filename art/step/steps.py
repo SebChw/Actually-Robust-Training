@@ -1,4 +1,4 @@
-from typing import Any, Dict, Iterable, Optional, Union
+from typing import Dict, Iterable, Optional, Union
 
 from lightning.pytorch.loggers import Logger
 
@@ -21,7 +21,7 @@ class ExploreData(Step):
         Returns:
             str: step id
         """
-        return f"data_analysis"
+        return "data_analysis"
 
 
 class EvaluateBaseline(ModelStep):

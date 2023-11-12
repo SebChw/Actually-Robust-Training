@@ -23,5 +23,5 @@ def get_checkpoint_logs_folder_path(step_id: str, step_name: str) -> Path:
     return get_checkpoint_step_dir_path(step_id, step_name)/"logs"
 
 
-#mkdirs
+#
 EXPERIMENT_LOG_PATH.mkdir(parents=True, exist_ok=True)

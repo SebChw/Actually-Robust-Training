@@ -13,7 +13,7 @@ from art.art_logger import art_logger, add_logger, remove_logger, get_new_log_fi
 from art.core.base_components.base_model import ArtModule
 from art.core.exceptions import MissingLogParamsException
 from art.core.MetricCalculator import MetricCalculator
-from art.paths import get_checkpoint_step_dir_path, get_checkpoint_logs_folder_path
+from art.paths import get_checkpoint_logs_folder_path
 from art.step.step_savers import JSONStepSaver
 from art.utils.enums import TrainingStage
 

@@ -5,7 +5,7 @@ import lightning as L
 from art.core.exceptions import CheckFailedException
 from art.core.MetricCalculator import MetricCalculator, SkippedMetric
 from art.experiment.experiment_state import ArtProjectState
-from art.paths import LOG_PATH, EXPERIMENT_LOG_PATH
+from art.paths import EXPERIMENT_LOG_PATH
 from art.step.checks import Check
 from art.art_logger import art_logger, add_logger, remove_logger, get_new_log_file_name
 
@@ -117,7 +117,6 @@ class ArtProject:
             return True
 
         return False
-
 
     def run_all(self, force_rerun=False):
         """
