@@ -25,17 +25,11 @@ classifiers = [
 
 dependencies = [
   "datasets>=2.11.0",
-  "numpy>=1.23.5",
   "lightning>=1.9",
-  "torchmetrics>=0.11.0",
   "torch>=1.13.1",
-  "hydra-core>=1.3.2",
-  "neptune>=1.6.2",
   "matplotlib~=3.6",
-  "lovely-tensors",
   "cookiecutter>=2.3.1",
   "typer==0.4.2",
-  "wandb>=0.15.11",
   "loguru==0.7.2"
 ]
 
