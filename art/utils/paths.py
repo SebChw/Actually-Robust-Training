@@ -1,7 +1,6 @@
 from pathlib import Path
 
 CHECKPOINTS_PATH = Path("checkpoints")
-LOG_PATH = Path("logs")
 EXPERIMENT_LOG_DIR = CHECKPOINTS_PATH / "experiment" / "logs"
 
 
