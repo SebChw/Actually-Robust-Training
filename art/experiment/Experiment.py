@@ -5,9 +5,9 @@ import lightning as L
 from art.core.exceptions import CheckFailedException
 from art.core.MetricCalculator import MetricCalculator, SkippedMetric
 from art.experiment.experiment_state import ArtProjectState
-from art.paths import EXPERIMENT_LOG_PATH
+from art.utils.paths import EXPERIMENT_LOG_DIR
 from art.step.checks import Check
-from art.art_logger import art_logger, add_logger, remove_logger, get_new_log_file_name
+from art.utils.art_logger import art_logger, add_logger, remove_logger, get_new_log_file_name, get_run_id
 
 if TYPE_CHECKING:
     from art.step.step import Step
@@ -125,7 +125,8 @@ class ArtProject:
         Args:
             force_rerun (bool): Whether to force rerun all steps.
         """
-        logger_id = add_logger(EXPERIMENT_LOG_PATH/get_new_log_file_name())
+        run_id = get_run_id()
+        logger_id = add_logger(EXPERIMENT_LOG_DIR / get_new_log_file_name(run_id))
         try:
             for step in self.steps:
                 self.metric_calculator.compile(step["skipped_metrics"])
@@ -136,7 +137,7 @@ class ArtProject:
                     self.fill_step_states(step)
                     continue
                 try:
-                    step(self.state.step_states, self.datamodule, self.metric_calculator)
+                    step(self.state.step_states, self.datamodule, self.metric_calculator, run_id)
                     self.check_checks(step, checks)
                 except CheckFailedException as e:
                     art_logger.exception(e)

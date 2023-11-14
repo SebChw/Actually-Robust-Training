@@ -2,7 +2,7 @@ from typing import Dict, Iterable, Optional, Union
 
 from lightning.pytorch.loggers import Logger
 
-from art.art_logger import art_logger
+from art.utils.art_logger import art_logger
 from art.core.base_components.base_model import ArtModule
 from art.step.step import ModelStep, Step
 from art.utils.enums import TrainingStage

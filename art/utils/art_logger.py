@@ -8,8 +8,12 @@ logger.remove()
 logger.add(sys.stdout, format="{message}", level="DEBUG")
 
 
-def get_new_log_file_name() -> str:
-    return datetime.now().strftime("%Y-%m-%d_%H-%M-%S") + "_" + str(uuid.uuid4()) + ".log"
+def get_run_id() -> str:
+    return datetime.now().strftime("%Y-%m-%d_%H-%M-%S") + "_" + str(uuid.uuid4())
+
+
+def get_new_log_file_name(run_id: str) -> str:
+    return f"{run_id}.log"
 
 
 def add_logger(log_file_path: Path) -> int:

@@ -5,7 +5,7 @@ from typing import Any
 
 import matplotlib.pyplot as plt
 
-from art.paths import get_checkpoint_step_dir_path
+from art.utils.paths import get_checkpoint_step_dir_path
 
 
 class StepSaver(ABC):
