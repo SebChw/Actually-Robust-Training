@@ -229,7 +229,8 @@ class ArtModule(L.LightningModule, ABC):
 
         return data
 
-    def get_hash(self):
+    @classmethod
+    def get_hash(cls):
         """
         Get hash of the model.
 
@@ -237,7 +238,7 @@ class ArtModule(L.LightningModule, ABC):
             str: Hash of the model.
         """
         return hashlib.md5(
-            inspect.getsource(self.__class__).encode("utf-8")
+            inspect.getsource(cls).encode("utf-8")
         ).hexdigest()
 
     def unify_type(self: Any, x: Any):

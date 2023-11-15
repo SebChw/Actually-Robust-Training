@@ -4,7 +4,7 @@ import hashlib
 import inspect
 import subprocess
 from abc import ABC, abstractmethod
-from typing import Any, Dict, Iterable, Optional, Union, Callable
+from typing import Any, Callable, Dict, Iterable, List, Optional, Union
 
 import lightning as L
 import torch
@@ -14,7 +14,7 @@ from lightning.pytorch.loggers import Logger
 from art.core.base_components.base_model import ArtModule
 from art.core.exceptions import MissingLogParamsException
 from art.core.MetricCalculator import MetricCalculator
-from art.step.step_savers import JSONStepSaver, ModelSaver
+from art.step.step_savers import JSONStepSaver
 from art.utils.enums import TrainingStage
 
 
@@ -41,6 +41,7 @@ class Step(ABC):
             "succesfull": False,
         }
         self.finalized = False
+        self.model_name = ""
 
     def __call__(
         self,
@@ -154,22 +155,13 @@ class Step(ABC):
         )
         return path.exists()
 
-    def get_model_name(self) -> str:
-        """
-        Retrieve the model name associated with the step. By default, it's empty.
-
-        Returns:
-            str: Model name.
-        """
-        return ""
 
     def __repr__(self) -> str:
         """Representation of the step"""
         result_repr = "\n".join(
             f"\t{k}: {v}" for k, v in self.results["scores"].items()
         )
-        model = self.model.__class__.__name__
-        return f"Step: {self.name}, Model: {model}, Passed: {self.results['succesfull']}. Results:\n{result_repr}"
+        return f"Step: {self.name}, Model: {self.model_name}, Passed: {self.results['succesfull']}. Results:\n{result_repr}"
 
     def set_succesfull(self):
         self.results["succesfull"] = True
@@ -223,6 +215,10 @@ class ModelStep(Step):
         self.model_modifiers = model_modifiers
         self.logger = logger
         self.trainer_kwargs = trainer_kwargs
+
+
+        self.model_name = model_class.__name__
+        self.hash = self.model_class.get_hash()
 
     def __call__(
         self,
@@ -310,19 +306,10 @@ class ModelStep(Step):
             str: The step ID.
         """
         return (
-            f"{self.get_model_name()}_{self.idx}"
-            if self.get_model_name() != ""
+            f"{self.model_name}_{self.idx}"
+            if self.model_name != ""
             else f"{self.idx}"
         )
-
-    def get_hash(self) -> str:
-        """
-        Compute a hash for the model associated with the step.
-
-        Returns:
-            str: Hash of the model.
-        """
-        return self.model.get_hash()
 
     def get_current_stage(self) -> str:
         """

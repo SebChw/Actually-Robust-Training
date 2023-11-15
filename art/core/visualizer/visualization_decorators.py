@@ -34,7 +34,8 @@ def visualize(visualizing_function_in=None, visualizing_function_out=None):
                 function: Decorated function.
             """
             if visualizing_function_in is not None:
-                visualizing_function_in(*args, **kwargs)
+                to_be_passed = args[1:]
+                visualizing_function_in(*to_be_passed, **kwargs)
             output = func(*args, **kwargs)
             if visualizing_function_out is not None:
                 visualizing_function_out(output)
@@ -63,6 +64,3 @@ def set_visualization(
             getattr(obj, method)
         )
         setattr(obj, method, decorated)
-
-        if hasattr(obj, "reset_pipelines"):
-            obj.reset_pipelines()
