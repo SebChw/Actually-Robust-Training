@@ -194,24 +194,35 @@ class ModelStep(Step):
 
     def __init__(
         self,
-        model_func: Callable[[], ArtModule],
+        model_class: ArtModule,
         trainer_kwargs: Dict = {},
+        model_kwargs: Dict = {},
+        model_modifiers: List[Callable] = [],
         logger: Optional[Union[Logger, Iterable[Logger], bool]] = None,
     ):
         """
         Initialize a model-based step.
 
         Args:
-            model_func (ArtModule): The model associated with this step.
+            model_class (ArtModule): The model's class associated with this step.
             trainer_kwargs (Dict, optional): Arguments to be passed to the trainer. Defaults to {}.
+            model_kwargs (Dict, optional): Arguments to be passed to the model. Defaults to {}.
+            model_modifiers (List[Callable], optional): List of functions to be applied to the model. Defaults to [].
+            datamodule_modifiers (List[Callable], optional): List of functions to be applied to the data module. Defaults to [].
             logger (Optional[Union[Logger, Iterable[Logger], bool]], optional): Logger to be used. Defaults to None.
         """
         super().__init__()
         if logger is not None:
             logger.add_tags(self.name)
-        assert isinstance(model_func, Callable)
-        self.model = model_func()
-        self.trainer = Trainer(**trainer_kwargs, logger=logger)
+
+        if not inspect.isclass(model_class):
+            raise ValueError("model_func must be class inhertiting from Art Module or path to the checkpoint. This is to avoid memory leaks. Simplest way of doing this is to use lambda function lambda : ArtModule()")
+        
+        self.model_class = model_class
+        self.model_kwargs = model_kwargs
+        self.model_modifiers = model_modifiers
+        self.logger = logger
+        self.trainer_kwargs = trainer_kwargs
 
     def __call__(
         self,
@@ -227,13 +238,10 @@ class ModelStep(Step):
             datamodule (L.LightningDataModule): Data module to be used.
             metric_calculator (MetricCalculator): Metric calculator for this step.
         """
-        self.model.set_metric_calculator(metric_calculator)
+        self.trainer = Trainer(**self.trainer_kwargs, logger=self.logger)
+        self.metric_calculator = metric_calculator
         super().__call__(previous_states, datamodule, metric_calculator)
-        #save model to file
-        ModelSaver().save(self.model, self.get_step_id(), self.name)
-        del self.model
-        if torch.cuda.is_available():
-            torch.cuda.empty_cache()
+        del self.trainer
         gc.collect()
 
     @abstractmethod
@@ -246,6 +254,20 @@ class ModelStep(Step):
         """
         pass
 
+    def initialize_model(self,) -> ArtModule:
+        """
+        Initializes the model.
+        """
+        if self.trainer.model is not None:
+            return None
+        
+        model = self.model_class(**self.model_kwargs)
+        for modifier in self.model_modifiers:
+            modifier(model)
+        model.set_metric_calculator(self.metric_calculator)
+
+        return model
+
     def train(self, trainer_kwargs: Dict):
         """
         Train the model using the provided trainer arguments.
@@ -253,8 +275,9 @@ class ModelStep(Step):
         Args:
             trainer_kwargs (Dict): Arguments to be passed to the trainer for training the model.
         """
-        self.trainer.fit(model=self.model, **trainer_kwargs)
+        self.trainer.fit(model=self.initialize_model(), **trainer_kwargs)
         logged_metrics = {k: v.item() for k, v in self.trainer.logged_metrics.items()}
+
         self.results["scores"].update(logged_metrics)
 
     def validate(self, trainer_kwargs: Dict):
@@ -264,8 +287,9 @@ class ModelStep(Step):
         Args:
             trainer_kwargs (Dict): Arguments to be passed to the trainer for validating the model.
         """
-        print(f"Validating model {self.get_model_name()}")
-        result = self.trainer.validate(model=self.model, **trainer_kwargs)
+        print(f"Validating model {self.model_name}")
+  
+        result = self.trainer.validate(model=self.initialize_model(), **trainer_kwargs)
         self.results["scores"].update(result[0])
 
     def test(self, trainer_kwargs: Dict):
@@ -275,17 +299,8 @@ class ModelStep(Step):
         Args:
             trainer_kwargs (Dict): Arguments to be passed to the trainer for testing the model.
         """
-        result = self.trainer.test(model=self.model, **trainer_kwargs)
+        result = self.trainer.test(model=self.initialize_model(), **trainer_kwargs)
         self.results["scores"].update(result[0])
-
-    def get_model_name(self) -> str:
-        """
-        Retrieve the name of the model associated with the step.
-
-        Returns:
-            str: Name of the model.
-        """
-        return self.model.__class__.__name__
 
     def get_step_id(self) -> str:
         """
