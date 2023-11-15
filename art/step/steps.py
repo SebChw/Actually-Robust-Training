@@ -146,6 +146,36 @@ class Overfit(ModelStep):
         super().log_params()
 
 
+class Train(ModelStep):
+    """This step trains the model"""
+
+    name = "Train"
+    description = "Trains model"
+
+    def __init__(
+        self,
+        model: ArtModule,
+        logger: Optional[Union[Logger, Iterable[Logger], bool]] = None,
+        trainer_kwargs: Dict = {},
+        freeze: Optional[list[str]] = None,
+    ):
+        super().__init__(model, trainer_kwargs, logger=logger, freeze=freeze)
+
+    def do(self, previous_states: Dict):
+        """
+        This method trains the model
+
+        Args:
+            previous_states (Dict): previous states
+        """
+        train_loader = self.datamodule.train_dataloader()
+        self.train(trainer_kwargs={"datamodule": self.datamodule})
+
+    def get_check_stage(self):
+        """Returns check stage"""
+        return TrainingStage.TRAIN.value
+
+
 class Regularize(ModelStep):
     """This step tries applying regularization to the model"""
 
@@ -207,9 +237,9 @@ class Squeeze(ModelStep):
 
 
 class TransferLearning(ModelStep):
-    """This step tries applying regularization to the model"""
-    name = "Regularize"
-    description = "Regularizes model"
+    """This step tries performing proper transfer learning"""
+    name = "TransferLearning"
+    description = "This step tries performing proper transfer learning"
 
     def __init__(
         self,
@@ -217,21 +247,33 @@ class TransferLearning(ModelStep):
         logger: Optional[Union[Logger, Iterable[Logger], bool]] = None,
         trainer_kwargs: Dict = {},
         freeze: Optional[list[str]] = None,
+        max_epochs: int = 40,
     ):
         if logger is not None:
             logger.run["sys/tags"].add("regularize")
-        trainer = Trainer(**trainer_kwargs, logger=logger)
-        super().__init__(model, trainer)
+        super().__init__(model, trainer_kwargs, logger=logger, freeze=freeze)
         self.model_to_freeze = freeze
+        self.trainer_kwargs = trainer_kwargs
+        self.max_epochs = max_epochs
 
     def do(self, previous_states: Dict):
         """
-        This method regularizes the model
+        This method trains the model
 
         Args:
             previous_states (Dict): previous states
         """
-        train_loader = self.datamodule.train_dataloader()
         self.freeze(self.model_to_freeze)
-        self.train(trainer_kwargs={"train_dataloaders": train_loader})
-        self.validate(trainer_kwargs={"datamodule": self.datamodule})
+        self.train(trainer_kwargs={"datamodule": self.datamodule})
+        self.unfreeze()
+        self.reset_trainer(logger=self.trainer.logger, max_epochs=self.max_epochs)
+        self.model.lr = 1e-5
+        self.train(trainer_kwargs={"datamodule": self.datamodule})
+
+    def log_params(self):
+        self.results["parameters"].update(self.trainer_kwargs)
+        super().log_params()
+
+    def get_check_stage(self):
+        """Returns check stage"""
+        return TrainingStage.VALIDATION.value

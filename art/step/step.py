@@ -208,14 +208,13 @@ class ModelStep(Step):
             logger (Optional[Union[Logger, Iterable[Logger], bool]], optional): Logger to be used. Defaults to None.
         """
         super().__init__()
-        if logger is not None:
-            logger.add_tags(self.name)
+        # if logger is not None:
+        #     logger.add_tags(self.name)
 
         self.model = model
+        self.default_trainer_kwargs = trainer_kwargs
         self.trainer = Trainer(**trainer_kwargs, logger=logger)
         self.freeze_model = freeze
-        if self.freeze_model is not None:
-            self.freeze(self.freeze_model)
 
     def __call__(
         self,
@@ -246,6 +245,13 @@ class ModelStep(Step):
                 if name in param[0]:
                     print(f"Freezing {param[0]}")
                     param[1].requires_grad = False
+
+    def unfreeze(self):
+        """
+        Unfreeze the model's parameters.
+        """
+        for param in self.model.parameters():
+            param.requires_grad = True
 
     @abstractmethod
     def do(self, previous_states: Dict):
@@ -355,3 +361,15 @@ class ModelStep(Step):
             raise MissingLogParamsException(
                 "Datamodule does not have log_params method. You don't want to regret lack of logs :)"
             )
+
+    def reset_trainer(self, logger: Optional[Logger] = None, max_epochs: int = 1):
+        """
+        Reset the trainer.
+
+        Args:
+            trainer_kwargs (Dict): Arguments to be passed to the trainer.
+            logger (Optional[Logger], optional): Logger to be used. Defaults to None.
+        """
+        kwargs = self.default_trainer_kwargs.copy()
+        kwargs["max_epochs"] = max_epochs
+        self.trainer = Trainer(**kwargs, logger=logger)

@@ -2,6 +2,7 @@ import json
 from abc import ABC, abstractmethod
 from pathlib import Path
 from typing import Any
+from lightning.pytorch.callbacks import EarlyStopping
 
 import matplotlib.pyplot as plt
 
@@ -108,6 +109,11 @@ class JSONStepSaver(StepSaver):
         else:
             model = step.model.__class__.__name__
             current_results = {"name": step_name, "model": model, "runs": []}
+
+        for key, value in step.results.items():
+            if key == "parameters":
+                if "callbacks" in step.results["parameters"].keys():
+                    del step.results["parameters"]["callbacks"]
 
         current_results["runs"].insert(0, step.results)
 
