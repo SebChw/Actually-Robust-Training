@@ -5,7 +5,9 @@ import lightning as L
 from art.core.exceptions import CheckFailedException
 from art.core.MetricCalculator import MetricCalculator, SkippedMetric
 from art.experiment.experiment_state import ArtProjectState
+from art.utils.paths import EXPERIMENT_LOG_DIR
 from art.step.checks import Check
+from art.utils.art_logger import art_logger, add_logger, remove_logger, get_new_log_file_name, get_run_id
 
 if TYPE_CHECKING:
     from art.step.step import Step
@@ -101,7 +103,7 @@ class ArtProject:
             try:
                 self.check_checks(step, checks)
             except Exception as e:
-                print(e)
+                art_logger.exception(e)
                 return True
 
         step_current_hash = step.get_hash()
@@ -109,7 +111,7 @@ class ArtProject:
         model_changed = True if step_current_hash != step_saved_hash else False
 
         if model_changed:
-            print(
+            art_logger.info(
                 f"Code of the model in {step.get_full_step_name()} was changed. Rerun needed."
             )
             return True
@@ -123,34 +125,42 @@ class ArtProject:
         Args:
             force_rerun (bool): Whether to force rerun all steps.
         """
-        for step in self.steps:
-            self.metric_calculator.compile(step["skipped_metrics"])
-            step, checks = step["step"], step["checks"]
-            self.state.current_step = step
+        run_id = get_run_id()
+        logger_id = add_logger(EXPERIMENT_LOG_DIR / get_new_log_file_name(run_id))
+        try:
+            for step in self.steps:
+                self.metric_calculator.compile(step["skipped_metrics"])
+                step, checks = step["step"], step["checks"]
+                self.state.current_step = step
 
-            if not self.check_if_must_be_run(step, checks) and not force_rerun:
+                if not self.check_if_must_be_run(step, checks) and not force_rerun:
+                    self.fill_step_states(step)
+                    continue
+                try:
+                    step(self.state.step_states, self.datamodule, self.metric_calculator, run_id)
+                    self.check_checks(step, checks)
+                except CheckFailedException as e:
+                    art_logger.exception(e)
+                    step.save_to_disk()
+                    break
+
                 self.fill_step_states(step)
-                continue
-            try:
-                step(self.state.step_states, self.datamodule, self.metric_calculator)
-                self.check_checks(step, checks)
-            except CheckFailedException as e:
-                print(f"\n\n{e}\n\n")
                 step.save_to_disk()
-                break
 
-            self.fill_step_states(step)
-            step.save_to_disk()
-
-        self.print_summary()
+            self.print_summary()
+        except Exception as e:
+            art_logger.exception(e)
+            raise e
+        finally:
+            remove_logger(logger_id)
 
     def print_summary(self):
         """
         Prints a summary of the project.
         """
-        print("Summary: ")
+        art_logger.info("Summary: ")
         for step in self.steps:
-            print(step["step"])
+            art_logger.info(step["step"])
             if not step["step"].is_succesfull():
                 break
 

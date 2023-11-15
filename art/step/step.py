@@ -9,9 +9,11 @@ import lightning as L
 from lightning import Trainer
 from lightning.pytorch.loggers import Logger
 
+from art.utils.art_logger import art_logger, add_logger, remove_logger, get_new_log_file_name, get_run_id
 from art.core.base_components.base_model import ArtModule
 from art.core.exceptions import MissingLogParamsException
 from art.core.MetricCalculator import MetricCalculator
+from art.utils.paths import get_checkpoint_logs_folder_path
 from art.step.step_savers import JSONStepSaver
 from art.utils.enums import TrainingStage
 
@@ -45,6 +47,7 @@ class Step(ABC):
         previous_states: Dict,
         datamodule: L.LightningDataModule,
         metric_calculator: MetricCalculator,
+        run_id: Optional[str] = None,
     ):
         """
         Call the step and save its results.
@@ -54,11 +57,20 @@ class Step(ABC):
             datamodule (L.LightningDataModule): Data module to be used.
             metric_calculator (MetricCalculator): Metric calculator for this step.
         """
-        self.datamodule = datamodule
-        self.fill_basic_results()
-        self.do(previous_states)
-        self.log_params()
-        self.finalized = True
+        log_file_name = get_new_log_file_name(run_id if run_id is not None else get_run_id())
+        logger_id = add_logger(get_checkpoint_logs_folder_path(self.get_step_id(), self.name)/log_file_name)
+        try:
+            self.datamodule = datamodule
+            self.fill_basic_results()
+            self.do(previous_states)
+            self.log_params()
+            self.finalized = True
+        except Exception as e:
+            art_logger.exception(f"Error while executing step {self.name}!")
+            raise e
+        finally:
+            remove_logger(logger_id)
+        self.results["log_file_name"] = log_file_name
 
     def set_step_id(self, idx: int):
         """
@@ -79,7 +91,7 @@ class Step(ABC):
                 .strip()
             )
         except Exception:
-            print("Error while getting commit id!")
+            art_logger.exception("Error while getting commit id!")
 
     def get_step_id(self) -> str:
         """
@@ -216,6 +228,7 @@ class ModelStep(Step):
         previous_states: Dict,
         datamodule: L.LightningDataModule,
         metric_calculator: MetricCalculator,
+        run_id: Optional[str] = None,
     ):
         """
         Call the model step, set the metric calculator for the model, and save the results.
@@ -226,7 +239,7 @@ class ModelStep(Step):
             metric_calculator (MetricCalculator): Metric calculator for this step.
         """
         self.model.set_metric_calculator(metric_calculator)
-        super().__call__(previous_states, datamodule, metric_calculator)
+        super().__call__(previous_states, datamodule, metric_calculator, run_id)
 
     @abstractmethod
     def do(self, previous_states: Dict):
@@ -256,7 +269,7 @@ class ModelStep(Step):
         Args:
             trainer_kwargs (Dict): Arguments to be passed to the trainer for validating the model.
         """
-        print(f"Validating model {self.get_model_name()}")
+        art_logger.info(f"Validating model {self.get_model_name()}")
         result = self.trainer.validate(model=self.model, **trainer_kwargs)
         self.results["scores"].update(result[0])
 

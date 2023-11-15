@@ -5,7 +5,7 @@ from typing import Any
 
 import matplotlib.pyplot as plt
 
-BASE_PATH = Path("checkpoints")
+from art.utils.paths import get_checkpoint_step_dir_path
 
 
 class StepSaver(ABC):
@@ -52,7 +52,7 @@ class StepSaver(ABC):
         Returns:
             bool: True if directory exists or is created successfully, otherwise False.
         """
-        return (BASE_PATH / f"{step_id}_{step_name}").mkdir(parents=True, exist_ok=True)
+        return get_checkpoint_step_dir_path(step_id, step_name).mkdir(parents=True, exist_ok=True)
 
     def get_path(self, step_id: str, step_name: str, filename: str):
         """
@@ -66,7 +66,7 @@ class StepSaver(ABC):
         Returns:
             Path: The full path to the file.
         """
-        return BASE_PATH / f"{step_id}_{step_name}" / filename
+        return get_checkpoint_step_dir_path(step_id, step_name) / filename
 
     def exists(self, step_id: str, step_name: str, filename: str):
         """
