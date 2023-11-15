@@ -2,6 +2,7 @@ import json
 from abc import ABC, abstractmethod
 from pathlib import Path
 from typing import Any
+
 import lightning as L
 import matplotlib.pyplot as plt
 import torch
@@ -109,8 +110,7 @@ class JSONStepSaver(StepSaver):
         if results_file.exists():
             current_results = self.load(step_id, step_name, filename)
         else:
-            model = step.model.__class__.__name__
-            current_results = {"name": step_name, "model": model, "runs": []}
+            current_results = {"name": step_name, "model": step.model_name, "runs": []}
 
         current_results["runs"].insert(0, step.results)
 
@@ -167,37 +167,3 @@ class MatplotLibSaver(StepSaver):
             NotImplementedError: This method is not implemented.
         """
         raise NotImplementedError()
-
-
-class ModelSaver(StepSaver):
-    def save(self, obj: ArtModule, step_id: str, step_name: str, filename: str = "model.ckpt"):
-        """
-        Save a PyTorch Lightning model.
-
-        Args:
-            obj (L.LightningModule): The model to save.
-            step_id (str): The ID of the step.
-            step_name (str): The name of the step.
-            filename (str): The name of the file to save the model to.
-        """
-        self.ensure_directory(step_id, step_name)
-        filepath = self.get_path(step_id, step_name, filename)
-        filepath.parent.mkdir(exist_ok=True)
-        torch.save(obj.state_dict(), filepath)
-
-    def load(self, step_id: str, step_name: str, model: ArtModule, filename: str = "model.ckpt"):
-        """
-        Load a PyTorch Lightning model.
-
-        Args:
-            step_id (str): The ID of the step.
-            step_name (str): The name of the step.
-            filename (str): The name of the file containing the model.
-
-        Returns:
-            L.LightningModule: The loaded model.
-        """
-        filepath = self.get_path(step_id, step_name, filename)
-        model.load_state_dict(torch.load(filepath))
-        return model
-

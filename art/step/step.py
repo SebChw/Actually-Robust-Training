@@ -275,6 +275,7 @@ class ModelStep(Step):
         logged_metrics = {k: v.item() for k, v in self.trainer.logged_metrics.items()}
 
         self.results["scores"].update(logged_metrics)
+        self.results["model_path"] = self.trainer.checkpoint_callback.best_model_path
 
     def validate(self, trainer_kwargs: Dict):
         """

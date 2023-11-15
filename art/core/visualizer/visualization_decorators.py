@@ -34,6 +34,7 @@ def visualize(visualizing_function_in=None, visualizing_function_out=None):
                 function: Decorated function.
             """
             if visualizing_function_in is not None:
+                # first arguments is the `self` object. We don't want to pass it to the visualizing function
                 to_be_passed = args[1:]
                 visualizing_function_in(*to_be_passed, **kwargs)
             output = func(*args, **kwargs)
