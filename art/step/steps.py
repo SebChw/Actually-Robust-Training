@@ -2,9 +2,9 @@ from typing import Dict, Iterable, Optional, Union
 
 from lightning.pytorch.loggers import Logger
 
-from art.utils.art_logger import art_logger
 from art.core.base_components.base_model import ArtModule
 from art.step.step import ModelStep, Step
+from art.utils.art_logger import art_logger
 from art.utils.enums import TrainingStage
 
 
@@ -33,8 +33,9 @@ class EvaluateBaseline(ModelStep):
     def __init__(
         self,
         baseline: ArtModule,
+        device: Optional[str] = "cpu",
     ):
-        super().__init__(baseline, {"accelerator": baseline.device.type})
+        super().__init__(baseline, {"accelerator": device})
 
     def do(self, previous_states: Dict):
         """
@@ -44,10 +45,12 @@ class EvaluateBaseline(ModelStep):
             previous_states (Dict): previous states
         """
         art_logger.info("Training baseline")
-        self.model.ml_train({"dataloader": self.datamodule.train_dataloader()})
+        model = self.model_class()
+        model.ml_train({"dataloader": self.datamodule.train_dataloader()})
         art_logger.info("Validating baseline")
-        self.validate(trainer_kwargs={"datamodule": self.datamodule})
-
+        model.set_metric_calculator(self.metric_calculator)
+        result = self.trainer.validate(model=model, datamodule= self.datamodule)
+        self.results["scores"].update(result[0])
 
 class CheckLossOnInit(ModelStep):
     """This step checks whether the loss on init is as expected"""
@@ -82,7 +85,7 @@ class OverfitOneBatch(ModelStep):
     def __init__(
         self,
         model: ArtModule,
-        number_of_steps: int = 100,
+        number_of_steps: int = 50,
     ):
         self.number_of_steps = number_of_steps
         super().__init__(model, {"overfit_batches": 1, "max_epochs": number_of_steps})
@@ -173,7 +176,6 @@ class Regularize(ModelStep):
             previous_states (Dict): previous states
         """
         art_logger.info("Turning on regularization")
-        self.model.turn_on_model_regularizations()
         self.datamodule.turn_on_regularizations()
         art_logger.info("Training regularized model")
         self.train(trainer_kwargs={"datamodule": self.datamodule})
@@ -194,7 +196,7 @@ class Tune(ModelStep):
         model: ArtModule,
         logger: Optional[Union[Logger, Iterable[Logger], bool]] = None,
     ):
-        super().__init__(model=model, logger=logger)
+        super().__init__(model_func=model, logger=logger)
 
     def do(self, previous_states: Dict):
         """

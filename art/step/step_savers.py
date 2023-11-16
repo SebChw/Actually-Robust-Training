@@ -3,7 +3,11 @@ from abc import ABC, abstractmethod
 from pathlib import Path
 from typing import Any
 
+import lightning as L
 import matplotlib.pyplot as plt
+import torch
+
+from art.core.base_components.base_model import ArtModule
 
 from art.utils.paths import get_checkpoint_step_dir_path
 
@@ -106,8 +110,7 @@ class JSONStepSaver(StepSaver):
         if results_file.exists():
             current_results = self.load(step_id, step_name, filename)
         else:
-            model = step.model.__class__.__name__
-            current_results = {"name": step_name, "model": model, "runs": []}
+            current_results = {"name": step_name, "model": step.model_name, "runs": []}
 
         current_results["runs"].insert(0, step.results)
 

@@ -8,61 +8,61 @@ Idea is as follows:
 """
 
 
-def visualize(visualizing_function_in=None, visualizing_function_out=None):
+def art_decorate_single_func(visualizing_function_in=None, visualizing_function_out=None):
     """
-    Decorator for visualizing input and output of a function.
+    Decorates input and output of a function.
 
     Args:
-        visualizing_function_in (function, optional): Function to visualize input. Defaults to None.
-        visualizing_function_out (function, optional): Function to visualize output. Defaults to None.
+        function_in (function, optional): Function applied on the input. Defaults to None.
+        function_out (function, optional): Function applied on the output. Defaults to None.
 
     Returns:
         function: Decorated function.
     """
-    def decorator_visualize_input(func):
+    def decorator(func):
         """
-        Decorator for visualizing input of a function.
+        Decorator
 
         Args:
             func (function): Function to decorate.
         """
-        def wrapper_visualize_input(*args, **kwargs):
+        def wrapper(*args, **kwargs):
             """
-            Wrapper for visualizing input of a function.
+            Wrapper
 
             Returns:
                 function: Decorated function.
             """
             if visualizing_function_in is not None:
-                visualizing_function_in(*args, **kwargs)
+                # first arguments is the `self` object. We don't want to pass it to the visualizing function
+                to_be_passed = args[1:]
+                visualizing_function_in(*to_be_passed, **kwargs)
             output = func(*args, **kwargs)
             if visualizing_function_out is not None:
                 visualizing_function_out(output)
             return output
 
-        return wrapper_visualize_input
+        return wrapper
 
-    return decorator_visualize_input
+    return decorator
 
 
-def set_visualization(
+def art_decorate(
     functions: List[Tuple[object, str]],
-    visualizing_function_in=None,
-    visualizing_function_out=None,
+    function_in=None,
+    function_out=None,
 ):
     """
-    Set visualization for a list of functions.
-
+    Decorates list of objects functions. It doesn't modify output of a function
+    put can be used for logging additional information during training.
+    
     Args:
         functions (List[Tuple[object, str]]): List of tuples of objects and methods to decorate.
-        visualizing_function_in (function, optional): Function to visualize input. Defaults to None.
-        visualizing_function_out (function, optional): Function to visualize output. Defaults to None.
+        function_in (function, optional): Function applied on the input. Defaults to None.
+        function_out (function, optional): Function applied on the output. Defaults to None.
     """
     for obj, method in functions:
-        decorated = visualize(visualizing_function_in, visualizing_function_out)(
+        decorated = art_decorate_single_func(function_in, function_out)(
             getattr(obj, method)
         )
         setattr(obj, method, decorated)
-
-        if hasattr(obj, "reset_pipelines"):
-            obj.reset_pipelines()

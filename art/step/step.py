@@ -1,21 +1,25 @@
 import datetime
+import gc
 import hashlib
 import inspect
 import subprocess
 from abc import ABC, abstractmethod
-from typing import Any, Dict, Iterable, Optional, Union
+from typing import Any, Callable, Dict, Iterable, List, Optional, Union
 
 import lightning as L
+import torch
 from lightning import Trainer
 from lightning.pytorch.loggers import Logger
 
-from art.utils.art_logger import art_logger, add_logger, remove_logger, get_new_log_file_name, get_run_id
 from art.core.base_components.base_model import ArtModule
 from art.core.exceptions import MissingLogParamsException
 from art.core.MetricCalculator import MetricCalculator
-from art.utils.paths import get_checkpoint_logs_folder_path
 from art.step.step_savers import JSONStepSaver
+from art.utils.art_logger import (add_logger, art_logger,
+                                  get_new_log_file_name, get_run_id,
+                                  remove_logger)
 from art.utils.enums import TrainingStage
+from art.utils.paths import get_checkpoint_logs_folder_path
 
 
 class NoModelUsed:
@@ -41,6 +45,7 @@ class Step(ABC):
             "succesfull": False,
         }
         self.finalized = False
+        self.model_name = ""
 
     def __call__(
         self,
@@ -63,7 +68,6 @@ class Step(ABC):
             self.datamodule = datamodule
             self.fill_basic_results()
             self.do(previous_states)
-            self.log_params()
             self.finalized = True
         except Exception as e:
             art_logger.exception(f"Error while executing step {self.name}!")
@@ -164,22 +168,13 @@ class Step(ABC):
         )
         return path.exists()
 
-    def get_model_name(self) -> str:
-        """
-        Retrieve the model name associated with the step. By default, it's empty.
-
-        Returns:
-            str: Model name.
-        """
-        return ""
 
     def __repr__(self) -> str:
         """Representation of the step"""
         result_repr = "\n".join(
             f"\t{k}: {v}" for k, v in self.results["scores"].items()
         )
-        model = self.model.__class__.__name__
-        return f"Step: {self.name}, Model: {model}, Passed: {self.results['succesfull']}. Results:\n{result_repr}"
+        return f"Step: {self.name}, Model: {self.model_name}, Passed: {self.results['succesfull']}. Results:\n{result_repr}"
 
     def set_succesfull(self):
         self.results["succesfull"] = True
@@ -204,24 +199,39 @@ class ModelStep(Step):
 
     def __init__(
         self,
-        model: ArtModule,
+        model_class: ArtModule,
         trainer_kwargs: Dict = {},
+        model_kwargs: Dict = {},
+        model_modifiers: List[Callable] = [],
         logger: Optional[Union[Logger, Iterable[Logger], bool]] = None,
     ):
         """
         Initialize a model-based step.
 
         Args:
-            model (ArtModule): The model associated with this step.
+            model_class (ArtModule): The model's class associated with this step.
             trainer_kwargs (Dict, optional): Arguments to be passed to the trainer. Defaults to {}.
+            model_kwargs (Dict, optional): Arguments to be passed to the model. Defaults to {}.
+            model_modifiers (List[Callable], optional): List of functions to be applied to the model. Defaults to [].
+            datamodule_modifiers (List[Callable], optional): List of functions to be applied to the data module. Defaults to [].
             logger (Optional[Union[Logger, Iterable[Logger], bool]], optional): Logger to be used. Defaults to None.
         """
         super().__init__()
         if logger is not None:
             logger.add_tags(self.name)
 
-        self.model = model
-        self.trainer = Trainer(**trainer_kwargs, logger=logger)
+        if not inspect.isclass(model_class):
+            raise ValueError("model_func must be class inhertiting from Art Module or path to the checkpoint. This is to avoid memory leaks. Simplest way of doing this is to use lambda function lambda : ArtModule()")
+        
+        self.model_class = model_class
+        self.model_kwargs = model_kwargs
+        self.model_modifiers = model_modifiers
+        self.logger = logger
+        self.trainer_kwargs = trainer_kwargs
+
+
+        self.model_name = model_class.__name__
+        self.hash = self.model_class.get_hash()
 
     def __call__(
         self,
@@ -238,8 +248,11 @@ class ModelStep(Step):
             datamodule (L.LightningDataModule): Data module to be used.
             metric_calculator (MetricCalculator): Metric calculator for this step.
         """
-        self.model.set_metric_calculator(metric_calculator)
+        self.trainer = Trainer(**self.trainer_kwargs, logger=self.logger)
+        self.metric_calculator = metric_calculator
         super().__call__(previous_states, datamodule, metric_calculator, run_id)
+        del self.trainer
+        gc.collect()
 
     @abstractmethod
     def do(self, previous_states: Dict):
@@ -251,6 +264,21 @@ class ModelStep(Step):
         """
         pass
 
+    def initialize_model(self,) -> ArtModule:
+        """
+        Initializes the model.
+        """
+        if self.trainer.model is not None:
+            return None
+        
+        model = self.model_class(**self.model_kwargs)
+        for modifier in self.model_modifiers:
+            modifier(model)
+        model.set_metric_calculator(self.metric_calculator)
+
+        self.log_params(model)
+        return model
+
     def train(self, trainer_kwargs: Dict):
         """
         Train the model using the provided trainer arguments.
@@ -258,9 +286,11 @@ class ModelStep(Step):
         Args:
             trainer_kwargs (Dict): Arguments to be passed to the trainer for training the model.
         """
-        self.trainer.fit(model=self.model, **trainer_kwargs)
+        self.trainer.fit(model=self.initialize_model(), **trainer_kwargs)
         logged_metrics = {k: v.item() for k, v in self.trainer.logged_metrics.items()}
+
         self.results["scores"].update(logged_metrics)
+        self.results["model_path"] = self.trainer.checkpoint_callback.best_model_path
 
     def validate(self, trainer_kwargs: Dict):
         """
@@ -269,8 +299,9 @@ class ModelStep(Step):
         Args:
             trainer_kwargs (Dict): Arguments to be passed to the trainer for validating the model.
         """
-        art_logger.info(f"Validating model {self.get_model_name()}")
-        result = self.trainer.validate(model=self.model, **trainer_kwargs)
+        art_logger.info(f"Validating model {self.model_name}")
+  
+        result = self.trainer.validate(model=self.initialize_model(), **trainer_kwargs)
         self.results["scores"].update(result[0])
 
     def test(self, trainer_kwargs: Dict):
@@ -280,17 +311,8 @@ class ModelStep(Step):
         Args:
             trainer_kwargs (Dict): Arguments to be passed to the trainer for testing the model.
         """
-        result = self.trainer.test(model=self.model, **trainer_kwargs)
+        result = self.trainer.test(model=self.initialize_model(), **trainer_kwargs)
         self.results["scores"].update(result[0])
-
-    def get_model_name(self) -> str:
-        """
-        Retrieve the name of the model associated with the step.
-
-        Returns:
-            str: Name of the model.
-        """
-        return self.model.__class__.__name__
 
     def get_step_id(self) -> str:
         """
@@ -300,19 +322,10 @@ class ModelStep(Step):
             str: The step ID.
         """
         return (
-            f"{self.get_model_name()}_{self.idx}"
-            if self.get_model_name() != ""
+            f"{self.model_name}_{self.idx}"
+            if self.model_name != ""
             else f"{self.idx}"
         )
-
-    def get_hash(self) -> str:
-        """
-        Compute a hash for the model associated with the step.
-
-        Returns:
-            str: Hash of the model.
-        """
-        return self.model.get_hash()
 
     def get_current_stage(self) -> str:
         """
@@ -332,9 +345,9 @@ class ModelStep(Step):
         """
         return TrainingStage.VALIDATION.value
 
-    def log_params(self):
-        if hasattr(self.model, "log_params"):
-            model_params = self.model.log_params()
+    def log_params(self, model):
+        if hasattr(model, "log_params"):
+            model_params = model.log_params()
             self.results["parameters"].update(model_params)
 
         else:

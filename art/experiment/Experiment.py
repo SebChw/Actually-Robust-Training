@@ -63,7 +63,7 @@ class ArtProject:
         Args:
             step (Step): The step whose results need to be recorded.
         """
-        self.state.step_states[step.get_model_name()][
+        self.state.step_states[step.model_name][
             step.get_name_with_id()
         ] = step.get_latest_run()
 
