@@ -46,6 +46,12 @@ dev = [
   "ipykernel>=6.26.0",
   "nbconvert>=7.9.2",
 ]
+dashboard = [
+  "dash_mantine_components",
+  "dash_bootstrap_components",
+  "dash",
+  "plotly"
+]
 
 [project.urls]
 "Homepage" = "https://github.com/sebchw/art"
