@@ -1,13 +1,8 @@
 import json
 from abc import ABC, abstractmethod
-from pathlib import Path
 from typing import Any
 
-import lightning as L
 import matplotlib.pyplot as plt
-import torch
-
-from art.core.base_components.base_model import ArtModule
 
 from art.utils.paths import get_checkpoint_step_dir_path
 
@@ -56,7 +51,9 @@ class StepSaver(ABC):
         Returns:
             bool: True if directory exists or is created successfully, otherwise False.
         """
-        return get_checkpoint_step_dir_path(step_id, step_name).mkdir(parents=True, exist_ok=True)
+        return get_checkpoint_step_dir_path(step_id, step_name).mkdir(
+            parents=True, exist_ok=True
+        )
 
     def get_path(self, step_id: str, step_name: str, filename: str):
         """
