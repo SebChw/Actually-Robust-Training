@@ -1,9 +1,10 @@
-from typing import Any, Dict, Iterable, Optional, Union
+from typing import Dict, Iterable, Optional, Union
 
 from lightning.pytorch.loggers import Logger
 
 from art.core.base_components.base_model import ArtModule
 from art.step.step import ModelStep, Step
+from art.utils.art_logger import art_logger
 from art.utils.enums import TrainingStage
 
 
@@ -20,7 +21,7 @@ class ExploreData(Step):
         Returns:
             str: step id
         """
-        return f"data_analysis"
+        return "data_analysis"
 
 
 class EvaluateBaseline(ModelStep):
@@ -43,8 +44,10 @@ class EvaluateBaseline(ModelStep):
         Args:
             previous_states (Dict): previous states
         """
+        art_logger.info("Training baseline")
         model = self.model_class()
         model.ml_train({"dataloader": self.datamodule.train_dataloader()})
+        art_logger.info("Validating baseline")
         model.set_metric_calculator(self.metric_calculator)
         result = self.trainer.validate(model=model, datamodule= self.datamodule)
         self.results["scores"].update(result[0])
@@ -69,6 +72,7 @@ class CheckLossOnInit(ModelStep):
             previous_states (Dict): previous states
         """
         train_loader = self.datamodule.train_dataloader()
+        art_logger.info("Calculating loss on init")
         self.validate(trainer_kwargs={"dataloaders": train_loader})
 
 
@@ -94,6 +98,7 @@ class OverfitOneBatch(ModelStep):
             previous_states (Dict): previous states
         """
         train_loader = self.datamodule.train_dataloader()
+        art_logger.info("Overfitting one batch")
         self.train(trainer_kwargs={"train_dataloaders": train_loader})
         for key, value in self.trainer.logged_metrics.items():
             if hasattr(value, "item"):
@@ -134,7 +139,9 @@ class Overfit(ModelStep):
             previous_states (Dict): previous states
         """
         train_loader = self.datamodule.train_dataloader()
+        art_logger.info("Overfitting model")
         self.train(trainer_kwargs={"train_dataloaders": train_loader})
+        art_logger.info("Validating overfitted model")
         self.validate(trainer_kwargs={"datamodule": self.datamodule})
 
     def get_check_stage(self):
@@ -168,7 +175,9 @@ class Regularize(ModelStep):
         Args:
             previous_states (Dict): previous states
         """
+        art_logger.info("Turning on regularization")
         self.datamodule.turn_on_regularizations()
+        art_logger.info("Training regularized model")
         self.train(trainer_kwargs={"datamodule": self.datamodule})
 
     def log_params(self):
