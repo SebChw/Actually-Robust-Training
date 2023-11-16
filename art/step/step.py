@@ -60,7 +60,6 @@ class Step(ABC):
         self.datamodule = datamodule
         self.fill_basic_results()
         self.do(previous_states)
-        self.log_params()
         self.finalized = True
 
     def set_step_id(self, idx: int):
@@ -262,6 +261,7 @@ class ModelStep(Step):
             modifier(model)
         model.set_metric_calculator(self.metric_calculator)
 
+        self.log_params(model)
         return model
 
     def train(self, trainer_kwargs: Dict):
@@ -330,9 +330,9 @@ class ModelStep(Step):
         """
         return TrainingStage.VALIDATION.value
 
-    def log_params(self):
-        if hasattr(self.model, "log_params"):
-            model_params = self.model.log_params()
+    def log_params(self, model):
+        if hasattr(model, "log_params"):
+            model_params = model.log_params()
             self.results["parameters"].update(model_params)
 
         else:
