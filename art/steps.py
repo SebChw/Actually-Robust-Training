@@ -7,19 +7,17 @@ from abc import ABC, abstractmethod
 from typing import Any, Callable, Dict, Iterable, List, Optional, Union
 
 import lightning as L
-import torch
 from lightning import Trainer
 from lightning.pytorch.loggers import Logger
 
-from art.core.base_components.base_model import ArtModule
-from art.core.exceptions import MissingLogParamsException
-from art.core.MetricCalculator import MetricCalculator
-from art.step.step_savers import JSONStepSaver
-from art.utils.art_logger import (add_logger, art_logger,
-                                  get_new_log_file_name, get_run_id,
-                                  remove_logger)
+from art.core import ArtModule
+from art.loggers import (add_logger, art_logger, get_new_log_file_name,
+                         get_run_id, remove_logger)
+from art.metrics import MetricCalculator
 from art.utils.enums import TrainingStage
+from art.utils.exceptions import MissingLogParamsException
 from art.utils.paths import get_checkpoint_logs_folder_path
+from art.utils.savers import JSONStepSaver
 
 
 class NoModelUsed:
@@ -62,8 +60,13 @@ class Step(ABC):
             datamodule (L.LightningDataModule): Data module to be used.
             metric_calculator (MetricCalculator): Metric calculator for this step.
         """
-        log_file_name = get_new_log_file_name(run_id if run_id is not None else get_run_id())
-        logger_id = add_logger(get_checkpoint_logs_folder_path(self.get_step_id(), self.name)/log_file_name)
+        log_file_name = get_new_log_file_name(
+            run_id if run_id is not None else get_run_id()
+        )
+        logger_id = add_logger(
+            get_checkpoint_logs_folder_path(self.get_step_id(), self.name)
+            / log_file_name
+        )
         try:
             self.datamodule = datamodule
             self.fill_basic_results()
@@ -168,7 +171,6 @@ class Step(ABC):
         )
         return path.exists()
 
-
     def __repr__(self) -> str:
         """Representation of the step"""
         result_repr = "\n".join(
@@ -221,14 +223,15 @@ class ModelStep(Step):
             logger.add_tags(self.name)
 
         if not inspect.isclass(model_class):
-            raise ValueError("model_func must be class inhertiting from Art Module or path to the checkpoint. This is to avoid memory leaks. Simplest way of doing this is to use lambda function lambda : ArtModule()")
-        
+            raise ValueError(
+                "model_func must be class inhertiting from Art Module or path to the checkpoint. This is to avoid memory leaks. Simplest way of doing this is to use lambda function lambda : ArtModule()"
+            )
+
         self.model_class = model_class
         self.model_kwargs = model_kwargs
         self.model_modifiers = model_modifiers
         self.logger = logger
         self.trainer_kwargs = trainer_kwargs
-
 
         self.model_name = model_class.__name__
         self.hash = self.model_class.get_hash()
@@ -264,13 +267,15 @@ class ModelStep(Step):
         """
         pass
 
-    def initialize_model(self,) -> ArtModule:
+    def initialize_model(
+        self,
+    ) -> ArtModule:
         """
         Initializes the model.
         """
         if self.trainer.model is not None:
             return None
-        
+
         model = self.model_class(**self.model_kwargs)
         for modifier in self.model_modifiers:
             modifier(model)
@@ -300,7 +305,7 @@ class ModelStep(Step):
             trainer_kwargs (Dict): Arguments to be passed to the trainer for validating the model.
         """
         art_logger.info(f"Validating model {self.model_name}")
-  
+
         result = self.trainer.validate(model=self.initialize_model(), **trainer_kwargs)
         self.results["scores"].update(result[0])
 
@@ -322,9 +327,7 @@ class ModelStep(Step):
             str: The step ID.
         """
         return (
-            f"{self.model_name}_{self.idx}"
-            if self.model_name != ""
-            else f"{self.idx}"
+            f"{self.model_name}_{self.idx}" if self.model_name != "" else f"{self.idx}"
         )
 
     def get_current_stage(self) -> str:
@@ -362,3 +365,208 @@ class ModelStep(Step):
             raise MissingLogParamsException(
                 "Datamodule does not have log_params method. You don't want to regret lack of logs :)"
             )
+
+
+class ExploreData(Step):
+    """This class checks whether we have some markdown file description of the dataset + we implemented visualizations"""
+
+    name = "Data analysis"
+    description = "This step allows you to perform data analysis and extract information that is necessery in next steps"
+
+    def get_step_id(self) -> str:
+        """
+        Returns step id
+
+        Returns:
+            str: step id
+        """
+        return "data_analysis"
+
+
+class EvaluateBaseline(ModelStep):
+    """This class takes a baseline and evaluates/trains it on the dataset"""
+
+    name = "Evaluate Baseline"
+    description = "Evaluates a baseline on the dataset"
+
+    def __init__(
+        self,
+        baseline: ArtModule,
+        device: Optional[str] = "cpu",
+    ):
+        super().__init__(baseline, {"accelerator": device})
+
+    def do(self, previous_states: Dict):
+        """
+        This method evaluates baseline on the dataset
+
+        Args:
+            previous_states (Dict): previous states
+        """
+        art_logger.info("Training baseline")
+        model = self.model_class()
+        model.ml_train({"dataloader": self.datamodule.train_dataloader()})
+        art_logger.info("Validating baseline")
+        model.set_metric_calculator(self.metric_calculator)
+        result = self.trainer.validate(model=model, datamodule=self.datamodule)
+        self.results["scores"].update(result[0])
+
+
+class CheckLossOnInit(ModelStep):
+    """This step checks whether the loss on init is as expected"""
+
+    name = "Check Loss On Init"
+    description = "Checks loss on init"
+
+    def __init__(
+        self,
+        model: ArtModule,
+    ):
+        super().__init__(model)
+
+    def do(self, previous_states: Dict):
+        """
+        This method checks loss on init. It validates the model on the train dataloader and checks whether the loss is as expected.
+
+        Args:
+            previous_states (Dict): previous states
+        """
+        train_loader = self.datamodule.train_dataloader()
+        art_logger.info("Calculating loss on init")
+        self.validate(trainer_kwargs={"dataloaders": train_loader})
+
+
+class OverfitOneBatch(ModelStep):
+    """This step tries to Overfit one train batch"""
+
+    name = "Overfit One Batch"
+    description = "Overfits one batch"
+
+    def __init__(
+        self,
+        model: ArtModule,
+        number_of_steps: int = 50,
+    ):
+        self.number_of_steps = number_of_steps
+        super().__init__(model, {"overfit_batches": 1, "max_epochs": number_of_steps})
+
+    def do(self, previous_states: Dict):
+        """
+        This method overfits one batch
+
+        Args:
+            previous_states (Dict): previous states
+        """
+        train_loader = self.datamodule.train_dataloader()
+        art_logger.info("Overfitting one batch")
+        self.train(trainer_kwargs={"train_dataloaders": train_loader})
+        for key, value in self.trainer.logged_metrics.items():
+            if hasattr(value, "item"):
+                self.results[key] = value.item()
+            else:
+                self.results[key] = value
+
+    def get_check_stage(self):
+        """Returns check stage"""
+        return TrainingStage.TRAIN.value
+
+    def log_params(self):
+        self.results["parameters"]["number_of_steps"] = self.number_of_steps
+        super().log_params()
+
+
+class Overfit(ModelStep):
+    """This step tries to overfit the model"""
+
+    name = "Overfit"
+    description = "Overfits model"
+
+    def __init__(
+        self,
+        model: ArtModule,
+        logger: Optional[Union[Logger, Iterable[Logger], bool]] = None,
+        max_epochs: int = 1,
+    ):
+        self.max_epochs = max_epochs
+
+        super().__init__(model, {"max_epochs": max_epochs}, logger=logger)
+
+    def do(self, previous_states: Dict):
+        """
+        This method overfits the model
+
+        Args:
+            previous_states (Dict): previous states
+        """
+        train_loader = self.datamodule.train_dataloader()
+        art_logger.info("Overfitting model")
+        self.train(trainer_kwargs={"train_dataloaders": train_loader})
+        art_logger.info("Validating overfitted model")
+        self.validate(trainer_kwargs={"datamodule": self.datamodule})
+
+    def get_check_stage(self):
+        """Returns check stage"""
+        return TrainingStage.TRAIN.value
+
+    def log_params(self):
+        self.results["parameters"]["max_epochs"] = self.max_epochs
+        super().log_params()
+
+
+class Regularize(ModelStep):
+    """This step tries applying regularization to the model"""
+
+    name = "Regularize"
+    description = "Regularizes model"
+
+    def __init__(
+        self,
+        model: ArtModule,
+        logger: Optional[Union[Logger, Iterable[Logger], bool]] = None,
+        trainer_kwargs: Dict = {},
+    ):
+        self.trainer_kwargs = trainer_kwargs
+        super().__init__(model, trainer_kwargs, logger=logger)
+
+    def do(self, previous_states: Dict):
+        """
+        This method regularizes the model
+
+        Args:
+            previous_states (Dict): previous states
+        """
+        art_logger.info("Turning on regularization")
+        self.datamodule.turn_on_regularizations()
+        art_logger.info("Training regularized model")
+        self.train(trainer_kwargs={"datamodule": self.datamodule})
+
+    def log_params(self):
+        self.results["parameters"].update(self.trainer_kwargs)
+        super().log_params()
+
+
+class Tune(ModelStep):
+    """This step tunes the model"""
+
+    name = "Tune"
+    description = "Tunes model"
+
+    def __init__(
+        self,
+        model: ArtModule,
+        logger: Optional[Union[Logger, Iterable[Logger], bool]] = None,
+    ):
+        super().__init__(model_func=model, logger=logger)
+
+    def do(self, previous_states: Dict):
+        """
+        This method tunes the model
+
+        Args:
+            previous_states (Dict): previous states
+        """
+        # TODO how to solve this?
+
+
+class Squeeze(ModelStep):
+    pass

@@ -1,16 +1,81 @@
-from typing import TYPE_CHECKING, Any, List
+from collections import defaultdict
+from typing import Any, Dict, List, Union
 
 import lightning as L
 
-from art.core.exceptions import CheckFailedException
-from art.core.MetricCalculator import MetricCalculator, SkippedMetric
-from art.experiment.experiment_state import ArtProjectState
+from art.checks import Check
+from art.loggers import (
+    add_logger,
+    art_logger,
+    get_new_log_file_name,
+    get_run_id,
+    remove_logger,
+)
+from art.metrics import MetricCalculator, SkippedMetric
+from art.steps import Step
+from art.utils.enums import TrainingStage
+from art.utils.exceptions import CheckFailedException
 from art.utils.paths import EXPERIMENT_LOG_DIR
-from art.step.checks import Check
-from art.utils.art_logger import art_logger, add_logger, remove_logger, get_new_log_file_name, get_run_id
 
-if TYPE_CHECKING:
-    from art.step.step import Step
+
+class ArtProjectState:
+    current_step: Union[Step, None]
+    current_stage: TrainingStage = TrainingStage.TRAIN
+    step_states: Dict[str, Dict[str, Dict[str, str]]]
+    status: str
+    """
+    A class for managing the state of a project.
+        steps:{
+        "model_name": {
+            "step_name": {/*step state*/},
+            "step_name2": {/*step state*/},
+        }
+        "model2_name: {
+            "step_name": {/*step state*/},
+            "step_name2": {/*step state*/},
+        }
+    }"""
+
+    def __init__(self):
+        self.step_states = defaultdict(lambda: defaultdict(lambda: defaultdict(str)))
+        self.status = "created"
+        self.current_step = None
+
+    def get_steps(self):
+        """
+        Returns all steps that were run
+
+        Returns:
+            Dict[str, Dict[str, Dict[str, str]]]: [description]
+        """
+        return self.step_states
+
+    def add_step(self, step):
+        """
+        Adds step to the state
+
+        Args:
+            step (Step): A step to be add the the project
+        """
+        self.step_states.append(step)
+
+    def get_current_step(self):
+        """
+        Gets current step
+
+        Returns:
+            Step: Current step
+        """
+        return self.current_step.name
+
+    def get_current_stage(self):
+        """
+        Gets current stage
+
+        Returns:
+            TrainingStage: Current stage
+        """
+        return self.current_step.get_current_stage()
 
 
 class ArtProject:
@@ -103,7 +168,6 @@ class ArtProject:
             try:
                 self.check_checks(step, checks)
             except Exception as e:
-                art_logger.exception(e)
                 return True
 
         step_current_hash = step.get_hash()
@@ -137,10 +201,14 @@ class ArtProject:
                     self.fill_step_states(step)
                     continue
                 try:
-                    step(self.state.step_states, self.datamodule, self.metric_calculator, run_id)
+                    step(
+                        self.state.step_states,
+                        self.datamodule,
+                        self.metric_calculator,
+                        run_id,
+                    )
                     self.check_checks(step, checks)
                 except CheckFailedException as e:
-                    art_logger.exception(e)
                     step.save_to_disk()
                     break
 

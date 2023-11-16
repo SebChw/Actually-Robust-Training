@@ -1,11 +1,37 @@
 import os
+import sys
+import uuid
+from datetime import datetime
+from pathlib import Path
 from typing import Optional, Union
 
-from neptune import init_run
-from neptune.exceptions import MissingFieldException
 import numpy as np
-from wandb import log, save, Image
 from lightning.pytorch.loggers import NeptuneLogger, WandbLogger
+from loguru import logger
+
+logger.remove()
+logger.add(sys.stdout, format="{message}", level="DEBUG")
+
+
+def get_run_id() -> str:
+    return datetime.now().strftime("%Y-%m-%d_%H-%M-%S") + "_" + str(uuid.uuid4())
+
+
+def get_new_log_file_name(run_id: str) -> str:
+    return f"{run_id}.log"
+
+
+def add_logger(log_file_path: Path) -> int:
+    return art_logger.add(
+        log_file_path, format="{time} {level} {message}", level="DEBUG"
+    )
+
+
+def remove_logger(logger_id: int):
+    art_logger.remove(logger_id)
+
+
+art_logger = logger
 
 
 class NeptuneLoggerAdapter(NeptuneLogger):
@@ -14,6 +40,9 @@ class NeptuneLoggerAdapter(NeptuneLogger):
     """
 
     def __init__(self, *args, **kwargs):
+        from neptune import init_run
+        from neptune.exceptions import MissingFieldException
+
         super().__init__(*args, **kwargs)
 
     def log_config(self, configFile, path: str = "hydra/config"):
@@ -105,6 +134,8 @@ class WandbLoggerAdapter(WandbLogger):
     """
 
     def __init__(self, *args, **kwargs):
+        import wandb
+
         super().__init__(*args, **kwargs)
 
     def log_config(self, configFile: str):
@@ -118,7 +149,7 @@ class WandbLoggerAdapter(WandbLogger):
         """
         # yaml_data = open(configFile, 'r')
         # yaml_data = yaml.load(yaml_data, Loader=yaml.SafeLoader)
-        save(configFile)
+        wandb.save(configFile)
 
     def log_img(self, image, path: Union[str, np.ndarray] = "image"):
         """
@@ -127,7 +158,7 @@ class WandbLoggerAdapter(WandbLogger):
         Args:
             image (np.ndarray): Image to log.
             path (str, optional): Path to log image to. Defaults to "image"."""
-        log({path: Image(image)})
+        wandb.log({path: wandb.Image(image)})
 
     def log_figure(self, figure, path="figure"):
         """
@@ -137,4 +168,4 @@ class WandbLoggerAdapter(WandbLogger):
             figure (Any): Figure to log.
             path (str, optional): Path to log figure to. Defaults to "figure".
         """
-        log({path: figure})
+        wandb.log({path: figure})

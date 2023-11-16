@@ -7,7 +7,7 @@ import lightning as L
 import torch.nn
 from torch.utils.data import DataLoader
 
-from art.core.MetricCalculator import MetricCalculator
+from art.metrics import MetricCalculator
 from art.utils.enums import LOSS, PREDICTION, TARGET
 
 
@@ -237,9 +237,7 @@ class ArtModule(L.LightningModule, ABC):
         Returns:
             str: Hash of the model.
         """
-        return hashlib.md5(
-            inspect.getsource(cls).encode("utf-8")
-        ).hexdigest()
+        return hashlib.md5(inspect.getsource(cls).encode("utf-8")).hexdigest()
 
     def unify_type(self: Any, x: Any):
         """
