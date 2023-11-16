@@ -6,6 +6,7 @@ class ProjectType(Enum):
     """
     Enum for project types
     """
+
     CLASSIFICATION = 1
     REGRESSION = 2
     CLUSTERING = 3
@@ -24,8 +25,16 @@ def get_git_user_info():
         subprocess.CalledProcessError: If the git command fails.
     """
     try:
-        username = subprocess.check_output(["git", "config", "--get", "user.name"]).decode().strip()
-        email = subprocess.check_output(["git", "config", "--get", "user.email"]).decode().strip()
+        username = (
+            subprocess.check_output(["git", "config", "--get", "user.name"])
+            .decode()
+            .strip()
+        )
+        email = (
+            subprocess.check_output(["git", "config", "--get", "user.email"])
+            .decode()
+            .strip()
+        )
         return username, email
     except subprocess.CalledProcessError:
         return None, None
