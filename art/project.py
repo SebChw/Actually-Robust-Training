@@ -119,7 +119,6 @@ class ArtProject:
                 "skipped_metrics": skipped_metrics,
             }
         )
-        step.set_step_id(len(self.steps))
 
     def fill_step_states(self, step: "Step"):
         """
@@ -129,7 +128,7 @@ class ArtProject:
             step (Step): The step whose results need to be recorded.
         """
         self.state.step_states[step.model_name][
-            step.get_name_with_id()
+            step.get_full_step_name()
         ] = step.get_latest_run()
 
     def check_checks(self, step: "Step", checks: List[Check]):
@@ -262,9 +261,6 @@ class ArtProject:
             step_id (int): The ID of the step to replace. Default is the last step.
         """
         self.steps[step_id]["step"] = step
-        if step_id == -1:
-            step_id = len(self.steps)
-        step.set_step_id(step_id)
 
     def register_metrics(self, metrics: List[Any]):
         """
