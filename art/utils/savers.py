@@ -111,6 +111,11 @@ class JSONStepSaver(StepSaver):
 
         current_results["runs"].insert(0, step.results)
 
+        for key in step.results.keys():
+            if key == "parameters":
+                if "callbacks" in step.results["parameters"].keys():
+                    del step.results["parameters"]["callbacks"]
+
         with open(results_file, "w") as f:
             json.dump(current_results, f)
 
