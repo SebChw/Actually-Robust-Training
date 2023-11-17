@@ -15,11 +15,11 @@ def get_checkpoint_step_dir_path(step_id: str, step_name: str) -> Path:
     Returns:
         str: The name of the directory.
     """
-    return CHECKPOINTS_PATH/f"{step_id}_{step_name}"
+    return CHECKPOINTS_PATH / f"{step_id}_{step_name}"
 
 
 def get_checkpoint_logs_folder_path(step_id: str, step_name: str) -> Path:
-    return get_checkpoint_step_dir_path(step_id, step_name)/"logs"
+    return get_checkpoint_step_dir_path(step_id, step_name) / "logs"
 
 
 #

@@ -8,7 +8,9 @@ Idea is as follows:
 """
 
 
-def art_decorate_single_func(visualizing_function_in=None, visualizing_function_out=None):
+def art_decorate_single_func(
+    visualizing_function_in=None, visualizing_function_out=None
+):
     """
     Decorates input and output of a function.
 
@@ -19,6 +21,7 @@ def art_decorate_single_func(visualizing_function_in=None, visualizing_function_
     Returns:
         function: Decorated function.
     """
+
     def decorator(func):
         """
         Decorator
@@ -26,6 +29,7 @@ def art_decorate_single_func(visualizing_function_in=None, visualizing_function_
         Args:
             func (function): Function to decorate.
         """
+
         def wrapper(*args, **kwargs):
             """
             Wrapper
@@ -55,7 +59,7 @@ def art_decorate(
     """
     Decorates list of objects functions. It doesn't modify output of a function
     put can be used for logging additional information during training.
-    
+
     Args:
         functions (List[Tuple[object, str]]): List of tuples of objects and methods to decorate.
         function_in (function, optional): Function applied on the input. Defaults to None.

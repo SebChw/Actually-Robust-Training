@@ -3,8 +3,8 @@ from typing import TYPE_CHECKING, Any, Dict, List
 from art.utils.enums import TrainingStage
 
 if TYPE_CHECKING:
-    from art.core.base_components.base_model import ArtModule
-    from art.experiment.Experiment import ArtProject
+    from art.core import ArtModule
+    from art.project import ArtProject
 
 
 class DefaultMetric:
