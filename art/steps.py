@@ -470,9 +470,9 @@ class OverfitOneBatch(ModelStep):
         """Returns check stage"""
         return TrainingStage.TRAIN.value
 
-    def log_params(self):
+    def log_params(self, model):
         self.results["parameters"]["number_of_steps"] = self.number_of_steps
-        super().log_params()
+        super().log_params(model)
 
 
 class Overfit(ModelStep):
@@ -508,9 +508,9 @@ class Overfit(ModelStep):
         """Returns check stage"""
         return TrainingStage.TRAIN.value
 
-    def log_params(self):
+    def log_params(self, model):
         self.results["parameters"]["max_epochs"] = self.max_epochs
-        super().log_params()
+        super().log_params(model)
 
 
 class Regularize(ModelStep):
@@ -540,9 +540,9 @@ class Regularize(ModelStep):
         art_logger.info("Training regularized model")
         self.train(trainer_kwargs={"datamodule": self.datamodule})
 
-    def log_params(self):
+    def log_params(self, model):
         self.results["parameters"].update(self.trainer_kwargs)
-        super().log_params()
+        super().log_params(model)
 
 
 class Tune(ModelStep):
