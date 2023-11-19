@@ -117,7 +117,11 @@ class JSONStepSaver(StepSaver):
                     del step.results["parameters"]["callbacks"]
 
         with open(results_file, "w") as f:
-            json.dump(current_results, f)
+            try:
+                json.dump(current_results, f)
+            except TypeError as e:
+                print(current_results)
+                raise f"Error while saving results for step {step_name}: {e}. If you have ellipsis (...) in your results, it may cause the issue."
 
     def load(self, step_id: str, step_name: str, filename: str = RESULT_NAME):
         """

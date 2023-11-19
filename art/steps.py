@@ -233,6 +233,7 @@ class ModelStep(Step):
 
         self.model_name = model_class.__name__
         self.hash = self.model_class.get_hash()
+        self.trainer = Trainer(**self.trainer_kwargs, logger=self.logger)
 
     def __call__(
         self,
@@ -592,7 +593,7 @@ class TransferLearning(ModelStep):
         freezed_trainer_kwargs: Dict = {},
         unfreezed_trainer_kwargs: Dict = {},
         freeze_names: Optional[list[str]] = None,
-        freeze_to: Optional[int] = None,
+        keep_unfrozen: Optional[int] = None,
         fine_tune_lr: float = 1e-5,
         fine_tune: bool = True,
     ):
@@ -606,13 +607,13 @@ class TransferLearning(ModelStep):
             freezed_trainer_kwargs (Dict, optional): trainer kwargs use for transfer learning with freezed weights. Defaults to {}.
             unfreezed_trainer_kwargs (Dict, optional): trainer kwargs use for fine tuning with unfreezed weights. Defaults to {}.
             freeze_names (Optional[list[str]], optional): name of model to freeze which appears in layers. Defaults to None.
-            freeze_to (Optional[int], optional): number of layers to freeze (from the 0th). Defaults to None.
+            keep_unfrozen (Optional[int], optional): number of last layers to keep unfrozen. Defaults to None.
             fine_tune_lr (float, optional): fine tune lr. Defaults to 1e-5.
             fine_tune (bool, optional): whether or not perform fine tuning. Defaults to True.
         """
         super().__init__(model, trainer_kwargs=freezed_trainer_kwargs, logger=logger, model_modifiers=model_modifiers)
         self.freeze_names = freeze_names
-        self.freeze_to = freeze_to
+        self.keep_unfrozen = keep_unfrozen
         self.unfreezed_trainer_kwargs = unfreezed_trainer_kwargs
         self.fine_tune_lr = fine_tune_lr
         self.fine_tune = fine_tune
@@ -648,21 +649,21 @@ class TransferLearning(ModelStep):
                     if name in param[0]:
                         param[1].requires_grad = False
 
-        def freeze_to_layer(model):
-            """Freeze parameters up to a certain layer index."""
+        def freeze_without_last_n(model):
+            """Freeze all parameters except last n layers."""
             for i, param in enumerate(model.parameters()):
-                if i < self.freeze_to:
+                if i < len(list(model.parameters())) - self.keep_unfrozen:
                     param.requires_grad = False
 
         def freeze_model(model):
-            if self.freeze_names is not None and self.freeze_to is not None:
+            if self.freeze_names is not None and self.keep_unfrozen is not None:
                 raise ValueError(
-                    "Both freeze_names and freeze_to are provided. Please provide only one of them."
+                    "Both freeze_names and keep_unfrozen are provided. Please provide only one of them."
                 )
             elif self.freeze_names is not None:
                 freeze_by_name(model)
-            elif self.freeze_to is not None:
-                freeze_to_layer(model)
+            elif self.keep_unfrozen is not None:
+                freeze_without_last_n(model)
             else:
                 raise ValueError("No freezing criteria provided.")
 

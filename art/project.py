@@ -12,7 +12,7 @@ from art.loggers import (
     remove_logger,
 )
 from art.metrics import MetricCalculator, SkippedMetric
-from art.steps import Step
+from art.steps import Step, ModelStep
 from art.utils.enums import TrainingStage
 from art.utils.exceptions import CheckFailedException
 from art.utils.paths import EXPERIMENT_LOG_DIR
@@ -192,10 +192,13 @@ class ArtProject:
         run_id = get_run_id()
         logger_id = add_logger(EXPERIMENT_LOG_DIR / get_new_log_file_name(run_id))
         try:
-            for step in self.steps:
-                self.metric_calculator.compile(step["skipped_metrics"])
-                step, checks = step["step"], step["checks"]
+            for step_check in self.steps:
+                self.metric_calculator.compile(step_check["skipped_metrics"])
+                step, checks = step_check["step"], step_check["checks"]
                 self.state.current_step = step
+                if isinstance(step, ModelStep):
+                    curr_device = "cuda" if isinstance(step.trainer.accelerator, L.pytorch.accelerators.CUDAAccelerator) else "cpu"
+                    self.metric_calculator.to(curr_device)
 
                 if not self.check_if_must_be_run(step, checks) and not force_rerun:
                     self.fill_step_states(step)
