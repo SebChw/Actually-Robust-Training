@@ -1,13 +1,13 @@
-checkpoints/data_analysis_Data analysis/class_images/class_0.png
-checkpoints/data_analysis_Data analysis/class_images/class_1.png
-checkpoints/data_analysis_Data analysis/class_images/class_2.png
-checkpoints/data_analysis_Data analysis/class_images/class_3.png
-checkpoints/data_analysis_Data analysis/class_images/class_4.png
-checkpoints/data_analysis_Data analysis/class_images/class_5.png
-checkpoints/data_analysis_Data analysis/class_images/class_6.png
-checkpoints/data_analysis_Data analysis/class_images/class_7.png
-checkpoints/data_analysis_Data analysis/class_images/class_8.png
-checkpoints/data_analysis_Data analysis/class_images/class_9.png
+checkpoints/Data analysis/class_images/class_0.png
+checkpoints/Data analysis/class_images/class_1.png
+checkpoints/Data analysis/class_images/class_2.png
+checkpoints/Data analysis/class_images/class_3.png
+checkpoints/Data analysis/class_images/class_4.png
+checkpoints/Data analysis/class_images/class_5.png
+checkpoints/Data analysis/class_images/class_6.png
+checkpoints/Data analysis/class_images/class_7.png
+checkpoints/Data analysis/class_images/class_8.png
+checkpoints/Data analysis/class_images/class_9.png
 augmentations_0.png
 augmentations_1.png
 augmentations_2.png
@@ -19,11 +19,11 @@ augmentations_7.png
 augmentations_8.png
 augmentations_9.png
 debug_art.log
-checkpoints/AlreadyExistingSolutionBaseline_4_Evaluate Baseline/results.json
-checkpoints/data_analysis_Data analysis/results.json
-checkpoints/HeuristicBaseline_2_Evaluate Baseline/results.json
-checkpoints/MlBaseline_3_Evaluate Baseline/results.json
-checkpoints/MNISTModel_5_Check Loss On Init/results.json
-checkpoints/MNISTModel_6_Overfit One Batch/results.json
-checkpoints/MNISTModel_7_Overfit/results.json
-checkpoints/MNISTModel_8_Regularize/results.json
+checkpoints/AlreadyExistingSolutionBaseline_Evaluate Baseline/results.json
+checkpoints/Data analysis/results.json
+checkpoints/HeuristicBaseline_Evaluate Baseline/results.json
+checkpoints/MlBaseline_Evaluate Baseline/results.json
+checkpoints/MNISTModel_Check Loss On Init/results.json
+checkpoints/MNISTModelNormalized_Overfit One Batch/results.json
+checkpoints/MNISTModelNormalized_Overfit/results.json
+checkpoints/MNISTModelNormalized_Regularize/results.json

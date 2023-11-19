@@ -64,7 +64,7 @@ class Step(ABC):
             run_id if run_id is not None else get_run_id()
         )
         logger_id = add_logger(
-            get_checkpoint_logs_folder_path(self.get_step_id(), self.name)
+            get_checkpoint_logs_folder_path(self.get_full_step_name())
             / log_file_name
         )
         try:
@@ -79,15 +79,6 @@ class Step(ABC):
             remove_logger(logger_id)
         self.results["log_file_name"] = log_file_name
 
-    def set_step_id(self, idx: int):
-        """
-        Set the step ID.
-
-        Args:
-            idx (int): Index to set as step ID.
-        """
-        self.idx = idx
-
     def fill_basic_results(self):
         """Fill basic results like hash and commit id"""
         self.results["hash"] = self.get_hash()
@@ -100,24 +91,6 @@ class Step(ABC):
         except Exception:
             art_logger.exception("Error while getting commit id!")
 
-    def get_step_id(self) -> str:
-        """
-        Retrieve the step ID.
-
-        Returns:
-            str: The step ID.
-        """
-        return f"{self.idx}"
-
-    def get_name_with_id(self) -> str:
-        """
-        Retrieve the step name combined with its ID.
-
-        Returns:
-            str: Name combined with ID.
-        """
-        return f"{self.idx}_{self.name}"
-
     def get_full_step_name(self) -> str:
         """
         Retrieve the full name of the step, which is a combination of its ID and name.
@@ -125,7 +98,7 @@ class Step(ABC):
         Returns:
             str: The full step name.
         """
-        return f"{self.get_step_id()}_{self.name}"
+        return self.name
 
     def get_hash(self) -> str:
         """
@@ -157,7 +130,7 @@ class Step(ABC):
         """
         if self.finalized:
             return self.results
-        return JSONStepSaver().load(self.get_step_id(), self.name)["runs"][0]
+        return JSONStepSaver().load(self.get_full_step_name())["runs"][0]
 
     def was_run(self) -> bool:
         """
@@ -167,7 +140,7 @@ class Step(ABC):
             bool: True if the step was run, otherwise False.
         """
         path = JSONStepSaver().get_path(
-            self.get_step_id(), self.name, JSONStepSaver.RESULT_NAME
+            self.get_full_step_name(), JSONStepSaver.RESULT_NAME
         )
         return path.exists()
 
@@ -319,7 +292,7 @@ class ModelStep(Step):
         result = self.trainer.test(model=self.initialize_model(), **trainer_kwargs)
         self.results["scores"].update(result[0])
 
-    def get_step_id(self) -> str:
+    def get_full_step_name(self) -> str:
         """
         Retrieve the step ID, combining model name (if available) with the index.
 
@@ -327,7 +300,7 @@ class ModelStep(Step):
             str: The step ID.
         """
         return (
-            f"{self.model_name}_{self.idx}" if self.model_name != "" else f"{self.idx}"
+            f"{self.model_name}_{self.name}" if self.model_name != "" else self.name
         )
 
     def get_current_stage(self) -> str:
@@ -372,15 +345,6 @@ class ExploreData(Step):
 
     name = "Data analysis"
     description = "This step allows you to perform data analysis and extract information that is necessery in next steps"
-
-    def get_step_id(self) -> str:
-        """
-        Returns step id
-
-        Returns:
-            str: step id
-        """
-        return "data_analysis"
 
 
 class EvaluateBaseline(ModelStep):
