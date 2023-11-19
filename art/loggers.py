@@ -3,7 +3,7 @@ import sys
 import uuid
 from datetime import datetime
 from pathlib import Path
-from typing import Optional, Union
+from typing import Optional, Union, List
 
 import numpy as np
 from lightning.pytorch.loggers import NeptuneLogger, WandbLogger
@@ -126,6 +126,17 @@ class NeptuneLoggerAdapter(NeptuneLogger):
     def stop(self):
         self.run.stop()
 
+    def add_tags(self, tags: Union[List[str], str]):
+        """
+        Adds tags to the Neptune experiment.
+
+        Args:
+            tags (Union[List[str], str]): Tag or list of tags to add.
+        """
+        if isinstance(tags, str):
+            tags = [tags]
+        self.experiment.add_tags(tags)
+
 
 class WandbLoggerAdapter(WandbLogger):
     """
@@ -169,3 +180,14 @@ class WandbLoggerAdapter(WandbLogger):
             path (str, optional): Path to log figure to. Defaults to "figure".
         """
         wandb.log({path: figure})
+
+    def add_tags(self, tags: Union[List[str], str]):
+        """
+        Adds tags to the Wandb run.
+
+        Args:
+            tags (Union[List[str], str]): Tag or list of tags to add.
+        """
+        if isinstance(tags, str):
+            tags = [tags]
+        wandb.run.tags += tags
