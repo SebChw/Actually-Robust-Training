@@ -18,7 +18,7 @@ parser.add_argument(
 )
 args = parser.parse_args()
 
-LOGS_PATH = Path(args.exp_path) / "checkpoints"
+LOGS_PATH = Path(args.exp_path) / "art_checkpoints"
 if not LOGS_PATH.exists():
     raise ValueError(f"Path {LOGS_PATH} does not exist.")
 app = Dash(__name__, external_stylesheets=[dbc.themes.BOOTSTRAP])
