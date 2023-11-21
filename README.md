@@ -49,6 +49,12 @@ After running all cells run dashboard with
 python -m art.cli run-dashboard exp1
 ```
 
+2. A tutorial showing how to use ART for transfer learning in an NLP task.
+```sh
+python -m art.cli bert-transfer-learning-tutorial
+```
+
+
 ## Required knowledge
 In order to use ART, you should have a basic knowledge of:
 - Python - you can find many tutorials online, e.g. [here](https://www.learnpython.org/)
