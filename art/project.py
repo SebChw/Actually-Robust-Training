@@ -207,6 +207,7 @@ class ArtProject:
                     )
                     self.check_checks(step, checks)
                 except CheckFailedException as e:
+                    art_logger.exception(e)
                     step.save_to_disk()
                     break
 
