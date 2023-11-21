@@ -8,6 +8,7 @@ from typing import Any, Callable, Dict, Iterable, List, Optional, Union
 
 import lightning as L
 from lightning import Trainer
+from lightning.pytorch.accelerators import CUDAAccelerator
 from lightning.pytorch.loggers import Logger
 
 from art.core import ArtModule
@@ -163,8 +164,18 @@ class Step(ABC):
     ):
         pass
 
+    @abstractmethod
+    def do(self, previous_states: Dict):
+        """
+        Abstract method to execute the step. Must be implemented by child classes.
+
+        Args:
+            previous_states (Dict): Dictionary containing the previous step states.
+        """
+        pass
+
     def save_to_disk(self):
-        JSONStepSaver().save(self, "results.json")
+        JSONStepSaver().save(self, self.get_full_step_name(), "results.json")
 
 
 class ModelStep(Step):
@@ -178,7 +189,7 @@ class ModelStep(Step):
         trainer_kwargs: Dict = {},
         model_kwargs: Dict = {},
         model_modifiers: List[Callable] = [],
-        logger: Optional[Union[Logger, Iterable[Logger], bool]] = None,
+        logger: Optional[Logger] = None,
     ):
         """
         Initialize a model-based step.
@@ -189,7 +200,7 @@ class ModelStep(Step):
             model_kwargs (Dict, optional): Arguments to be passed to the model. Defaults to {}.
             model_modifiers (List[Callable], optional): List of functions to be applied to the model. Defaults to [].
             datamodule_modifiers (List[Callable], optional): List of functions to be applied to the data module. Defaults to [].
-            logger (Optional[Union[Logger, Iterable[Logger], bool]], optional): Logger to be used. Defaults to None.
+            logger (Optional[Logger], optional): Logger to be used. Defaults to None.
         """
         super().__init__()
         if logger is not None:
@@ -225,25 +236,17 @@ class ModelStep(Step):
         """
         self.trainer = Trainer(**self.trainer_kwargs, logger=self.logger)
         self.metric_calculator = metric_calculator
-        curr_device = "cuda" if isinstance(self.trainer.accelerator, L.pytorch.accelerators.CUDAAccelerator) else "cpu"
+        curr_device = (
+            "cuda" if isinstance(self.trainer.accelerator, CUDAAccelerator) else "cpu"
+        )
         self.metric_calculator.to(curr_device)
         super().__call__(previous_states, datamodule, metric_calculator, run_id)
         del self.trainer
         gc.collect()
 
-    @abstractmethod
-    def do(self, previous_states: Dict):
-        """
-        Abstract method to execute the step. Must be implemented by child classes.
-
-        Args:
-            previous_states (Dict): Dictionary containing the previous step states.
-        """
-        pass
-
     def initialize_model(
         self,
-    ) -> ArtModule:
+    ) -> Optional[ArtModule]:
         """
         Initializes the model.
         """
@@ -469,7 +472,7 @@ class Overfit(ModelStep):
     def __init__(
         self,
         model: ArtModule,
-        logger: Optional[Union[Logger, Iterable[Logger], bool]] = None,
+        logger: Optional[Logger] = None,
         max_epochs: int = 1,
     ):
         self.max_epochs = max_epochs
@@ -507,7 +510,7 @@ class Regularize(ModelStep):
     def __init__(
         self,
         model: ArtModule,
-        logger: Optional[Union[Logger, Iterable[Logger], bool]] = None,
+        logger: Optional[Logger] = None,
         trainer_kwargs: Dict = {},
     ):
         self.trainer_kwargs = trainer_kwargs
@@ -539,9 +542,9 @@ class Tune(ModelStep):
     def __init__(
         self,
         model: ArtModule,
-        logger: Optional[Union[Logger, Iterable[Logger], bool]] = None,
+        logger: Optional[Logger] = None,
     ):
-        super().__init__(model_func=model, logger=logger)
+        super().__init__(model, logger=logger)
 
     def do(self, previous_states: Dict):
         """
@@ -566,7 +569,7 @@ class TransferLearning(ModelStep):
         self,
         model: ArtModule,
         model_modifiers: List[Callable] = [],
-        logger: Optional[Union[Logger, Iterable[Logger], bool]] = None,
+        logger: Optional[Logger] = None,
         freezed_trainer_kwargs: Dict = {},
         unfreezed_trainer_kwargs: Dict = {},
         freeze_names: Optional[list[str]] = None,
@@ -580,7 +583,7 @@ class TransferLearning(ModelStep):
         Args:
             model (ArtModule): model
             model_modifiers (List[Callable], optional): model modifiers. Defaults to [].
-            logger (Optional[Union[Logger, Iterable[Logger], bool]], optional): logger. Defaults to None.
+            logger (Logger, optional): logger. Defaults to None.
             freezed_trainer_kwargs (Dict, optional): trainer kwargs use for transfer learning with freezed weights. Defaults to {}.
             unfreezed_trainer_kwargs (Dict, optional): trainer kwargs use for fine tuning with unfreezed weights. Defaults to {}.
             freeze_names (Optional[list[str]], optional): name of model to freeze which appears in layers. Defaults to None.

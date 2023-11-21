@@ -12,7 +12,7 @@ from art.loggers import (
     remove_logger,
 )
 from art.metrics import MetricCalculator, SkippedMetric
-from art.steps import Step, ModelStep
+from art.steps import ModelStep, Step
 from art.utils.enums import TrainingStage
 from art.utils.exceptions import CheckFailedException
 from art.utils.paths import EXPERIMENT_LOG_DIR
@@ -93,11 +93,11 @@ class ArtProject:
             **kwargs: Additional keyword arguments.
         """
         self.name = name
-        self.steps = []
+        self.steps: List[Dict] = []
         self.datamodule = datamodule
         self.state = ArtProjectState()
         self.metric_calculator = MetricCalculator(self)
-        self.changed_steps = []
+        self.changed_steps: List[str] = []
 
     def add_step(
         self,
