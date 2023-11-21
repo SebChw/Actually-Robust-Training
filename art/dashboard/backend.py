@@ -37,7 +37,7 @@ def prepare_steps_info(logs_path: Path) -> Dict[str, Dict]:
                     "timestamp": run["timestamp"],
                     "hash": run["hash"],
                     "commit_id": run["commit_id"],
-                    "successfull": run["succesfull"],
+                    "successfull": run["successfull"],
                 }
                 steps_info[step_name][DF].append(new_sample)
                 steps_info[step_name][SCORE_ATTRS] = list(run["scores"].keys())

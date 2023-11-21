@@ -40,7 +40,7 @@ class Step(ABC):
             "scores": {},
             "parameters": {},
             "timestamp": str(datetime.datetime.now()),
-            "succesfull": False,
+            "successfull": False,
         }
         self.finalized = False
         self.model_name = ""
@@ -149,13 +149,13 @@ class Step(ABC):
         result_repr = "\n".join(
             f"\t{k}: {v}" for k, v in self.results["scores"].items()
         )
-        return f"Step: {self.name}, Model: {self.model_name}, Passed: {self.results['succesfull']}. Results:\n{result_repr}"
+        return f"Step: {self.name}, Model: {self.model_name}, Passed: {self.results['successfull']}. Results:\n{result_repr}"
 
-    def set_succesfull(self):
-        self.results["succesfull"] = True
+    def set_successfull(self):
+        self.results["successfull"] = True
 
-    def is_succesfull(self):
-        return self.results["succesfull"]
+    def is_successfull(self):
+        return self.results["successfull"]
 
     @abstractmethod
     def log_params(
