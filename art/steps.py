@@ -12,8 +12,13 @@ from lightning.pytorch.accelerators import CUDAAccelerator
 from lightning.pytorch.loggers import Logger
 
 from art.core import ArtModule
-from art.loggers import (add_logger, art_logger, get_new_log_file_name,
-                         get_run_id, remove_logger)
+from art.loggers import (
+    add_logger,
+    art_logger,
+    get_new_log_file_name,
+    get_run_id,
+    remove_logger,
+)
 from art.metrics import MetricCalculator
 from art.utils.enums import TrainingStage
 from art.utils.exceptions import MissingLogParamsException
@@ -65,8 +70,7 @@ class Step(ABC):
             run_id if run_id is not None else get_run_id()
         )
         logger_id = add_logger(
-            get_checkpoint_logs_folder_path(self.get_full_step_name())
-            / log_file_name
+            get_checkpoint_logs_folder_path(self.get_full_step_name()) / log_file_name
         )
         try:
             self.datamodule = datamodule
@@ -314,9 +318,7 @@ class ModelStep(Step):
         Returns:
             str: The step ID.
         """
-        return (
-            f"{self.model_name}_{self.name}" if self.model_name != "" else self.name
-        )
+        return f"{self.model_name}_{self.name}" if self.model_name != "" else self.name
 
     def get_current_stage(self) -> str:
         """
@@ -562,6 +564,7 @@ class Squeeze(ModelStep):
 
 class TransferLearning(ModelStep):
     """This step tries performing proper transfer learning"""
+
     name = "TransferLearning"
     description = "This step tries performing proper transfer learning"
 
@@ -591,7 +594,12 @@ class TransferLearning(ModelStep):
             fine_tune_lr (float, optional): fine tune lr. Defaults to 1e-5.
             fine_tune (bool, optional): whether or not perform fine tuning. Defaults to True.
         """
-        super().__init__(model, trainer_kwargs=freezed_trainer_kwargs, logger=logger, model_modifiers=model_modifiers)
+        super().__init__(
+            model,
+            trainer_kwargs=freezed_trainer_kwargs,
+            logger=logger,
+            model_modifiers=model_modifiers,
+        )
         self.freeze_names = freeze_names
         self.keep_unfrozen = keep_unfrozen
         self.unfreezed_trainer_kwargs = unfreezed_trainer_kwargs
@@ -608,7 +616,9 @@ class TransferLearning(ModelStep):
         self.train(trainer_kwargs={"datamodule": self.datamodule})
         if self.fine_tune:
             self.add_unfreezing()
-            self.reset_trainer(logger=self.trainer.logger, trainer_kwargs=self.unfreezed_trainer_kwargs)
+            self.reset_trainer(
+                logger=self.trainer.logger, trainer_kwargs=self.unfreezed_trainer_kwargs
+            )
             self.train(trainer_kwargs={"datamodule": self.datamodule})
 
     def log_params(self, model):
