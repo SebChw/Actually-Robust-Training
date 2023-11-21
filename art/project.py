@@ -163,21 +163,19 @@ class ArtProject:
             bool: True if the step must be run, False otherwise.
         """
         if not step.was_run():
-            return True, False
+            return True
         else:
             step_current_hash = step.get_hash()
             step_saved_hash = step.get_latest_run()["hash"]
             model_changed = True if step_current_hash != step_saved_hash else False
+            if model_changed:
+                self.changed_steps.append(step.get_full_step_name())
             try:
                 self.check_checks(step, checks)
             except CheckFailedException:
-                if model_changed:
-                    art_logger.info(
-                        f"Code of the model in {step.get_full_step_name()} was changed. Rerun could be needed, you can force it by adding force_rerun=True to run_all()."
-                    )
-                return True, model_changed
+                return True
 
-            return False, False
+            return False
 
     def run_all(self, force_rerun=False):
         """
@@ -195,9 +193,7 @@ class ArtProject:
                 step, checks = step_dict["step"], step_dict["checks"]
                 self.state.current_step = step
 
-                rerun_step, model_changed = self.check_if_must_be_run(step, checks)
-                if model_changed:
-                    self.changed_steps.append(step.get_full_step_name())
+                rerun_step = self.check_if_must_be_run(step, checks)
 
                 if not rerun_step and not force_rerun:
                     self.fill_step_states(step)
