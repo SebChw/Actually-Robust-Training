@@ -1,10 +1,13 @@
 import json
 from abc import ABC, abstractmethod
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 import matplotlib.pyplot as plt
 
 from art.utils.paths import get_checkpoint_step_dir_path
+
+if TYPE_CHECKING:
+    from art.steps import Step
 
 
 class StepSaver(ABC):
@@ -86,7 +89,7 @@ class JSONStepSaver(StepSaver):
 
     RESULT_NAME = "results.json"
 
-    def save(self, step: "Step", filename: str = RESULT_NAME):
+    def save(self, obj: "Step", full_step_name: str, filename: str = RESULT_NAME):
         """
         Save an object as a JSON file.
 
@@ -94,21 +97,20 @@ class JSONStepSaver(StepSaver):
             step (Step): The step to save.
             filename (str, optional): The name of the JSON file. Defaults to "results.json".
         """
-        full_step_name = step.get_full_step_name()
 
         self.ensure_directory(full_step_name)
         results_file = self.get_path(full_step_name, filename)
         if results_file.exists():
             current_results = self.load(full_step_name, filename)
         else:
-            current_results = {"name": step.name, "model": step.model_name, "runs": []}
+            current_results = {"name": obj.name, "model": obj.model_name, "runs": []}
 
-        current_results["runs"].insert(0, step.results)
+        current_results["runs"].insert(0, obj.results)
 
-        for key in step.results.keys():
+        for key in obj.results.keys():
             if key == "parameters":
-                if "callbacks" in step.results["parameters"].keys():
-                    del step.results["parameters"]["callbacks"]
+                if "callbacks" in obj.results["parameters"].keys():
+                    del obj.results["parameters"]["callbacks"]
 
         with open(results_file, "w") as f:
             try:
