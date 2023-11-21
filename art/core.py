@@ -229,16 +229,6 @@ class ArtModule(L.LightningModule, ABC):
 
         return data
 
-    @classmethod
-    def get_hash(cls):
-        """
-        Get hash of the model.
-
-        Returns:
-            str: Hash of the model.
-        """
-        return hashlib.md5(inspect.getsource(cls).encode("utf-8")).hexdigest()
-
     def unify_type(self: Any, x: Any):
         """
         Unify type - x to torch.Tensor.

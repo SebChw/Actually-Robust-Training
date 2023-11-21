@@ -207,7 +207,6 @@ class ModelStep(Step):
         self.trainer_kwargs = trainer_kwargs
 
         self.model_name = model_class.__name__
-        self.hash = self.model_class.get_hash()
 
     def __call__(
         self,
@@ -271,6 +270,17 @@ class ModelStep(Step):
 
         self.results["scores"].update(logged_metrics)
         self.results["model_path"] = self.trainer.checkpoint_callback.best_model_path
+
+    def get_hash(self) -> str:
+        """
+        Compute a hash based on the source code of the step's class.
+
+        Returns:
+            str: MD5 hash of the step's source code.
+        """
+        return hashlib.md5(
+            inspect.getsource(self.model_class).encode("utf-8")
+        ).hexdigest()
 
     def validate(self, trainer_kwargs: Dict):
         """
