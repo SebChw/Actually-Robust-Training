@@ -151,6 +151,8 @@ class Step(ABC):
 
     def __repr__(self) -> str:
         """Representation of the step"""
+        if not self.finalized:
+            self.results["scores"] = self.get_latest_run()["scores"]
         result_repr = "\n".join(
             f"\t{k}: {v}" for k, v in self.results["scores"].items()
         )
