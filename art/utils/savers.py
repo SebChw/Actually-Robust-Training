@@ -4,6 +4,7 @@ from typing import TYPE_CHECKING, Any
 
 import matplotlib.pyplot as plt
 
+from art.utils.exceptions import SavingArtResultsException
 from art.utils.paths import get_checkpoint_step_dir_path
 
 if TYPE_CHECKING:
@@ -117,7 +118,9 @@ class JSONStepSaver(StepSaver):
                 json.dump(current_results, f)
             except TypeError as e:
                 print(current_results)
-                raise f"Error while saving results for step {step_name}: {e}. If you have ellipsis (...) in your results, it may cause the issue."
+                raise SavingArtResultsException(
+                    f"Error while saving results for step {full_step_name}: {e}. If you have ellipsis (...) in your results, it may cause the issue."
+                )
 
     def load(self, full_step_name, filename: str = RESULT_NAME):
         """

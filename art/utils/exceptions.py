@@ -11,3 +11,9 @@ class MissingLogParamsException(Exception):
     """Exception raised when a log is missing parameters."""
 
     pass
+
+
+class SavingArtResultsException(Exception):
+    """Exception raised when saving ART results fails."""
+
+    pass
