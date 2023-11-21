@@ -149,7 +149,7 @@ class ArtProject:
                 raise CheckFailedException(
                     f"Check failed for step: {step.name}. Reason: {result.error}"
                 )
-        step.set_successfull()
+        step.set_successful()
 
     def check_if_must_be_run(self, step: "Step", checks: List[Check]) -> bool:
         """
@@ -228,7 +228,7 @@ class ArtProject:
         art_logger.info("Summary: ")
         for step in self.steps:
             art_logger.info(step["step"])
-            if not step["step"].is_successfull():
+            if not step["step"].is_successful():
                 break
         if len(self.changed_steps) > 0:
             art_logger.info(

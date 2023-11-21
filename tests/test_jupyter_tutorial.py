@@ -92,7 +92,7 @@ def check_expected_steps_executions():
             results = json.load(f)
 
         for step_run, expected_result in zip(results["runs"], expected_results):
-            assert step_run["successfull"] == expected_result
+            assert step_run["successful"] == expected_result
 
 
 def test_tutorial():

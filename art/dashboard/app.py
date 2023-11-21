@@ -48,17 +48,17 @@ def updateTable(
         Tuple[List[Dict[str, Any]], List[Dict[str, Any]], List[Dict[str, Any]]]: List of data for the table, columns and style_data_conditional.
     """
     step_runs_df = STEPS_INFO[step_name][DF]
-    step_runs_df.successfull = step_runs_df.successfull.astype(int)
+    step_runs_df.successful = step_runs_df.successful.astype(int)
     conditional = [
         {
             "if": {
-                "filter_query": "{successfull} = 1",
+                "filter_query": "{successful} = 1",
             },
             "backgroundColor": "rgba(0,255,0,0.2)",
         },
         {
             "if": {
-                "filter_query": "{successfull} = 0",
+                "filter_query": "{successful} = 0",
             },
             "backgroundColor": "rgba(255,0,0,0.2)",
         },
