@@ -13,7 +13,7 @@ It will help you go throught development process of your neural network from scr
    :caption: Contents:
 
    concepts
-   apidocs/index
+   apidocs/modules
 
 
 
