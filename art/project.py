@@ -97,6 +97,7 @@ class ArtProject:
         self.datamodule = datamodule
         self.state = ArtProjectState()
         self.metric_calculator = MetricCalculator(self)
+        self.changed_steps = []
 
     def add_step(
         self,
@@ -162,23 +163,22 @@ class ArtProject:
         Returns:
             bool: True if the step must be run, False otherwise.
         """
-        step_current_hash = step.get_hash()
-        step_saved_hash = step.get_latest_run()["hash"]
-        model_changed = True if step_current_hash != step_saved_hash else False
         if not step.was_run():
-            return True, model_changed
+            return True, False
         else:
+            step_current_hash = step.get_hash()
+            step_saved_hash = step.get_latest_run()["hash"]
+            model_changed = True if step_current_hash != step_saved_hash else False
             try:
                 self.check_checks(step, checks)
-            except Exception as e:
+            except CheckFailedException:
+                if model_changed:
+                    art_logger.info(
+                        f"Code of the model in {step.get_full_step_name()} was changed. Rerun could be needed, you can force it by adding force_rerun=True to run_all()."
+                    )
                 return True, model_changed
 
-        if model_changed:
-            art_logger.info(
-                f"Code of the model in {step.get_full_step_name()} was changed. Rerun could be needed, you can force it by adding force_rerun=True to run_all()."
-            )
-
-        return False, model_changed
+            return False, False
 
     def run_all(self, force_rerun=False):
         """
@@ -189,7 +189,7 @@ class ArtProject:
         """
         run_id = get_run_id()
         logger_id = add_logger(EXPERIMENT_LOG_DIR / get_new_log_file_name(run_id))
-        changed_steps = []
+        self.changed_steps = []
         try:
             for step in self.steps:
                 self.metric_calculator.compile(step["skipped_metrics"])
@@ -198,7 +198,7 @@ class ArtProject:
 
                 rerun_step, model_changed = self.check_if_must_be_run(step, checks)
                 if model_changed:
-                    changed_steps.append(step.get_full_step_name())
+                    self.changed_steps.append(step.get_full_step_name())
 
                 if not rerun_step and not force_rerun:
                     self.fill_step_states(step)
@@ -218,14 +218,14 @@ class ArtProject:
                 self.fill_step_states(step)
                 step.save_to_disk()
 
-            self.print_summary(changed_steps)
+            self.print_summary()
         except Exception as e:
             art_logger.exception(e)
             raise e
         finally:
             remove_logger(logger_id)
 
-    def print_summary(self, changed_steps: List[str] = []):
+    def print_summary(self):
         """
         Prints a summary of the project.
         """
@@ -234,9 +234,9 @@ class ArtProject:
             art_logger.info(step["step"])
             if not step["step"].is_succesfull():
                 break
-        if len(changed_steps) > 0:
+        if len(self.changed_steps) > 0:
             art_logger.info(
-                f"Code of the following steps was changed: {', '.join(changed_steps)}\n Rerun could be needed."
+                f"Code of the following steps was changed: {', '.join(self.changed_steps)}\n Rerun could be needed."
             )
 
     def get_steps(self):
