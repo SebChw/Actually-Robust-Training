@@ -53,12 +53,13 @@ def prepare_steps_info(logs_path: Path) -> Dict[str, Dict]:
     return steps_info
 
 
-def prepare_steps(logs_path):
+def prepare_steps():
     return [
         "Data analysis",
         "Evaluate Baseline",
         "Check Loss On Init",
         "Overfit One Batch",
         "Overfit",
+        "TransferLearning",
         "Regularize",
     ]

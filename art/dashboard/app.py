@@ -22,8 +22,8 @@ LOGS_PATH = Path(args.exp_path) / "art_checkpoints"
 if not LOGS_PATH.exists():
     raise ValueError(f"Path {LOGS_PATH} does not exist.")
 app = Dash(__name__, external_stylesheets=[dbc.themes.BOOTSTRAP])
-ORDERED_STEPS = prepare_steps(LOGS_PATH)
 STEPS_INFO = prepare_steps_info(LOGS_PATH)
+ORDERED_STEPS = [x for x in prepare_steps() if x in STEPS_INFO.keys()]
 TIMELINE = build_timeline(ORDERED_STEPS, STEPS_INFO)
 app.layout = get_layout(ORDERED_STEPS, TIMELINE)
 
