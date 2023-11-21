@@ -219,6 +219,8 @@ class ModelStep(Step):
             logger (Optional[Union[Logger, Iterable[Logger], bool]], optional): Logger to be used. Defaults to None.
         """
         super().__init__()
+        if logger is not None:
+            logger.add_tags(self.name)
 
         if not inspect.isclass(model_class):
             raise ValueError(
@@ -233,7 +235,6 @@ class ModelStep(Step):
 
         self.model_name = model_class.__name__
         self.hash = self.model_class.get_hash()
-        self.trainer = Trainer(**self.trainer_kwargs, logger=self.logger)
 
     def __call__(
         self,
@@ -252,6 +253,8 @@ class ModelStep(Step):
         """
         self.trainer = Trainer(**self.trainer_kwargs, logger=self.logger)
         self.metric_calculator = metric_calculator
+        curr_device = "cuda" if isinstance(self.trainer.accelerator, L.pytorch.accelerators.CUDAAccelerator) else "cpu"
+        self.metric_calculator.to(curr_device)
         super().__call__(previous_states, datamodule, metric_calculator, run_id)
         del self.trainer
         gc.collect()
