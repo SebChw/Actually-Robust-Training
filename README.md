@@ -1,3 +1,5 @@
+<p align="center"><img src="docs/art.png" alt="image" width="200" height="auto"></p>
+
 # ART - Actually Robust Training framework
 
 ![Tests](https://github.com/SebChw/art/actions/workflows/tests.yml/badge.svg)
