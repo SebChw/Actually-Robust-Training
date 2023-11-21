@@ -88,5 +88,11 @@ def run_dashboard(experiment_folder: str = "."):
     os.system(f"python -m art.dashboard.app --exp_path {experiment_folder}")
 
 
+@app.command()
+def bert_transfer_learning_tutorial():
+    """Create a project named 'bert_transfer_learning_tutorial' using the 'bert_transfer_learning_tutorial' branch."""
+    create_project(project_name="bert-transfer-learning-tutorial", branch="bert_transfer_learning_tutorial")
+
+
 if __name__ == "__main__":
     app()

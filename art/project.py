@@ -12,7 +12,7 @@ from art.loggers import (
     remove_logger,
 )
 from art.metrics import MetricCalculator, SkippedMetric
-from art.steps import Step
+from art.steps import Step, ModelStep
 from art.utils.enums import TrainingStage
 from art.utils.exceptions import CheckFailedException
 from art.utils.paths import EXPERIMENT_LOG_DIR
@@ -191,9 +191,9 @@ class ArtProject:
         run_id = get_run_id()
         logger_id = add_logger(EXPERIMENT_LOG_DIR / get_new_log_file_name(run_id))
         try:
-            for step in self.steps:
-                self.metric_calculator.compile(step["skipped_metrics"])
-                step, checks = step["step"], step["checks"]
+            for step_dict in self.steps:
+                self.metric_calculator.compile(step_dict["skipped_metrics"])
+                step, checks = step_dict["step"], step_dict["checks"]
                 self.state.current_step = step
 
                 if not self.check_if_must_be_run(step, checks) and not force_rerun:

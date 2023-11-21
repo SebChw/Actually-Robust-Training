@@ -226,6 +226,8 @@ class ModelStep(Step):
         """
         self.trainer = Trainer(**self.trainer_kwargs, logger=self.logger)
         self.metric_calculator = metric_calculator
+        curr_device = "cuda" if isinstance(self.trainer.accelerator, L.pytorch.accelerators.CUDAAccelerator) else "cpu"
+        self.metric_calculator.to(curr_device)
         super().__call__(previous_states, datamodule, metric_calculator, run_id)
         del self.trainer
         gc.collect()
@@ -338,6 +340,15 @@ class ModelStep(Step):
             raise MissingLogParamsException(
                 "Datamodule does not have log_params method. You don't want to regret lack of logs :)"
             )
+
+    def reset_trainer(self, logger: Optional[Logger] = None, trainer_kwargs: Dict = {}):
+        """
+        Reset the trainer.
+        Args:
+            trainer_kwargs (Dict): Arguments to be passed to the trainer.
+            logger (Optional[Logger], optional): Logger to be used. Defaults to None.
+        """
+        self.trainer = Trainer(**trainer_kwargs, logger=logger)
 
 
 class ExploreData(Step):
@@ -534,3 +545,111 @@ class Tune(ModelStep):
 
 class Squeeze(ModelStep):
     pass
+
+
+class TransferLearning(ModelStep):
+    """This step tries performing proper transfer learning"""
+    name = "TransferLearning"
+    description = "This step tries performing proper transfer learning"
+
+    def __init__(
+        self,
+        model: ArtModule,
+        model_modifiers: List[Callable] = [],
+        logger: Optional[Union[Logger, Iterable[Logger], bool]] = None,
+        freezed_trainer_kwargs: Dict = {},
+        unfreezed_trainer_kwargs: Dict = {},
+        freeze_names: Optional[list[str]] = None,
+        keep_unfrozen: Optional[int] = None,
+        fine_tune_lr: float = 1e-5,
+        fine_tune: bool = True,
+    ):
+        """
+        This method initializes the step
+
+        Args:
+            model (ArtModule): model
+            model_modifiers (List[Callable], optional): model modifiers. Defaults to [].
+            logger (Optional[Union[Logger, Iterable[Logger], bool]], optional): logger. Defaults to None.
+            freezed_trainer_kwargs (Dict, optional): trainer kwargs use for transfer learning with freezed weights. Defaults to {}.
+            unfreezed_trainer_kwargs (Dict, optional): trainer kwargs use for fine tuning with unfreezed weights. Defaults to {}.
+            freeze_names (Optional[list[str]], optional): name of model to freeze which appears in layers. Defaults to None.
+            keep_unfrozen (Optional[int], optional): number of last layers to keep unfrozen. Defaults to None.
+            fine_tune_lr (float, optional): fine tune lr. Defaults to 1e-5.
+            fine_tune (bool, optional): whether or not perform fine tuning. Defaults to True.
+        """
+        super().__init__(model, trainer_kwargs=freezed_trainer_kwargs, logger=logger, model_modifiers=model_modifiers)
+        self.freeze_names = freeze_names
+        self.keep_unfrozen = keep_unfrozen
+        self.unfreezed_trainer_kwargs = unfreezed_trainer_kwargs
+        self.fine_tune_lr = fine_tune_lr
+        self.fine_tune = fine_tune
+
+    def do(self, previous_states: Dict):
+        """
+        This method trains the model
+        Args:
+            previous_states (Dict): previous states
+        """
+        self.add_freezing()
+        self.train(trainer_kwargs={"datamodule": self.datamodule})
+        if self.fine_tune:
+            self.add_unfreezing()
+            self.reset_trainer(logger=self.trainer.logger, trainer_kwargs=self.unfreezed_trainer_kwargs)
+            self.train(trainer_kwargs={"datamodule": self.datamodule})
+
+    def log_params(self, model):
+        self.results["parameters"].update(self.trainer_kwargs)
+        super().log_params(model)
+
+    def get_check_stage(self):
+        """Returns check stage"""
+        return TrainingStage.VALIDATION.value
+
+    def add_freezing(self):
+        """Adds freezing to the model"""
+
+        def freeze_by_name(model):
+            """Freeze parameters by layer names."""
+            for name in self.freeze_names:
+                for param in model.named_parameters():
+                    if name in param[0]:
+                        param[1].requires_grad = False
+
+        def freeze_without_last_n(model):
+            """Freeze all parameters except last n layers."""
+            for i, param in enumerate(model.parameters()):
+                if i < len(list(model.parameters())) - self.keep_unfrozen:
+                    param.requires_grad = False
+
+        def freeze_model(model):
+            if self.freeze_names is not None and self.keep_unfrozen is not None:
+                raise ValueError(
+                    "Both freeze_names and keep_unfrozen are provided. Please provide only one of them."
+                )
+            elif self.freeze_names is not None:
+                freeze_by_name(model)
+            elif self.keep_unfrozen is not None:
+                freeze_without_last_n(model)
+            else:
+                raise ValueError("No freezing criteria provided.")
+
+        self.model_modifiers.append(freeze_model)
+
+    def add_unfreezing(self):
+        """Adds unfreezing to the model"""
+
+        def unfreeze_model(model):
+            for param in model.parameters():
+                param.requires_grad = True
+
+        self.model_modifiers.pop()
+        self.model_modifiers.append(unfreeze_model)
+
+    def add_lr_change(self):
+        """Adds lr change to the model"""
+
+        def change_lr(model):
+            model.lr = self.fine_tune_lr
+
+        self.model_modifiers.append(change_lr)
