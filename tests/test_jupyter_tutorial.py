@@ -1,10 +1,28 @@
-import filecmp
+import json
 import os
 import shutil
 
 import nbformat
 from cookiecutter.main import cookiecutter
 from nbconvert.preprocessors import ExecutePreprocessor
+
+EXPECTED_STEPS_EXECUTIONS = {
+    "art_checkpoints/AlreadyExistingSolutionBaseline_Evaluate Baseline/results.json": [
+        True
+    ],
+    "art_checkpoints/Data analysis/results.json": [True],
+    "art_checkpoints/HeuristicBaseline_Evaluate Baseline/results.json": [True],
+    "art_checkpoints/MlBaseline_Evaluate Baseline/results.json": [True],
+    "art_checkpoints/MNISTModel_Check Loss On Init/results.json": [False, False],
+    "art_checkpoints/MNISTModelNormalized_Check Loss On Init/results.json": [True],
+    "art_checkpoints/MNISTModelNormalized_Overfit One Batch/results.json": [
+        True,
+        False,
+        False,
+    ],
+    "art_checkpoints/MNISTModelNormalized_Overfit/results.json": [True],
+    "art_checkpoints/MNISTModelNormalized_Regularize/results.json": [True],
+}
 
 
 def download_tutorial():
@@ -13,7 +31,7 @@ def download_tutorial():
     """
     try:
         cookiecutter(
-            "https://github.com/SebChw/art_template.git",
+            "https://github.com/SebChw/ART-Templates.git",
             no_input=True,
             extra_context={
                 "project_name": "mnist_tutorial",
@@ -67,6 +85,16 @@ def check_outputs():
         assert os.path.isfile(os.path.join(jupyter_outputs_folder, path))
 
 
+def check_expected_steps_executions():
+    jupyter_outputs_folder = "mnist_tutorial/exp1"
+    for results_file, expected_results in EXPECTED_STEPS_EXECUTIONS.items():
+        with open(os.path.join(jupyter_outputs_folder, results_file), "r") as f:
+            results = json.load(f)
+
+        for step_run, expected_result in zip(results["runs"], expected_results):
+            assert step_run["successfull"] == expected_result
+
+
 def test_tutorial():
     """
     Tests the downloaded tutorial by running the Jupyter notebook and checking the output files.
@@ -79,6 +107,7 @@ def test_tutorial():
     run_jupyter_notebook()
     print("Checking outputs...")
     check_outputs()
+    check_expected_steps_executions()
     print("Cleaning up...")
     clean_up()
 
