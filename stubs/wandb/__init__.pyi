@@ -1,11 +1,10 @@
-from typing import Dict
+from typing import Any, Dict
 
-def log(argument: Dict):
-    ...
+def log(argument: Dict): ...
+def save(configFile: str): ...
 
-def save(configFile: str):
-    ...
-
-class Image():
+class Image:
     def __init__(self, image):
         self.image = image
+
+run: Any
