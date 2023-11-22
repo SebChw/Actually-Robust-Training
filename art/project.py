@@ -215,7 +215,6 @@ class ArtProject:
 
             self.print_summary()
         except Exception as e:
-            art_logger.exception(e)
             raise e
         finally:
             remove_logger(logger_id)

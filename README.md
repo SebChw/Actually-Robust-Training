@@ -27,7 +27,7 @@ pip install art-training
 ## Project creation
 To use most of art's features we encourage you to create a new folder for your project using the CLI tool:
 ```sh
-python -m art.cli create_project --name my_project
+python -m art.cli create-project my_project_name
 ```
 
 This will create a new folder `my_project` with a basic structure for your project. To learn more about ART we encourage you to read our [documentation](https://audio-research-toolkit.readthedocs.io/en/latest/), and check our [tutorials](#tutorials)!
@@ -43,12 +43,12 @@ python -m art.cli run-dashboard path_to_experiment_folder
 ```sh
 python -m art.cli get-started
 ```
-and go to exp1/tutorial.ipynb
+and launch tutorial.ipynb
 
 After running all cells run dashboard with
 
 ```sh
-python -m art.cli run-dashboard exp1
+python -m art.cli run-dashboard
 ```
 
 2. A tutorial showing how to use ART for transfer learning in an NLP task.
