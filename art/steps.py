@@ -8,11 +8,17 @@ from typing import Any, Callable, Dict, Iterable, List, Optional, Union
 
 import lightning as L
 from lightning import Trainer
+from lightning.pytorch.accelerators import CUDAAccelerator
 from lightning.pytorch.loggers import Logger
 
 from art.core import ArtModule
-from art.loggers import (add_logger, art_logger, get_new_log_file_name,
-                         get_run_id, remove_logger)
+from art.loggers import (
+    add_logger,
+    art_logger,
+    get_new_log_file_name,
+    get_run_id,
+    remove_logger,
+)
 from art.metrics import MetricCalculator
 from art.utils.enums import TrainingStage
 from art.utils.exceptions import MissingLogParamsException
@@ -40,7 +46,7 @@ class Step(ABC):
             "scores": {},
             "parameters": {},
             "timestamp": str(datetime.datetime.now()),
-            "succesfull": False,
+            "successful": False,
         }
         self.finalized = False
         self.model_name = ""
@@ -64,8 +70,7 @@ class Step(ABC):
             run_id if run_id is not None else get_run_id()
         )
         logger_id = add_logger(
-            get_checkpoint_logs_folder_path(self.get_full_step_name())
-            / log_file_name
+            get_checkpoint_logs_folder_path(self.get_full_step_name()) / log_file_name
         )
         try:
             self.datamodule = datamodule
@@ -146,16 +151,18 @@ class Step(ABC):
 
     def __repr__(self) -> str:
         """Representation of the step"""
+        if not self.finalized:
+            self.results["scores"] = self.get_latest_run()["scores"]
         result_repr = "\n".join(
             f"\t{k}: {v}" for k, v in self.results["scores"].items()
         )
-        return f"Step: {self.name}, Model: {self.model_name}, Passed: {self.results['succesfull']}. Results:\n{result_repr}"
+        return f"Step: {self.name}, Model: {self.model_name}, Passed: {self.results['successful']}. Results:\n{result_repr}"
 
-    def set_succesfull(self):
-        self.results["succesfull"] = True
+    def set_successful(self):
+        self.results["successful"] = True
 
-    def is_succesfull(self):
-        return self.results["succesfull"]
+    def is_successful(self):
+        return self.results["successful"]
 
     @abstractmethod
     def log_params(
@@ -163,8 +170,18 @@ class Step(ABC):
     ):
         pass
 
+    @abstractmethod
+    def do(self, previous_states: Dict):
+        """
+        Abstract method to execute the step. Must be implemented by child classes.
+
+        Args:
+            previous_states (Dict): Dictionary containing the previous step states.
+        """
+        pass
+
     def save_to_disk(self):
-        JSONStepSaver().save(self, "results.json")
+        JSONStepSaver().save(self, self.get_full_step_name(), "results.json")
 
 
 class ModelStep(Step):
@@ -178,7 +195,7 @@ class ModelStep(Step):
         trainer_kwargs: Dict = {},
         model_kwargs: Dict = {},
         model_modifiers: List[Callable] = [],
-        logger: Optional[Union[Logger, Iterable[Logger], bool]] = None,
+        logger: Optional[Logger] = None,
     ):
         """
         Initialize a model-based step.
@@ -189,7 +206,7 @@ class ModelStep(Step):
             model_kwargs (Dict, optional): Arguments to be passed to the model. Defaults to {}.
             model_modifiers (List[Callable], optional): List of functions to be applied to the model. Defaults to [].
             datamodule_modifiers (List[Callable], optional): List of functions to be applied to the data module. Defaults to [].
-            logger (Optional[Union[Logger, Iterable[Logger], bool]], optional): Logger to be used. Defaults to None.
+            logger (Optional[Logger], optional): Logger to be used. Defaults to None.
         """
         super().__init__()
         if logger is not None:
@@ -207,7 +224,6 @@ class ModelStep(Step):
         self.trainer_kwargs = trainer_kwargs
 
         self.model_name = model_class.__name__
-        self.hash = self.model_class.get_hash()
 
     def __call__(
         self,
@@ -226,25 +242,17 @@ class ModelStep(Step):
         """
         self.trainer = Trainer(**self.trainer_kwargs, logger=self.logger)
         self.metric_calculator = metric_calculator
-        curr_device = "cuda" if isinstance(self.trainer.accelerator, L.pytorch.accelerators.CUDAAccelerator) else "cpu"
+        curr_device = (
+            "cuda" if isinstance(self.trainer.accelerator, CUDAAccelerator) else "cpu"
+        )
         self.metric_calculator.to(curr_device)
         super().__call__(previous_states, datamodule, metric_calculator, run_id)
         del self.trainer
         gc.collect()
 
-    @abstractmethod
-    def do(self, previous_states: Dict):
-        """
-        Abstract method to execute the step. Must be implemented by child classes.
-
-        Args:
-            previous_states (Dict): Dictionary containing the previous step states.
-        """
-        pass
-
     def initialize_model(
         self,
-    ) -> ArtModule:
+    ) -> Optional[ArtModule]:
         """
         Initializes the model.
         """
@@ -271,6 +279,17 @@ class ModelStep(Step):
 
         self.results["scores"].update(logged_metrics)
         self.results["model_path"] = self.trainer.checkpoint_callback.best_model_path
+
+    def get_hash(self) -> str:
+        """
+        Compute a hash based on the source code of the step's class.
+
+        Returns:
+            str: MD5 hash of the step's source code.
+        """
+        return hashlib.md5(
+            inspect.getsource(self.model_class).encode("utf-8")
+        ).hexdigest()
 
     def validate(self, trainer_kwargs: Dict):
         """
@@ -301,9 +320,7 @@ class ModelStep(Step):
         Returns:
             str: The step ID.
         """
-        return (
-            f"{self.model_name}_{self.name}" if self.model_name != "" else self.name
-        )
+        return f"{self.model_name}_{self.name}" if self.model_name != "" else self.name
 
     def get_current_stage(self) -> str:
         """
@@ -459,7 +476,7 @@ class Overfit(ModelStep):
     def __init__(
         self,
         model: ArtModule,
-        logger: Optional[Union[Logger, Iterable[Logger], bool]] = None,
+        logger: Optional[Logger] = None,
         max_epochs: int = 1,
     ):
         self.max_epochs = max_epochs
@@ -497,7 +514,7 @@ class Regularize(ModelStep):
     def __init__(
         self,
         model: ArtModule,
-        logger: Optional[Union[Logger, Iterable[Logger], bool]] = None,
+        logger: Optional[Logger] = None,
         trainer_kwargs: Dict = {},
     ):
         self.trainer_kwargs = trainer_kwargs
@@ -529,9 +546,9 @@ class Tune(ModelStep):
     def __init__(
         self,
         model: ArtModule,
-        logger: Optional[Union[Logger, Iterable[Logger], bool]] = None,
+        logger: Optional[Logger] = None,
     ):
-        super().__init__(model_func=model, logger=logger)
+        super().__init__(model, logger=logger)
 
     def do(self, previous_states: Dict):
         """
@@ -549,6 +566,7 @@ class Squeeze(ModelStep):
 
 class TransferLearning(ModelStep):
     """This step tries performing proper transfer learning"""
+
     name = "TransferLearning"
     description = "This step tries performing proper transfer learning"
 
@@ -556,7 +574,7 @@ class TransferLearning(ModelStep):
         self,
         model: ArtModule,
         model_modifiers: List[Callable] = [],
-        logger: Optional[Union[Logger, Iterable[Logger], bool]] = None,
+        logger: Optional[Logger] = None,
         freezed_trainer_kwargs: Dict = {},
         unfreezed_trainer_kwargs: Dict = {},
         freeze_names: Optional[list[str]] = None,
@@ -570,7 +588,7 @@ class TransferLearning(ModelStep):
         Args:
             model (ArtModule): model
             model_modifiers (List[Callable], optional): model modifiers. Defaults to [].
-            logger (Optional[Union[Logger, Iterable[Logger], bool]], optional): logger. Defaults to None.
+            logger (Logger, optional): logger. Defaults to None.
             freezed_trainer_kwargs (Dict, optional): trainer kwargs use for transfer learning with freezed weights. Defaults to {}.
             unfreezed_trainer_kwargs (Dict, optional): trainer kwargs use for fine tuning with unfreezed weights. Defaults to {}.
             freeze_names (Optional[list[str]], optional): name of model to freeze which appears in layers. Defaults to None.
@@ -578,7 +596,12 @@ class TransferLearning(ModelStep):
             fine_tune_lr (float, optional): fine tune lr. Defaults to 1e-5.
             fine_tune (bool, optional): whether or not perform fine tuning. Defaults to True.
         """
-        super().__init__(model, trainer_kwargs=freezed_trainer_kwargs, logger=logger, model_modifiers=model_modifiers)
+        super().__init__(
+            model,
+            trainer_kwargs=freezed_trainer_kwargs,
+            logger=logger,
+            model_modifiers=model_modifiers,
+        )
         self.freeze_names = freeze_names
         self.keep_unfrozen = keep_unfrozen
         self.unfreezed_trainer_kwargs = unfreezed_trainer_kwargs
@@ -595,7 +618,9 @@ class TransferLearning(ModelStep):
         self.train(trainer_kwargs={"datamodule": self.datamodule})
         if self.fine_tune:
             self.add_unfreezing()
-            self.reset_trainer(logger=self.trainer.logger, trainer_kwargs=self.unfreezed_trainer_kwargs)
+            self.reset_trainer(
+                logger=self.trainer.logger, trainer_kwargs=self.unfreezed_trainer_kwargs
+            )
             self.train(trainer_kwargs={"datamodule": self.datamodule})
 
     def log_params(self, model):

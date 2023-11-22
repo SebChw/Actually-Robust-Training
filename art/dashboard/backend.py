@@ -37,7 +37,7 @@ def prepare_steps_info(logs_path: Path) -> Dict[str, Dict]:
                     "timestamp": run["timestamp"],
                     "hash": run["hash"],
                     "commit_id": run["commit_id"],
-                    "successfull": run["succesfull"],
+                    "successful": run["successful"],
                 }
                 steps_info[step_name][DF].append(new_sample)
                 steps_info[step_name][SCORE_ATTRS] = list(run["scores"].keys())
@@ -53,12 +53,13 @@ def prepare_steps_info(logs_path: Path) -> Dict[str, Dict]:
     return steps_info
 
 
-def prepare_steps(logs_path):
+def prepare_steps():
     return [
         "Data analysis",
         "Evaluate Baseline",
         "Check Loss On Init",
         "Overfit One Batch",
         "Overfit",
+        "TransferLearning",
         "Regularize",
     ]

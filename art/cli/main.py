@@ -91,7 +91,10 @@ def run_dashboard(experiment_folder: str = "."):
 @app.command()
 def bert_transfer_learning_tutorial():
     """Create a project named 'bert_transfer_learning_tutorial' using the 'bert_transfer_learning_tutorial' branch."""
-    create_project(project_name="bert-transfer-learning-tutorial", branch="bert_transfer_learning_tutorial")
+    create_project(
+        project_name="bert_transfer_learning_tutorial",
+        branch="bert_transfer_learning_tutorial",
+    )
 
 
 if __name__ == "__main__":

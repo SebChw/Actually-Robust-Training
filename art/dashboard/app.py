@@ -22,8 +22,8 @@ LOGS_PATH = Path(args.exp_path) / "art_checkpoints"
 if not LOGS_PATH.exists():
     raise ValueError(f"Path {LOGS_PATH} does not exist.")
 app = Dash(__name__, external_stylesheets=[dbc.themes.BOOTSTRAP])
-ORDERED_STEPS = prepare_steps(LOGS_PATH)
 STEPS_INFO = prepare_steps_info(LOGS_PATH)
+ORDERED_STEPS = [x for x in prepare_steps() if x in STEPS_INFO.keys()]
 TIMELINE = build_timeline(ORDERED_STEPS, STEPS_INFO)
 app.layout = get_layout(ORDERED_STEPS, TIMELINE)
 
@@ -48,17 +48,17 @@ def updateTable(
         Tuple[List[Dict[str, Any]], List[Dict[str, Any]], List[Dict[str, Any]]]: List of data for the table, columns and style_data_conditional.
     """
     step_runs_df = STEPS_INFO[step_name][DF]
-    step_runs_df.successfull = step_runs_df.successfull.astype(int)
+    step_runs_df.successful = step_runs_df.successful.astype(int)
     conditional = [
         {
             "if": {
-                "filter_query": "{successfull} = 1",
+                "filter_query": "{successful} = 1",
             },
             "backgroundColor": "rgba(0,255,0,0.2)",
         },
         {
             "if": {
-                "filter_query": "{successfull} = 0",
+                "filter_query": "{successful} = 0",
             },
             "backgroundColor": "rgba(255,0,0,0.2)",
         },

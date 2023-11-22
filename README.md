@@ -1,8 +1,10 @@
+<p align="center"><img src="docs/art.png" alt="image" width="200" height="auto"></p>
+
 # ART - Actually Robust Training framework
 
 ![Tests](https://github.com/SebChw/art/actions/workflows/tests.yml/badge.svg)
 ![Docs](
-https://readthedocs.org/projects/audio-research-toolkit/badge/?version=latest&style=flat)
+https://readthedocs.org/projects/actually-robust-training/badge/?version=latest&style=flat)
 
 ----
 
@@ -18,36 +20,47 @@ https://readthedocs.org/projects/audio-research-toolkit/badge/?version=latest&st
   - [Contributing](#contributing)
 
 ## Installation
-To get started, first clone the repo and install our package in editable mode:
+To get started, install ART package using:
 ```sh
 pip install art-training
 ```
 ## Project creation
 To use most of art's features we encourage you to create a new folder for your project using the CLI tool:
 ```sh
-python -m art.cli create_project --name my_project
+python -m art.cli create-project my_project_name
 ```
 
-This will create a new folder `my_project` with a basic structure for your project. To learn more about ART we encourage you to read our [documentation](https://audio-research-toolkit.readthedocs.io/en/latest/), and check our [tutorials](#tutorials)!
+This will create a new folder `my_project` with a basic structure for your project. To learn more about ART we encourage you to read our [documentation](https://actually-robust-training.readthedocs.io/en/latest/), and check our [tutorials](#tutorials)!
 
 ## Dashboard
-After you run some steps you can see compare their execution in the dashboard
+After you run some steps you can see compare their execution in the dashboard. To use the dashboard, firstly install required dependencies:
 ```sh
-python -m art.cli run-dashboard path_to_experiment_folder
+pip install art-training[dashboard]
 ```
+and run this command in the directory of your project (directory with folder called art_checkpoints).
+```sh
+python -m art.cli run-dashboard
+```
+Optionally you can use --experiment-folder switch to pass path to the folder. For more info, use --help switch.
 
 ## Tutorials
 1. A showcase of ART's features. To check it out type:
 ```sh
-python -m art.cli get_started
+python -m art.cli get-started
 ```
-and go to exp1/tutorial.ipynb
+and launch tutorial.ipynb
 
 After running all cells run dashboard with
 
 ```sh
-python -m art.cli run-dashboard exp1
+python -m art.cli run-dashboard
 ```
+
+2. A tutorial showing how to use ART for transfer learning in an NLP task.
+```sh
+python -m art.cli bert-transfer-learning-tutorial
+```
+
 
 ## Required knowledge
 In order to use ART, you should have a basic knowledge of:
