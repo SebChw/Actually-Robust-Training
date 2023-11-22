@@ -69,7 +69,7 @@ def run_jupyter_notebook():
     except Exception as e:
         print("Error while running Jupyter notebook:", str(e))
         raise e
-    os.chdir("../..")
+    os.chdir("..")
 
 
 def check_outputs():
