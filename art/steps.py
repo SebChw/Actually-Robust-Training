@@ -298,6 +298,10 @@ class ModelStep(Step):
         Args:
             trainer_kwargs (Dict): Arguments to be passed to the trainer for validating the model.
         """
+
+        if "datamodule" not in trainer_kwargs.keys():
+            self.datamodule.setup(stage=TrainingStage.VALIDATION.value)
+
         art_logger.info(f"Validating model {self.model_name}")
 
         result = self.trainer.validate(model=self.initialize_model(), **trainer_kwargs)
@@ -310,6 +314,9 @@ class ModelStep(Step):
         Args:
             trainer_kwargs (Dict): Arguments to be passed to the trainer for testing the model.
         """
+        if "datamodule" not in trainer_kwargs.keys():
+            self.datamodule.setup()
+
         result = self.trainer.test(model=self.initialize_model(), **trainer_kwargs)
         self.results["scores"].update(result[0])
 
@@ -395,6 +402,8 @@ class EvaluateBaseline(ModelStep):
         Args:
             previous_states (Dict): previous states
         """
+        # Running setup for ml_train with pure train dataloader
+        self.datamodule.setup(stage=TrainingStage.TRAIN.value)
         art_logger.info("Training baseline")
         model = self.model_class()
         model.ml_train({"dataloader": self.datamodule.train_dataloader()})
@@ -423,6 +432,8 @@ class CheckLossOnInit(ModelStep):
         Args:
             previous_states (Dict): previous states
         """
+        # Running setup for train dataloader used in validation
+        self.datamodule.setup(stage=TrainingStage.TRAIN.value)
         train_loader = self.datamodule.train_dataloader()
         art_logger.info("Calculating loss on init")
         self.validate(trainer_kwargs={"dataloaders": train_loader})
@@ -449,6 +460,8 @@ class OverfitOneBatch(ModelStep):
         Args:
             previous_states (Dict): previous states
         """
+        # Running setup for train with pure dataloader
+        self.datamodule.setup(stage=TrainingStage.TRAIN.value)
         train_loader = self.datamodule.train_dataloader()
         art_logger.info("Overfitting one batch")
         self.train(trainer_kwargs={"train_dataloaders": train_loader})
@@ -490,6 +503,8 @@ class Overfit(ModelStep):
         Args:
             previous_states (Dict): previous states
         """
+        # Running setup for train with pure dataloader
+        self.datamodule.setup(stage=TrainingStage.TRAIN.value)
         train_loader = self.datamodule.train_dataloader()
         art_logger.info("Overfitting model")
         self.train(trainer_kwargs={"train_dataloaders": train_loader})
