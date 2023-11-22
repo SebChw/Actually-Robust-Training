@@ -1,0 +1,29 @@
+art_checkpoints/Data analysis/class_images/class_0.png
+art_checkpoints/Data analysis/class_images/class_1.png
+art_checkpoints/Data analysis/class_images/class_2.png
+art_checkpoints/Data analysis/class_images/class_3.png
+art_checkpoints/Data analysis/class_images/class_4.png
+art_checkpoints/Data analysis/class_images/class_5.png
+art_checkpoints/Data analysis/class_images/class_6.png
+art_checkpoints/Data analysis/class_images/class_7.png
+art_checkpoints/Data analysis/class_images/class_8.png
+art_checkpoints/Data analysis/class_images/class_9.png
+augmentations_0.png
+augmentations_1.png
+augmentations_2.png
+augmentations_3.png
+augmentations_4.png
+augmentations_5.png
+augmentations_6.png
+augmentations_7.png
+augmentations_8.png
+augmentations_9.png
+debug_art.log
+art_checkpoints/AlreadyExistingSolutionBaseline_Evaluate Baseline/results.json
+art_checkpoints/Data analysis/results.json
+art_checkpoints/HeuristicBaseline_Evaluate Baseline/results.json
+art_checkpoints/MlBaseline_Evaluate Baseline/results.json
+art_checkpoints/MNISTModel_Check Loss On Init/results.json
+art_checkpoints/MNISTModelNormalized_Overfit One Batch/results.json
+art_checkpoints/MNISTModelNormalized_Overfit/results.json
+art_checkpoints/MNISTModelNormalized_Regularize/results.json

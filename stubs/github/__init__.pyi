@@ -1,0 +1,9 @@
+class Repo:
+    clone_url: str
+
+class User:
+    def create_repo(self, name: str, private: bool = False) -> Repo: ...
+
+class Github:
+    def __init__(self, token: str) -> None: ...
+    def get_user(self) -> User: ...
