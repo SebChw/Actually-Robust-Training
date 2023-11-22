@@ -4,7 +4,7 @@
 
 ![Tests](https://github.com/SebChw/art/actions/workflows/tests.yml/badge.svg)
 ![Docs](
-https://readthedocs.org/projects/audio-research-toolkit/badge/?version=latest&style=flat)
+https://readthedocs.org/projects/actually-robust-training/badge/?version=latest&style=flat)
 
 ----
 
@@ -41,7 +41,7 @@ python -m art.cli run-dashboard path_to_experiment_folder
 ## Tutorials
 1. A showcase of ART's features. To check it out type:
 ```sh
-python -m art.cli get_started
+python -m art.cli get-started
 ```
 and go to exp1/tutorial.ipynb
 
