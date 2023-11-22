@@ -146,9 +146,8 @@ class ArtProject:
         for check in checks:
             result = check.check(step)
             if not result.is_positive:
-                raise CheckFailedException(
-                    f"Check failed for step: {step.name}. Reason: {result.error}"
-                )
+                msg = f"Check failed for step: {step.name}. Reason: {result.error}"
+                raise CheckFailedException(msg)
         step.set_successful()
 
     def check_if_must_be_run(self, step: "Step", checks: List[Check]) -> bool:
@@ -207,7 +206,7 @@ class ArtProject:
                     )
                     self.check_checks(step, checks)
                 except CheckFailedException as e:
-                    art_logger.exception(e)
+                    art_logger.warning(e)
                     step.save_to_disk()
                     break
 
