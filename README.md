@@ -20,7 +20,7 @@ https://readthedocs.org/projects/actually-robust-training/badge/?version=latest&
   - [Contributing](#contributing)
 
 ## Installation
-To get started, first clone the repo and install our package in editable mode:
+To get started, install ART package using:
 ```sh
 pip install art-training
 ```
@@ -30,13 +30,18 @@ To use most of art's features we encourage you to create a new folder for your p
 python -m art.cli create-project my_project_name
 ```
 
-This will create a new folder `my_project` with a basic structure for your project. To learn more about ART we encourage you to read our [documentation](https://audio-research-toolkit.readthedocs.io/en/latest/), and check our [tutorials](#tutorials)!
+This will create a new folder `my_project` with a basic structure for your project. To learn more about ART we encourage you to read our [documentation](https://actually-robust-training.readthedocs.io/en/latest/), and check our [tutorials](#tutorials)!
 
 ## Dashboard
-After you run some steps you can see compare their execution in the dashboard
+After you run some steps you can see compare their execution in the dashboard. To use the dashboard, firstly install required dependencies:
 ```sh
-python -m art.cli run-dashboard path_to_experiment_folder
+pip install art-training[dashboard]
 ```
+and run this command in the directory of your project (directory with folder called art_checkpoints).
+```sh
+python -m art.cli run-dashboard
+```
+Optionally you can use --experiment-folder switch to pass path to the folder. For more info, use --help switch.
 
 ## Tutorials
 1. A showcase of ART's features. To check it out type:
