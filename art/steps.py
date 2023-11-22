@@ -94,7 +94,7 @@ class Step(ABC):
                 .strip()
             )
         except Exception:
-            art_logger.exception("Error while getting commit id!")
+            art_logger.exception("Error while getting commit id!\nNote: Every art directory should be a git repository")
 
     def get_full_step_name(self) -> str:
         """
