@@ -8,7 +8,13 @@ https://readthedocs.org/projects/actually-robust-training/badge/?version=latest&
 
 ----
 
-**ART** is a framework that teaches and keeps an eye on good practices when training deep neural networks. It is inspired by a [blog post by Andrej Karpathy “A Recipe for Training Neural Networks”](https://karpathy.github.io/2019/04/25/recipe/). The framework teaches the user how to properly train DNNs by encouraging the user to use built-in mechanisms that ensure the correctness and robustness of the pipeline using easily usable steps. It allows users not only to learn but also to use it in their future projects to speed up model development.
+**ART** is a Python library that teaches good practices when training deep neural networks with [PyTorch](https://pytorch.org/). It is inspired by Andrej Karpathy's blog post [“A Recipe for Training Neural Networks”](https://karpathy.github.io/2019/04/25/recipe/). ART encourages the user to train DNNs through a series of steps that ensure the correctness and robustness of their training pipeline. The steps implemented using ART can be viewed not only as guidance for early adepts of deep learning but also as a project template and checklist for more advanced users.
+
+To get the most out of ART, you should have a basic knowledge of (or eagerness to learn):
+- Python: https://www.learnpython.org/
+- Machine learning: https://www.coursera.org/learn/machine-learning
+- PyTorch: https://pytorch.org/tutorials/
+- PyTorch Lightning: https://lightning.ai/docs/pytorch/stable/levels/core_skills.html
 
 **Table of contents:**
 - [ART - Actually Robust Training framework](#art---actually-robust-training-framework)
@@ -21,7 +27,6 @@ https://readthedocs.org/projects/actually-robust-training/badge/?version=latest&
   - [Project creation](#project-creation)
   - [Dashboard](#dashboard)
   - [Tutorials](#tutorials)
-  - [Required knowledge](#required-knowledge)
   - [Contributing](#contributing)
 
 ## Installation
@@ -33,7 +38,7 @@ pip install art-training
 ## Quickstart
 
 ### Steps
-You can split your entire pipeline into series of steps
+The basic idea behind ART is to split your deep learning pipeline into a series of _steps_:
 ```python
     from art.project import ArtProject
     from art.steps import CheckLossOnInit, Overfit, OverfitOneBatch
@@ -50,7 +55,7 @@ You can split your entire pipeline into series of steps
     project.run_all()
 ```
 
-As a result, if you logged any metrics with self.log, you will observe something like this:
+As a result, if you logged any metrics with self.log, you should observe something like this:
 
 ```
 Summary:
@@ -69,7 +74,7 @@ Step: Overfit, Model: YourLightningModule, Passed: True. Results:
 [Explore all available Steps](not-existing-link)
 
 ### Adding checks
-Additionally you can verify if step is passed. You can't move forward withouth passing previous steps.
+Ideally, each step should be accompanied by a set of _checks_. ART will not move to the next step without passing checks from previous steps.
 
 ```python
     from art.steps import CheckLossOnInit, Overfit, OverfitOneBatch
@@ -79,7 +84,7 @@ Additionally you can verify if step is passed. You can't move forward withouth p
 
     project = ArtProject(name="quickstart", datamodule=datamodule)
 
-    # Let's assume we work on typical classification_problem
+    # Let's assume we are working on a typical classification problem
     NUM_CLASSES = 10
     EXPECTED_LOSS = -math.log(1 / NUM_CLASSES) # 2.3
 
@@ -100,7 +105,7 @@ Additionally you can verify if step is passed. You can't move forward withouth p
     project.run_all()
 ```
 
-This time, depending on your scores you may observe something like this
+This time, depending on your scores, you may observe something like this:
 
 ```
 Check failed for step: Check Loss On Init. Reason: Score 16.067102432250977 is not equal to 2.3
@@ -111,7 +116,7 @@ Step: Check Loss On Init, Model: YourLightningModule, Passed: False. Results:
 ```
 
 ### Debug your Neural Network
-Track network evolution, gradients values, save images by Decorating your functions
+Track network evolution, gradient values, and save images by decorating your functions
 ```python
     from art.decorators import BatchSaver, art_decorate
 
@@ -120,14 +125,14 @@ Track network evolution, gradients values, save images by Decorating your functi
     art_decorate([(model_class, "forward")], BatchSaver())
 
     project = ArtProject(name="quickstart", datamodule=datamodule)
-    # For this to work we should allow providing empty checks. And just print warning... man use checks.
+    # For this to work we should allow providing empty checks. And just print a warning... man use checks.
     project.add_step(CheckLossOnInit(model_class))
     project.run_all()
 
 ```
 
 ### Get control over what is being calculated
-For some problems metrics calculation can be quite expensive. By utilizing `MetricCalculator` we have control over what is being calculated. Additionally, metric names and logging is handled automatically
+For some problems, metric calculation can be quite expensive. By utilizing the `MetricCalculator` class, you can control what is being calculated. Additionally, metric names and logging are handled automatically:
 ```python
     from art.metrics import MetricCalculator, SkippedMetric
 
@@ -137,10 +142,10 @@ For some problems metrics calculation can be quite expensive. By utilizing `Metr
     # YourLightningModule(L.LightningModule) -> YourArtModule(ArtModule)
     #
     # Now you can Use YourArtModule.compute_metrics({PREDICTION: ..., TARGET: ...}) -> Dict[str, float]
-    # Which will calculate and log metrics with appropriate name for you. Additionally you can now skip expensive metrics calculations
+    # This will calculate and log metrics with an appropriate name for you. Additionally, you can now skip expensive metrics calculations
     model_class = YourArtModule
 
-    # Let's assume we work on typical classification_problem
+    # Let's assume we work on a typical classification problem
     NUM_CLASSES = 10
     EXPECTED_LOSS = -math.log(1 / NUM_CLASSES)
 
@@ -171,36 +176,35 @@ For some problems metrics calculation can be quite expensive. By utilizing `Metr
     project.run_all(metric_calculator=metric_calculator)
 ```
 
-If you want to use all features from ART, and create your new Deep Learning Project following good practices consider checking [tutorials](#tutorials). They cover more features and bigger tasks
+If you want to use all features from ART and create your new Deep Learning Project following good practices check out the [tutorials](#tutorials).
 
 ## Project creation
-To use most of art's features we encourage you to create a new folder for your project using the CLI tool:
+To get the most out of ART, we encourage you to create a new folder for your project using the CLI tool:
 ```sh
 python -m art.cli create-project my_project_name
 ```
 
-This will create a new folder `my_project` with a basic structure for your project. To learn more about ART we encourage you to read our [documentation](https://actually-robust-training.readthedocs.io/en/latest/), and check our [tutorials](#tutorials)!
+This will create a new folder called `my_project_name` with a basic structure for your project. To learn more about ART, for more details we encourage you to read the [documentation](https://actually-robust-training.readthedocs.io/en/latest/) or go through the [tutorials](#tutorials)!
 
 ## Dashboard
-After you run some steps you can see compare their execution in the dashboard. To use the dashboard, firstly install required dependencies:
+After you run some steps, you can compare their execution in the dashboard. To use the dashboard, first install required dependencies:
 ```sh
 pip install art-training[dashboard]
 ```
-and run this command in the directory of your project (directory with folder called art_checkpoints).
+and run the following command in the directory of your project (the directory with a folder called art_checkpoints).
 ```sh
 python -m art.cli run-dashboard
 ```
-Optionally you can use --experiment-folder switch to pass path to the folder. For more info, use --help switch.
+Optionally you can use the `--experiment-folder` switch to pass the path to the folder. For more info, use the `--help` switch.
 
 ## Tutorials
-1. A showcase of ART's features. To check it out type:
+1. A showcase of ART's features. To check it out, type:
 ```sh
 python -m art.cli get-started
 ```
 and launch tutorial.ipynb
 
-After running all cells run dashboard with
-
+After running all cells run the dashboard with:
 ```sh
 python -m art.cli run-dashboard
 ```
@@ -209,14 +213,6 @@ python -m art.cli run-dashboard
 ```sh
 python -m art.cli bert-transfer-learning-tutorial
 ```
-
-
-## Required knowledge
-In order to use ART, you should have a basic knowledge of:
-- Python - you can find many tutorials online, e.g. [here](https://www.learnpython.org/)
-- Basic knowledge of machine learning & neural networks - you can find many tutorials online, e.g. [here](https://www.coursera.org/learn/machine-learning)
-- PyTorch - you can find many tutorials online, e.g. [here](https://pytorch.org/tutorials/)
-- PyTorch Lightning - you can find many tutorials online, e.g. [here](https://lightning.ai/docs/pytorch/stable/levels/core_skills.html)
 
 ## Contributing
 We welcome contributions to ART! Please check out our [contributing guide](https://github.com/SebChw/art/wiki/Contributing)
