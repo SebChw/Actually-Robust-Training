@@ -176,6 +176,14 @@ For some problems, metric calculation can be quite expensive. By utilizing the `
     project.run_all(metric_calculator=metric_calculator)
 ```
 
+In summary:
+- You still use **pure PyTorch and Lightning**.
+- You don't lose any **flexibility**.
+- You keep your experiments **organized**.
+- You follow **best practices**.
+- You make your model **easier to debug**.
+- You increase experiment **reproducibility**.
+
 If you want to use all features from ART and create your new Deep Learning Project following good practices check out the [tutorials](#tutorials).
 
 ## Project creation
