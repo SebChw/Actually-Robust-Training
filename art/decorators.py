@@ -45,9 +45,7 @@ def art_decorate_single_func(
                 function: Decorated function.
             """
             if visualizing_function_in is not None:
-                # first arguments is the `self` object. We don't want to pass it to the visualizing function
-                to_be_passed = args[1:]
-                visualizing_function_in(*to_be_passed, **kwargs)
+                visualizing_function_in(*args, **kwargs)
             output = func(*args, **kwargs)
             if visualizing_function_out is not None:
                 visualizing_function_out(output)
