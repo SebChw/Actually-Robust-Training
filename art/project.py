@@ -102,7 +102,7 @@ class ArtProject:
     def add_step(
         self,
         step: "Step",
-        checks: List[Check],
+        checks: Optional[List[Check]] = [],
         skipped_metrics: List[SkippedMetric] = [],
     ):
         """
