@@ -133,9 +133,7 @@ class NeptuneLoggerAdapter(NeptuneLogger):
         Args:
             tags (Union[List[str], str]): Tag or list of tags to add.
         """
-        if isinstance(tags, str):
-            tags = [tags]
-        self.experiment.add_tags(tags)
+        self.run["sys/tags"].add(tags)
 
 
 class WandbLoggerAdapter(WandbLogger):
