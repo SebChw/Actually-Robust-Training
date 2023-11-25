@@ -1,7 +1,7 @@
 import math
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
-from typing import List
+from typing import Any, List, Union
 
 
 @dataclass
@@ -121,13 +121,13 @@ class CheckScore(CheckResult):
     Base class for checking scores based on a specific metric.
 
     Attributes:
-        metric: An object used to calculate the metric.
+        metric: An object used to calculate the metric or the string with the name of the metric.
         value (float): The expected value of the metric.
     """
 
     def __init__(
         self,
-        metric,  # This requires an object which was used to calculate metric
+        metric: Union[str, Any],
         value: float,
     ):
         self.metric = metric
@@ -158,7 +158,10 @@ class CheckScore(CheckResult):
         """
         last_run = step.get_latest_run()
         result = last_run["scores"]
-        self.build_required_key(step, self.metric)
+        if isinstance(self.metric, str):
+            self.required_key = self.metric
+        else:
+            self.build_required_key(step, self.metric)
         return self._check_method(result)
 
 

@@ -8,15 +8,21 @@ https://readthedocs.org/projects/actually-robust-training/badge/?version=latest&
 
 ----
 
-**ART** is a framework that teaches and keeps an eye on good practices when training deep neural networks. It is inspired by a [blog post by Andrej Karpathy “A Recipe for Training Neural Networks”](https://karpathy.github.io/2019/04/25/recipe/). The framework teaches the user how to properly train DNNs by encouraging the user to use built-in mechanisms that ensure the correctness and robustness of the pipeline using easily usable steps. It allows users not only to learn but also to use it in their future projects to speed up model development.
+**ART** is a Python library that teaches good practices when training deep neural networks with [PyTorch](https://pytorch.org/). It is inspired by Andrej Karpathy's blog post [“A Recipe for Training Neural Networks”](https://karpathy.github.io/2019/04/25/recipe/). ART encourages the user to train DNNs through a series of steps that ensure the correctness and robustness of their training pipeline. The steps implemented using ART can be viewed not only as guidance for early adepts of deep learning but also as a project template and checklist for more advanced users.
+
+To get the most out of ART, you should have a basic knowledge of (or eagerness to learn):
+- Python: https://www.learnpython.org/
+- Machine learning: https://www.coursera.org/learn/machine-learning
+- PyTorch: https://pytorch.org/tutorials/
+- PyTorch Lightning: https://lightning.ai/docs/pytorch/stable/levels/core_skills.html
 
 **Table of contents:**
 - [ART - Actually Robust Training framework](#art---actually-robust-training-framework)
   - [Installation](#installation)
+  - [Quickstart](#quickstart)
   - [Project creation](#project-creation)
   - [Dashboard](#dashboard)
   - [Tutorials](#tutorials)
-  - [Required knowledge](#required-knowledge)
   - [Contributing](#contributing)
 
 ## Installation
@@ -24,34 +30,115 @@ To get started, install ART package using:
 ```sh
 pip install art-training
 ```
+
+## Quickstart
+
+1. The basic idea behind ART is to split your deep learning pipeline into a series of _steps_. 
+2. Each step should be accompanied by a set of _checks_. ART will not move to the next step without passing checks from previous steps.
+
+```python
+import math
+import torch.nn as nn
+from torchmetrics import Accuracy
+from art.checks import CheckScoreCloseTo, CheckScoreGreaterThan, CheckScoreLessThan
+from art.metrics import SkippedMetric
+from art.project import ArtProject
+from art.steps import CheckLossOnInit, Overfit, OverfitOneBatch
+from art.utils.quickstart import ArtModuleExample, LightningDataModuleExample
+
+# Initialize the datamodule, and indicate the model class
+datamodule = LightningDataModuleExample()
+model_class = ArtModuleExample
+
+# Define metrics and loss functions to be calculated within the project
+metric = Accuracy(task="multiclass", num_classes=datamodule.n_classes)
+loss_fn = nn.CrossEntropyLoss()
+
+# Create an ART project and register defined metrics
+project = ArtProject(name="quickstart", datamodule=datamodule)
+project.register_metrics([metric, loss_fn])
+
+# Add steps to the project
+EXPECTED_LOSS = -math.log(1 / datamodule.n_classes)
+project.add_step(
+    CheckLossOnInit(model_class),
+    checks=[CheckScoreCloseTo(loss_fn, EXPECTED_LOSS, rel_tol=0.01)],
+    skipped_metrics=[SkippedMetric(metric)],
+)
+project.add_step(
+    OverfitOneBatch(model_class, number_of_steps=100),
+    checks=[CheckScoreLessThan(loss_fn, 0.1)],
+    skipped_metrics=[SkippedMetric(metric)],
+)
+project.add_step(
+    Overfit(model_class, max_epochs=10),
+    checks=[CheckScoreGreaterThan(metric, 0.9)],
+)
+
+# Run your project
+project.run_all()
+```
+
+As a result, you should observe something like this:
+```
+    Check failed for step: Overfit. Reason: Score 0.7900000214576721 is not greater than 0.9
+    Summary:
+    Step: Check Loss On Init, Model: ArtModuleExample, Passed: True. Results:
+            CrossEntropyLoss-validate: 2.299098491668701
+    Step: Overfit One Batch, Model: ArtModuleExample, Passed: True. Results:
+            CrossEntropyLoss-train: 0.03459629788994789
+    Step: Overfit, Model: ArtModuleExample, Passed: False. Results:
+            MulticlassAccuracy-train: 0.7900000214576721
+            CrossEntropyLoss-train: 0.5287203788757324
+            MulticlassAccuracy-validate: 0.699999988079071
+            CrossEntropyLoss-validate: 0.8762148022651672
+```
+
+Finally, track your progress with the dashboard:
+
+```sh
+python -m art.cli run-dashboard
+```
+
+<p align="center"><img src="docs/dashboard.png" alt="image"></p>
+
+In summary:
+- You still use **pure PyTorch and Lightning**.
+- You don't lose any **flexibility**.
+- You keep your experiments **organized**.
+- You follow **best practices**.
+- You make your model **easier to debug**.
+- You increase experiment **reproducibility**.
+
+If you want to use all features from ART and create your new Deep Learning Project following good practices check out the [tutorials](#tutorials).
+
 ## Project creation
-To use most of art's features we encourage you to create a new folder for your project using the CLI tool:
+To get the most out of ART, we encourage you to create a new folder for your project using the CLI tool:
 ```sh
 python -m art.cli create-project my_project_name
 ```
 
-This will create a new folder `my_project` with a basic structure for your project. To learn more about ART we encourage you to read our [documentation](https://actually-robust-training.readthedocs.io/en/latest/), and check our [tutorials](#tutorials)!
+This will create a new folder called `my_project_name` with a basic structure for your project. To learn more about ART, for more details we encourage you to read the [documentation](https://actually-robust-training.readthedocs.io/en/latest/) or go through the [tutorials](#tutorials)!
 
 ## Dashboard
-After you run some steps you can see compare their execution in the dashboard. To use the dashboard, firstly install required dependencies:
+After you run some steps, you can compare their execution in the dashboard. To use the dashboard, first install required dependencies:
 ```sh
 pip install art-training[dashboard]
 ```
-and run this command in the directory of your project (directory with folder called art_checkpoints).
+and run the following command in the directory of your project (the directory with a folder called art_checkpoints).
 ```sh
 python -m art.cli run-dashboard
 ```
-Optionally you can use --experiment-folder switch to pass path to the folder. For more info, use --help switch.
+Optionally you can use the `--experiment-folder` switch to pass the path to the folder. For more info, use the `--help` switch.
 
 ## Tutorials
-1. A showcase of ART's features. To check it out type:
+1. A showcase of ART's features. To check it out, type:
 ```sh
 python -m art.cli get-started
 ```
 and launch tutorial.ipynb
 
-After running all cells run dashboard with
-
+After running all cells run the dashboard with:
 ```sh
 python -m art.cli run-dashboard
 ```
@@ -60,14 +147,6 @@ python -m art.cli run-dashboard
 ```sh
 python -m art.cli bert-transfer-learning-tutorial
 ```
-
-
-## Required knowledge
-In order to use ART, you should have a basic knowledge of:
-- Python - you can find many tutorials online, e.g. [here](https://www.learnpython.org/)
-- Basic knowledge of machine learning & neural networks - you can find many tutorials online, e.g. [here](https://www.coursera.org/learn/machine-learning)
-- PyTorch - you can find many tutorials online, e.g. [here](https://pytorch.org/tutorials/)
-- PyTorch Lightning - you can find many tutorials online, e.g. [here](https://lightning.ai/docs/pytorch/stable/levels/core_skills.html)
 
 ## Contributing
 We welcome contributions to ART! Please check out our [contributing guide](https://github.com/SebChw/art/wiki/Contributing)
