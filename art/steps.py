@@ -350,16 +350,16 @@ class ModelStep(Step):
             self.results["parameters"].update(model_params)
 
         else:
-            raise MissingLogParamsException(
-                "Model does not have log_params method. You don't want to regret lack of logs :)"
+            art_logger.opt(ansi=True).warning(
+                "<yellow>Art/Lightning Module does not have log_params method. You don't want to regret lack of logs.</yellow>"
             )
 
         if hasattr(self.datamodule, "log_params"):
             data_params = self.datamodule.log_params()
             self.results["parameters"].update(data_params)
         else:
-            raise MissingLogParamsException(
-                "Datamodule does not have log_params method. You don't want to regret lack of logs :)"
+            art_logger.opt(ansi=True).warning(
+                "<yellow>Datamodule does not have log_params method. You don't want to regret lack of logs.</yellow>"
             )
 
     def reset_trainer(self, logger: Optional[Logger] = None, trainer_kwargs: Dict = {}):
@@ -400,10 +400,9 @@ class EvaluateBaseline(ModelStep):
             previous_states (Dict): previous states
         """
         art_logger.info("Training baseline")
-        model = self.model_class()
+        model = self.initialize_model()
         model.ml_train({"dataloader": self.datamodule.train_dataloader()})
         art_logger.info("Validating baseline")
-        model.set_metric_calculator(self.metric_calculator)
         result = self.trainer.validate(model=model, datamodule=self.datamodule)
         self.results["scores"].update(result[0])
 
