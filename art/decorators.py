@@ -56,10 +56,17 @@ def art_decorate_single_func(
     return decorator
 
 
+@dataclass
+class ModelDecorator:
+    funcion_name: str
+    input_decorator: Optional[Callable] = None
+    output_decorator: Optional[Callable] = None
+
+
 def art_decorate(
     functions: List[Tuple[object, str]],
-    function_in=None,
-    function_out=None,
+    input_decorator: Optional[Callable] = None,
+    output_decorator: Optional[Callable] = None,
 ):
     """
     Decorates list of objects functions. It doesn't modify output of a function
@@ -71,7 +78,7 @@ def art_decorate(
         function_out (function, optional): Function applied on the output. Defaults to None.
     """
     for obj, method in functions:
-        decorated = art_decorate_single_func(function_in, function_out)(
+        decorated = art_decorate_single_func(input_decorator, output_decorator)(
             getattr(obj, method)
         )
         setattr(obj, method, decorated)
