@@ -298,10 +298,6 @@ class ModelStep(Step):
         Args:
             trainer_kwargs (Dict): Arguments to be passed to the trainer for validating the model.
         """
-
-        if "datamodule" not in trainer_kwargs.keys():
-            self.datamodule.setup(stage=TrainingStage.VALIDATION.value)
-
         art_logger.info(f"Validating model {self.model_name}")
 
         result = self.trainer.validate(model=self.initialize_model(), **trainer_kwargs)
@@ -314,9 +310,6 @@ class ModelStep(Step):
         Args:
             trainer_kwargs (Dict): Arguments to be passed to the trainer for testing the model.
         """
-        if "datamodule" not in trainer_kwargs.keys():
-            self.datamodule.setup()
-
         result = self.trainer.test(model=self.initialize_model(), **trainer_kwargs)
         self.results["scores"].update(result[0])
 
@@ -374,6 +367,20 @@ class ModelStep(Step):
         """
         self.trainer = Trainer(**trainer_kwargs, logger=logger)
 
+    def get_trainloader(self):
+        try:
+            return self.datamodule.train_dataloader()
+        except:
+            self.datamodule.setup(stage=TrainingStage.TRAIN.value)
+            return self.datamodule.train_dataloader()
+
+    def get_valloader(self):
+        try:
+            return self.datamodule.val_dataloader()
+        except:
+            self.datamodule.setup(stage=TrainingStage.VALIDATION.value)
+            return self.datamodule.val_dataloader()
+
 
 class ExploreData(Step):
     """This class checks whether we have some markdown file description of the dataset + we implemented visualizations"""
@@ -406,7 +413,7 @@ class EvaluateBaseline(ModelStep):
         self.datamodule.setup(stage=TrainingStage.TRAIN.value)
         art_logger.info("Training baseline")
         model = self.model_class()
-        model.ml_train({"dataloader": self.datamodule.train_dataloader()})
+        model.ml_train({"dataloader": self.get_trainloader()})
         art_logger.info("Validating baseline")
         model.set_metric_calculator(self.metric_calculator)
         result = self.trainer.validate(model=model, datamodule=self.datamodule)
@@ -434,7 +441,7 @@ class CheckLossOnInit(ModelStep):
         """
         # Running setup for train dataloader used in validation
         self.datamodule.setup(stage=TrainingStage.TRAIN.value)
-        train_loader = self.datamodule.train_dataloader()
+        train_loader = self.get_trainloader()
         art_logger.info("Calculating loss on init")
         self.validate(trainer_kwargs={"dataloaders": train_loader})
 
@@ -462,7 +469,7 @@ class OverfitOneBatch(ModelStep):
         """
         # Running setup for train with pure dataloader
         self.datamodule.setup(stage=TrainingStage.TRAIN.value)
-        train_loader = self.datamodule.train_dataloader()
+        train_loader = self.get_trainloader()
         art_logger.info("Overfitting one batch")
         self.train(trainer_kwargs={"train_dataloaders": train_loader})
         for key, value in self.trainer.logged_metrics.items():
@@ -505,7 +512,7 @@ class Overfit(ModelStep):
         """
         # Running setup for train with pure dataloader
         self.datamodule.setup(stage=TrainingStage.TRAIN.value)
-        train_loader = self.datamodule.train_dataloader()
+        train_loader = self.get_trainloader()
         art_logger.info("Overfitting model")
         self.train(trainer_kwargs={"train_dataloaders": train_loader})
         art_logger.info("Validating overfitted model")
