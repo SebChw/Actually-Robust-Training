@@ -19,7 +19,7 @@ from art.loggers import (
     get_run_id,
     remove_logger,
 )
-from art.metrics import MetricCalculator
+from art.metrics import MetricCalculator, SkippedMetric
 from art.utils.enums import TrainingStage
 from art.utils.exceptions import MissingLogParamsException
 from art.utils.paths import get_checkpoint_logs_folder_path
@@ -55,7 +55,6 @@ class Step(ABC):
         self,
         previous_states: Dict,
         datamodule: L.LightningDataModule,
-        metric_calculator: MetricCalculator,
         run_id: Optional[str] = None,
     ):
         """
@@ -229,7 +228,8 @@ class ModelStep(Step):
         self,
         previous_states: Dict,
         datamodule: L.LightningDataModule,
-        metric_calculator: MetricCalculator,
+        metric_calculator: Union[MetricCalculator, None],
+        skipped_metrics: List[SkippedMetric] = [],
         run_id: Optional[str] = None,
     ):
         """
@@ -239,14 +239,17 @@ class ModelStep(Step):
             previous_states (Dict): Dictionary containing the previous step states.
             datamodule (L.LightningDataModule): Data module to be used.
             metric_calculator (MetricCalculator): Metric calculator for this step.
+            skipped_metrics (List[SkippedMetric]): A list of metrics to skip for this step.
         """
         self.trainer = Trainer(**self.trainer_kwargs, logger=self.logger)
         self.metric_calculator = metric_calculator
         curr_device = (
             "cuda" if isinstance(self.trainer.accelerator, CUDAAccelerator) else "cpu"
         )
-        self.metric_calculator.to(curr_device)
-        super().__call__(previous_states, datamodule, metric_calculator, run_id)
+        if self.metric_calculator is not None:
+            self.metric_calculator.to(curr_device)
+            self.metric_calculator.compile(skipped_metrics)
+        super().__call__(previous_states, datamodule, run_id)
         del self.trainer
         gc.collect()
 
@@ -262,7 +265,8 @@ class ModelStep(Step):
         model = self.model_class(**self.model_kwargs)
         for modifier in self.model_modifiers:
             modifier(model)
-        model.set_metric_calculator(self.metric_calculator)
+        if hasattr(model, "set_metric_calculator"):
+            model.set_metric_calculator(self.metric_calculator)
 
         self.log_params(model)
         return model

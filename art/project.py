@@ -1,5 +1,5 @@
 from collections import defaultdict
-from typing import Any, Dict, List, Union
+from typing import Any, Dict, List, Optional, Union
 
 import lightning as L
 
@@ -50,15 +50,6 @@ class ArtProjectState:
         """
         return self.step_states
 
-    def add_step(self, step):
-        """
-        Adds step to the state
-
-        Args:
-            step (Step): A step to be add the the project
-        """
-        self.step_states.append(step)
-
     def get_current_step(self):
         """
         Gets current step
@@ -83,20 +74,29 @@ class ArtProject:
     Represents a single Art project, encapsulating steps, state, metrics, and logging.
     """
 
-    def __init__(self, name: str, datamodule: L.LightningDataModule, **kwargs):
+    def __init__(
+        self,
+        name: str,
+        datamodule: L.LightningDataModule,
+        use_metric_calculator: bool = True,
+        **kwargs,
+    ):
         """
         Initialize an Art project.
 
         Args:
             name (str): The name of the project.
             datamodule (L.LightningDataModule): Data module to be used in this project.
+            use_metric_calculator (bool): Whether to use the metric calculator.
             **kwargs: Additional keyword arguments.
         """
         self.name = name
         self.steps: List[Dict] = []
         self.datamodule = datamodule
         self.state = ArtProjectState()
-        self.metric_calculator = MetricCalculator(self)
+        self.metric_calculator = (
+            MetricCalculator(self) if use_metric_calculator else None
+        )
         self.changed_steps: List[str] = []
 
     def add_step(
@@ -176,6 +176,30 @@ class ArtProject:
 
             return False
 
+    def run_step(self, step: "Step", skipped_metrics: List[SkippedMetric], run_id: str):
+        """
+        Run a given step.
+
+        Args:
+            step (Step): The step to run.
+            skipped_metrics (List[SkippedMetric]): List of metrics to skip for this step.
+            run_id (str): The ID of the run.
+        """
+        if isinstance(step, ModelStep):
+            step(
+                self.state.step_states,
+                self.datamodule,
+                self.metric_calculator,
+                skipped_metrics,
+                run_id,
+            )
+        else:
+            step(
+                self.state.step_states,
+                self.datamodule,
+                run_id,
+            )
+
     def run_all(self, force_rerun=False):
         """
         Execute all steps in the project.
@@ -188,7 +212,6 @@ class ArtProject:
         self.changed_steps = []
         try:
             for step_dict in self.steps:
-                self.metric_calculator.compile(step_dict["skipped_metrics"])
                 step, checks = step_dict["step"], step_dict["checks"]
                 self.state.current_step = step
 
@@ -198,12 +221,7 @@ class ArtProject:
                     self.fill_step_states(step)
                     continue
                 try:
-                    step(
-                        self.state.step_states,
-                        self.datamodule,
-                        self.metric_calculator,
-                        run_id,
-                    )
+                    self.run_step(step, step_dict["skipped_metrics"], run_id)
                     self.check_checks(step, checks)
                 except CheckFailedException as e:
                     art_logger.warning(e)
