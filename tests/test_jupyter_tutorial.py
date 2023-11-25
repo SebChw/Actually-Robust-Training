@@ -3,8 +3,7 @@ import os
 import nbformat
 from cookiecutter.main import cookiecutter
 from nbconvert.preprocessors import ExecutePreprocessor
-
-from .utils import check_expected_steps_executions, clean_up
+from utils import check_expected_steps_executions, clean_up
 
 EXPECTED_STEPS_EXECUTIONS = {
     "art_checkpoints/AlreadyExistingSolutionBaseline_Evaluate Baseline/results.json": [
