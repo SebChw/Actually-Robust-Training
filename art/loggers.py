@@ -2,6 +2,7 @@ import os
 import sys
 import uuid
 from datetime import datetime
+from enum import Enum
 from pathlib import Path
 from typing import List, Optional, Union
 
@@ -9,8 +10,18 @@ import numpy as np
 from lightning.pytorch.loggers import NeptuneLogger, WandbLogger
 from loguru import logger
 
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from loguru import Logger
+
+
+class LoggerFlags(Enum):
+    SUPRESS_STDOUT = "supress_stdout"
+
+
 logger.remove()
-logger.add(sys.stdout, format="{message}", level="DEBUG")
+logger.add(sys.stdout, format="{message}", level="DEBUG", filter= lambda record: not record["extra"].get(LoggerFlags.SUPRESS_STDOUT.value, False))
 
 
 def get_run_id() -> str:
@@ -29,6 +40,10 @@ def add_logger(log_file_path: Path) -> int:
 
 def remove_logger(logger_id: int):
     art_logger.remove(logger_id)
+
+
+def supress_stdout(current_logger: 'Logger') -> 'Logger':
+    return current_logger.bind(**{LoggerFlags.SUPRESS_STDOUT.value: True})
 
 
 art_logger = logger

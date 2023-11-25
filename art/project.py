@@ -10,6 +10,7 @@ from art.loggers import (
     get_new_log_file_name,
     get_run_id,
     remove_logger,
+    supress_stdout
 )
 from art.metrics import MetricCalculator, SkippedMetric
 from art.steps import ModelStep, Step
@@ -215,6 +216,7 @@ class ArtProject:
 
             self.print_summary()
         except Exception as e:
+            supress_stdout(art_logger).exception(e)
             raise e
         finally:
             remove_logger(logger_id)
