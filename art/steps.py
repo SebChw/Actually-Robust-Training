@@ -94,7 +94,7 @@ class Step(ABC):
                 .strip()
             )
         except Exception:
-            art_logger.exception("Error while getting commit id!")
+            art_logger.exception("Error while getting commit id!\nNote: Every art directory should be a git repository")
 
     def get_full_step_name(self) -> str:
         """
@@ -367,6 +367,20 @@ class ModelStep(Step):
         """
         self.trainer = Trainer(**trainer_kwargs, logger=logger)
 
+    def get_trainloader(self):
+        try:
+            return self.datamodule.train_dataloader()
+        except:
+            self.datamodule.setup(stage=TrainingStage.TRAIN.value)
+            return self.datamodule.train_dataloader()
+
+    def get_valloader(self):
+        try:
+            return self.datamodule.val_dataloader()
+        except:
+            self.datamodule.setup(stage=TrainingStage.VALIDATION.value)
+            return self.datamodule.val_dataloader()
+
 
 class ExploreData(Step):
     """This class checks whether we have some markdown file description of the dataset + we implemented visualizations"""
@@ -395,9 +409,11 @@ class EvaluateBaseline(ModelStep):
         Args:
             previous_states (Dict): previous states
         """
+        # Running setup for ml_train with pure train dataloader
+        self.datamodule.setup(stage=TrainingStage.TRAIN.value)
         art_logger.info("Training baseline")
         model = self.model_class()
-        model.ml_train({"dataloader": self.datamodule.train_dataloader()})
+        model.ml_train({"dataloader": self.get_trainloader()})
         art_logger.info("Validating baseline")
         model.set_metric_calculator(self.metric_calculator)
         result = self.trainer.validate(model=model, datamodule=self.datamodule)
@@ -423,7 +439,9 @@ class CheckLossOnInit(ModelStep):
         Args:
             previous_states (Dict): previous states
         """
-        train_loader = self.datamodule.train_dataloader()
+        # Running setup for train dataloader used in validation
+        self.datamodule.setup(stage=TrainingStage.TRAIN.value)
+        train_loader = self.get_trainloader()
         art_logger.info("Calculating loss on init")
         self.validate(trainer_kwargs={"dataloaders": train_loader})
 
@@ -449,7 +467,9 @@ class OverfitOneBatch(ModelStep):
         Args:
             previous_states (Dict): previous states
         """
-        train_loader = self.datamodule.train_dataloader()
+        # Running setup for train with pure dataloader
+        self.datamodule.setup(stage=TrainingStage.TRAIN.value)
+        train_loader = self.get_trainloader()
         art_logger.info("Overfitting one batch")
         self.train(trainer_kwargs={"train_dataloaders": train_loader})
         for key, value in self.trainer.logged_metrics.items():
@@ -490,7 +510,9 @@ class Overfit(ModelStep):
         Args:
             previous_states (Dict): previous states
         """
-        train_loader = self.datamodule.train_dataloader()
+        # Running setup for train with pure dataloader
+        self.datamodule.setup(stage=TrainingStage.TRAIN.value)
+        train_loader = self.get_trainloader()
         art_logger.info("Overfitting model")
         self.train(trainer_kwargs={"train_dataloaders": train_loader})
         art_logger.info("Validating overfitted model")

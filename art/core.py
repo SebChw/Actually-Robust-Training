@@ -17,7 +17,7 @@ class ArtModule(L.LightningModule, ABC):
     ):
         super().__init__()
         self.regularized = True
-        self.reset_pipelines()
+        self.set_pipelines()
 
     """
     A module for managing the training process and application of various model configurations.
@@ -42,7 +42,7 @@ class ArtModule(L.LightningModule, ABC):
         if not hasattr(self, "metric_calculator"):
             raise ValueError("You need to set metric calculator first!")
 
-    def reset_pipelines(self):
+    def set_pipelines(self):
         """
         Reset pipelines for training, validation, and testing.
         """
