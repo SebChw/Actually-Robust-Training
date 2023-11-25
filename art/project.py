@@ -291,15 +291,6 @@ class ArtProject:
         """
         self.metric_calculator.add_metrics(metrics)
 
-    def to(self, device: str):
-        """
-        Move the metric calculator to a specified device.
-
-        Args:
-            device (str): The device to move the metrics to.
-        """
-        self.metric_calculator.to(device)
-
     def update_datamodule(self, datamodule: L.LightningDataModule):
         """
         Update the data module of the project.
