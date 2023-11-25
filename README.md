@@ -20,10 +20,6 @@ To get the most out of ART, you should have a basic knowledge of (or eagerness t
 - [ART - Actually Robust Training framework](#art---actually-robust-training-framework)
   - [Installation](#installation)
   - [Quickstart](#quickstart)
-    - [Steps](#steps)
-    - [Adding checks](#adding-checks)
-    - [Debug your Neural Network](#debug-your-neural-network)
-    - [Get control over what is being calculated](#get-control-over-what-is-being-calculated)
   - [Project creation](#project-creation)
   - [Dashboard](#dashboard)
   - [Tutorials](#tutorials)
@@ -37,144 +33,74 @@ pip install art-training
 
 ## Quickstart
 
-### Steps
-The basic idea behind ART is to split your deep learning pipeline into a series of _steps_:
-```python
-    from art.project import ArtProject
-    from art.steps import CheckLossOnInit, Overfit, OverfitOneBatch
-    
-    datamodule = YourLightningDataModule()
-    model_class = YourLightningModule
-
-    project = ArtProject(name="quickstart", datamodule=datamodule)
-
-    project.add_step(CheckLossOnInit(model_class))
-    project.add_step(OverfitOneBatch(model_class))
-    project.add_step(Overfit(model_class))
-
-    project.run_all()
-```
-
-As a result, if you logged any metrics with self.log, you should observe something like this:
-
-```
-Summary:
-Step: Check Loss On Init, Model: YourLightningModule, Passed: True. Results:
-         loss-valid: 16.067102432250977
-         accuracy-train: 0.75
-Step: Overfit One Batch, Model: YourLightningModule, Passed: True. Results:
-         loss-train: 0.00035009183920919895
-         accuracy-train: 0.800000011920929
-Step: Overfit, Model: YourLightningModule, Passed: True. Results:
-         loss-train: 2.1859991550445557
-         accuracy-train: 0.75
-         loss-valid: 3.5187878608703613
-```
-
-[Explore all available Steps](not-existing-link)
-
-### Adding checks
-Ideally, each step should be accompanied by a set of _checks_. ART will not move to the next step without passing checks from previous steps.
+1. The basic idea behind ART is to split your deep learning pipeline into a series of _steps_. 
+2. Each step should be accompanied by a set of _checks_. ART will not move to the next step without passing checks from previous steps.
 
 ```python
-    from art.steps import CheckLossOnInit, Overfit, OverfitOneBatch
+import math
+import torch.nn as nn
+from torchmetrics import Accuracy
+from art.checks import CheckScoreCloseTo, CheckScoreGreaterThan, CheckScoreLessThan
+from art.metrics import SkippedMetric
+from art.project import ArtProject
+from art.steps import CheckLossOnInit, Overfit, OverfitOneBatch
+from art.utils.quickstart import ArtModuleExample, LightningDataModuleExample
 
-    datamodule = YourLightningDataModule()
-    model_class = YourLightningModule
+# Initialize the datamodule, and indicate the model class
+datamodule = LightningDataModuleExample()
+model_class = ArtModuleExample
 
-    project = ArtProject(name="quickstart", datamodule=datamodule)
+# Define metrics and loss functions to be calculated within the project
+metric = Accuracy(task="multiclass", num_classes=datamodule.n_classes)
+loss_fn = nn.CrossEntropyLoss()
 
-    # Let's assume we are working on a typical classification problem
-    NUM_CLASSES = 10
-    EXPECTED_LOSS = -math.log(1 / NUM_CLASSES) # 2.3
+# Create an ART project and register defined metrics
+project = ArtProject(name="quickstart", datamodule=datamodule)
+project.register_metrics([metric, loss_fn])
 
-    project.add_step(
-        CheckLossOnInit(model_class),
-        #You must know logged metric names
-        checks=[CheckScoreCloseTo("loss-valid", EXPECTED_LOSS, rel_tol=0.01)],
-    )
-    project.add_step(
-        OverfitOneBatch(model_class),
-        checks=[CheckScoreLessThan("loss-train", 0.001)],
-    )
-    project.add_step(
-        Overfit(model_class),
-        checks=[CheckScoreLessThan("accuracy-train", 0.9)],
-    )
+# Add steps to the project
+EXPECTED_LOSS = -math.log(1 / datamodule.n_classes)
+project.add_step(
+    CheckLossOnInit(model_class),
+    checks=[CheckScoreCloseTo(loss_fn, EXPECTED_LOSS, rel_tol=0.01)],
+    skipped_metrics=[SkippedMetric(metric)],
+)
+project.add_step(
+    OverfitOneBatch(model_class, number_of_steps=100),
+    checks=[CheckScoreLessThan(loss_fn, 0.1)],
+    skipped_metrics=[SkippedMetric(metric)],
+)
+project.add_step(
+    Overfit(model_class, max_epochs=10),
+    checks=[CheckScoreGreaterThan(metric, 0.9)],
+)
 
-    project.run_all()
+# Run your project
+project.run_all()
 ```
 
-This time, depending on your scores, you may observe something like this:
-
+As a result, you should observe something like this:
 ```
-Check failed for step: Check Loss On Init. Reason: Score 16.067102432250977 is not equal to 2.3
-Summary:
-Step: Check Loss On Init, Model: YourLightningModule, Passed: False. Results:
-         loss-valid: 16.067102432250977
-         accuracy-train: 0.75
-```
-
-### Debug your Neural Network
-Track network evolution, gradient values, and save images by decorating your functions
-```python
-    from art.decorators import BatchSaver, art_decorate
-
-    datamodule = YourLightningDataModule()
-    model_class = YourLightningModule
-    art_decorate([(model_class, "forward")], BatchSaver())
-
-    project = ArtProject(name="quickstart", datamodule=datamodule)
-    # For this to work we should allow providing empty checks. And just print a warning... man use checks.
-    project.add_step(CheckLossOnInit(model_class))
-    project.run_all()
-
+    Check failed for step: Overfit. Reason: Score 0.7900000214576721 is not greater than 0.9
+    Summary:
+    Step: Check Loss On Init, Model: ArtModuleExample, Passed: True. Results:
+            CrossEntropyLoss-validate: 2.299098491668701
+    Step: Overfit One Batch, Model: ArtModuleExample, Passed: True. Results:
+            CrossEntropyLoss-train: 0.03459629788994789
+    Step: Overfit, Model: ArtModuleExample, Passed: False. Results:
+            MulticlassAccuracy-train: 0.7900000214576721
+            CrossEntropyLoss-train: 0.5287203788757324
+            MulticlassAccuracy-validate: 0.699999988079071
+            CrossEntropyLoss-validate: 0.8762148022651672
 ```
 
-### Get control over what is being calculated
-For some problems, metric calculation can be quite expensive. By utilizing the `MetricCalculator` class, you can control what is being calculated. Additionally, metric names and logging are handled automatically:
-```python
-    from art.metrics import MetricCalculator, SkippedMetric
+Finally, track your progress with the dashboard:
 
-    datamodule = YourLightningDataModule()
-    # from art.core import ArtModule
-    # from art.utils.enums import PREDICTION, TARGET
-    # YourLightningModule(L.LightningModule) -> YourArtModule(ArtModule)
-    #
-    # Now you can Use YourArtModule.compute_metrics({PREDICTION: ..., TARGET: ...}) -> Dict[str, float]
-    # This will calculate and log metrics with an appropriate name for you. Additionally, you can now skip expensive metrics calculations
-    model_class = YourArtModule
-
-    # Let's assume we work on a typical classification problem
-    NUM_CLASSES = 10
-    EXPECTED_LOSS = -math.log(1 / NUM_CLASSES)
-
-    # Remove metrics definition from model and put them here
-    expensive_metric = Accuracy(task="multiclass", num_classes=NUM_CLASSES)
-    loss_fn = nn.CrossEntropyLoss()
-    project = ArtProject(name="quickstart", datamodule=datamodule)
-
-    metric_calculator = MetricCalculator(project, [expensive_metric, loss_fn])
-
-    project.add_step(
-        CheckLossOnInit(model_class),
-        # You don't have to hardcode this names
-        checks=[CheckScoreCloseTo(loss_fn, EXPECTED_LOSS, rel_tol=0.01)],
-        # expensive_metric won't be calculated during this step
-        skipped_metrics=[SkippedMetric(expensive_metric)],
-    )
-    project.add_step(
-        OverfitOneBatch(model_class),
-        checks=[CheckScoreLessThan(loss_fn, 0.1)],
-        skipped_metrics=[SkippedMetric(expensive_metric)],
-    )
-    project.add_step(
-        Overfit(model_class),
-        checks=[CheckScoreGreaterThan(expensive_metric, 0.9)],
-    )
-
-    project.run_all(metric_calculator=metric_calculator)
+```sh
+python -m art.cli run-dashboard
 ```
+
+<p align="center"><img src="docs/dashboard.png" alt="image"></p>
 
 In summary:
 - You still use **pure PyTorch and Lightning**.
