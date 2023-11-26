@@ -7,7 +7,7 @@ description = "ART - Actually Robust Training framework - a framework that teach
 
 
 name = "art-training"
-version = "0.0.2"
+version = "0.2.1"
 authors = [
   { name = "Sebastian Chwilczynski", email = "sebastian.chwilczynski@student.put.poznan.pl" },
   { name = "Kacper Trebacz", email = "kacper.trebacz@student.put.poznan.pl" },
