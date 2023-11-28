@@ -4,7 +4,7 @@ from typing import Callable, Dict, List, Optional, Tuple
 
 from torchvision.utils import save_image
 
-from art.loggers import art_logger
+from art.loggers import art_logger, supress_stdout
 from art.utils.enums import INPUT, PREDICTION, TARGET
 
 """
@@ -92,7 +92,6 @@ class BatchSaver:
         Args:
             how_many_batches (int, optional): How many batches to save. Defaults to 10.
             image_key_name (str, optional): under what . Defaults to "input".
-            image_key_idx (int, optional): _description_. Defaults to 0.
         """
         self.time = 0
         self.how_many_batches = how_many_batches
@@ -117,16 +116,19 @@ class BatchSaver:
 class LogInputStats:
     """Log input stats to art logger"""
 
-    def __init__(self, custom_logger=None):
+    def __init__(self, suppress_stdout=True, custom_logger=None):
         """
         Args:
+            suppress_stdout (bool, optional): Whether to suppress stdout. Defaults to True.
             custom_logger (_type_, optional): By default art_logger will be used. You can pass your custom logger if you want. Defaults to None.
         """
         import lovely_tensors as lt
 
         lt.monkey_patch()
-
         self.logger = art_logger if custom_logger is None else custom_logger
+
+        if suppress_stdout and custom_logger is None:
+            self.logger = supress_stdout(self.logger)
 
     def __call__(self, *args, **kwargs):
         self.logger.info(f"Input stats: {args}, {kwargs}")
