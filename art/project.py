@@ -1,9 +1,10 @@
 from collections import defaultdict
-from typing import Any, Dict, List, Optional, Union
+from typing import Any, Callable, Dict, List, Optional, Tuple, Union
 
 import lightning as L
 
 from art.checks import Check
+from art.decorators import ModelDecorator
 from art.loggers import (
     add_logger,
     art_logger,
@@ -177,13 +178,20 @@ class ArtProject:
 
             return False
 
-    def run_step(self, step: "Step", skipped_metrics: List[SkippedMetric], run_id: str):
+    def run_step(
+        self,
+        step: "Step",
+        skipped_metrics: List[SkippedMetric],
+        model_decorators: List[ModelDecorator],
+        run_id: str,
+    ):
         """
         Run a given step.
 
         Args:
             step (Step): The step to run.
             skipped_metrics (List[SkippedMetric]): List of metrics to skip for this step.
+            model_decorators (List[Tuple(str, Callable)]): List of model decorators to be applied.
             run_id (str): The ID of the run.
         """
         if isinstance(step, ModelStep):
@@ -192,6 +200,7 @@ class ArtProject:
                 self.datamodule,
                 self.metric_calculator,
                 skipped_metrics,
+                model_decorators,
                 run_id,
             )
         else:
@@ -201,12 +210,13 @@ class ArtProject:
                 run_id,
             )
 
-    def run_all(self, force_rerun=False):
+    def run_all(self, force_rerun=False, model_decorators: List[ModelDecorator] = []):
         """
         Execute all steps in the project.
 
         Args:
             force_rerun (bool): Whether to force rerun all steps.
+            model_decorators (List[ModelDecorator]): List of model decorators to be applied.
         """
         run_id = get_run_id()
         logger_id = add_logger(EXPERIMENT_LOG_DIR / get_new_log_file_name(run_id))
@@ -222,7 +232,9 @@ class ArtProject:
                     self.fill_step_states(step)
                     continue
                 try:
-                    self.run_step(step, step_dict["skipped_metrics"], run_id)
+                    self.run_step(
+                        step, step_dict["skipped_metrics"], model_decorators, run_id
+                    )
                     self.check_checks(step, checks)
                 except CheckFailedException as e:
                     art_logger.warning(e)

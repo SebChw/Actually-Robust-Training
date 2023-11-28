@@ -4,7 +4,7 @@ import hashlib
 import inspect
 import subprocess
 from abc import ABC, abstractmethod
-from typing import Any, Callable, Dict, Iterable, List, Optional, Union
+from typing import Any, Callable, Dict, List, Optional, Union
 
 import lightning as L
 from lightning import Trainer
@@ -12,6 +12,7 @@ from lightning.pytorch.accelerators import CUDAAccelerator
 from lightning.pytorch.loggers import Logger
 
 from art.core import ArtModule
+from art.decorators import ModelDecorator, art_decorate
 from art.loggers import (
     add_logger,
     art_logger,
@@ -230,6 +231,7 @@ class ModelStep(Step):
         datamodule: L.LightningDataModule,
         metric_calculator: Union[MetricCalculator, None],
         skipped_metrics: List[SkippedMetric] = [],
+        model_decorators: List[ModelDecorator] = [],
         run_id: Optional[str] = None,
     ):
         """
@@ -240,9 +242,11 @@ class ModelStep(Step):
             datamodule (L.LightningDataModule): Data module to be used.
             metric_calculator (MetricCalculator): Metric calculator for this step.
             skipped_metrics (List[SkippedMetric]): A list of metrics to skip for this step.
+            model_decorators (List[ModelDecorator]): List of model decorators to be applied.
         """
         self.trainer = Trainer(**self.trainer_kwargs, logger=self.logger)
         self.metric_calculator = metric_calculator
+        self.model_decorators = model_decorators
         curr_device = (
             "cuda" if isinstance(self.trainer.accelerator, CUDAAccelerator) else "cpu"
         )
@@ -265,8 +269,17 @@ class ModelStep(Step):
         model = self.model_class(**self.model_kwargs)
         for modifier in self.model_modifiers:
             modifier(model)
-        if hasattr(model, "set_metric_calculator"):
+
+        for decorator in self.model_decorators:
+            art_decorate(
+                [(model, decorator.funcion_name)],
+                decorator.input_decorator,
+                decorator.output_decorator,
+            )
+
+        if isinstance(model, ArtModule):
             model.set_metric_calculator(self.metric_calculator)
+            model.set_pipelines()
 
         self.log_params(model)
         return model
