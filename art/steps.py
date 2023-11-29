@@ -232,6 +232,7 @@ class ModelStep(Step):
         metric_calculator: Union[MetricCalculator, None],
         skipped_metrics: List[SkippedMetric] = [],
         model_decorators: List[ModelDecorator] = [],
+        trainer_kwargs: Dict = {},
         run_id: Optional[str] = None,
     ):
         """
@@ -244,7 +245,8 @@ class ModelStep(Step):
             skipped_metrics (List[SkippedMetric]): A list of metrics to skip for this step.
             model_decorators (List[ModelDecorator]): List of model decorators to be applied.
         """
-        self.trainer = Trainer(**self.trainer_kwargs, logger=self.logger)
+        trainer_kwargs = {**self.trainer_kwargs, **trainer_kwargs}
+        self.trainer = Trainer(**trainer_kwargs, logger=self.logger)
         self.metric_calculator = metric_calculator
         self.model_decorators = model_decorators
         curr_device = (

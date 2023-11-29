@@ -11,7 +11,7 @@ from art.loggers import (
     get_new_log_file_name,
     get_run_id,
     remove_logger,
-    supress_stdout
+    supress_stdout,
 )
 from art.metrics import MetricCalculator, SkippedMetric
 from art.steps import ModelStep, Step
@@ -183,6 +183,7 @@ class ArtProject:
         step: "Step",
         skipped_metrics: List[SkippedMetric],
         model_decorators: List[ModelDecorator],
+        trainer_kwargs: Dict[str, Any],
         run_id: str,
     ):
         """
@@ -201,6 +202,7 @@ class ArtProject:
                 self.metric_calculator,
                 skipped_metrics,
                 model_decorators,
+                trainer_kwargs,
                 run_id,
             )
         else:
@@ -210,7 +212,12 @@ class ArtProject:
                 run_id,
             )
 
-    def run_all(self, force_rerun=False, model_decorators: List[ModelDecorator] = []):
+    def run_all(
+        self,
+        force_rerun=False,
+        model_decorators: List[ModelDecorator] = [],
+        trainer_kwargs: Dict[str, Any] = {},
+    ):
         """
         Execute all steps in the project.
 
@@ -233,7 +240,11 @@ class ArtProject:
                     continue
                 try:
                     self.run_step(
-                        step, step_dict["skipped_metrics"], model_decorators, run_id
+                        step,
+                        step_dict["skipped_metrics"],
+                        model_decorators,
+                        trainer_kwargs,
+                        run_id,
                     )
                     self.check_checks(step, checks)
                 except CheckFailedException as e:
