@@ -232,6 +232,7 @@ class ModelStep(Step):
         metric_calculator: Union[MetricCalculator, None],
         skipped_metrics: List[SkippedMetric] = [],
         model_decorators: List[ModelDecorator] = [],
+        trainer_kwargs: Dict = {},
         run_id: Optional[str] = None,
     ):
         """
@@ -244,7 +245,8 @@ class ModelStep(Step):
             skipped_metrics (List[SkippedMetric]): A list of metrics to skip for this step.
             model_decorators (List[ModelDecorator]): List of model decorators to be applied.
         """
-        self.trainer = Trainer(**self.trainer_kwargs, logger=self.logger)
+        trainer_kwargs = {**self.trainer_kwargs, **trainer_kwargs}
+        self.trainer = Trainer(**trainer_kwargs, logger=self.logger)
         self.metric_calculator = metric_calculator
         self.model_decorators = model_decorators
         curr_device = (
@@ -304,9 +306,12 @@ class ModelStep(Step):
         Returns:
             str: MD5 hash of the step's source code.
         """
-        return hashlib.md5(
-            inspect.getsource(self.model_class).encode("utf-8")
-        ).hexdigest()
+        try:
+            model_code = inspect.getsource(self.model_class).encode("utf-8")
+            return hashlib.md5(model_code).hexdigest()
+        except OSError:
+            art_logger.warning("Could not get source code of the model.")
+            return "Error"
 
     def validate(self, trainer_kwargs: Dict):
         """

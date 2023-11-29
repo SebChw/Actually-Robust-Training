@@ -119,7 +119,9 @@ class MetricCalculator:
             prepared_data = model.prepare_for_metric(data_for_metrics)
             metric_val = metric(*prepared_data)
             metric_name = self.build_name(metric)
-            model.log(metric_name, metric_val, on_step=False, on_epoch=True)
+            model.log(
+                metric_name, metric_val, on_step=False, on_epoch=True, prog_bar=True
+            )
             data_for_metrics[metric.__class__.__name__] = metric_val
 
         return data_for_metrics
