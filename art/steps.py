@@ -306,9 +306,12 @@ class ModelStep(Step):
         Returns:
             str: MD5 hash of the step's source code.
         """
-        return hashlib.md5(
-            inspect.getsource(self.model_class).encode("utf-8")
-        ).hexdigest()
+        try:
+            model_code = inspect.getsource(self.model_class).encode("utf-8")
+            return hashlib.md5(model_code).hexdigest()
+        except OSError:
+            art_logger.warning("Could not get source code of the model.")
+            return "Error"
 
     def validate(self, trainer_kwargs: Dict):
         """
