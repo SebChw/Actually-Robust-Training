@@ -60,40 +60,6 @@ class ArtModule(L.LightningModule, ABC):
         ]
         self.ml_train_pipeline = [self.ml_parse_data, self.baseline_train]
 
-    def turn_on_model_regularizations(self):
-        """
-        Turn on model regularizations.
-        """
-        if not self.regularized:
-            for param in self.parameters():
-                name, obj = param
-                if isinstance(obj, torch.nn.Dropout):
-                    obj.p = self.unregularized_params[name]
-
-            self.configure_optimizers = self.original_configure_optimizers
-
-            self.regularized = True
-
-    def turn_off_model_reguralizations(self):
-        """
-        Turn off model regularizations.
-        """
-        if self.regularized:
-            self.unregularized_params = {}
-            for param in self.parameters():
-                name, obj = param
-                if isinstance(obj, torch.nn.Dropout):
-                    self.unregularized_params[name] = obj.p
-                    obj.p = 0
-
-            # Simple Adam, no fancy optimizers at this stage
-            self.original_configure_optimizers = self.configure_optimizers
-            self.configure_optimizers = lambda self: torch.optim.Adam(
-                self.parameters(), lr=3e-4
-            )
-
-            self.regularized = False
-
     def parse_data(self, data: Dict):
         """
         Parse data.

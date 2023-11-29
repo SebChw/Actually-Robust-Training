@@ -570,8 +570,6 @@ class Regularize(ModelStep):
         Args:
             previous_states (Dict): previous states
         """
-        art_logger.info("Turning on regularization")
-        self.datamodule.turn_on_regularizations()
         art_logger.info("Training regularized model")
         self.train(trainer_kwargs={"datamodule": self.datamodule})
 
