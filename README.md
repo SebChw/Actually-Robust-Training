@@ -1,6 +1,6 @@
 <p align="center"><img src="docs/art.png" alt="image" width="200" height="auto"></p>
 
-# ART - Actually Robust Training framework
+# ART - Actually Robust Training Framework
 
 ![Tests](https://github.com/SebChw/art/actions/workflows/tests.yml/badge.svg)
 ![Docs](
@@ -158,21 +158,23 @@ python -m art.cli regularization_tutorial
 - [**Step**](https://actually-robust-training.readthedocs.io/en/latest/apidocs/art.html#art.steps.Step): Unitary process that takes you closer to your final goal - good Deep Learning model. **In this tutorial we present you steps that were inspired by Andrej Karpathy's** [Recipe for Training Neural Networks](http://karpathy.github.io/2019/04/25/recipe/):
     1. [EvaluateBaseline](https://actually-robust-training.readthedocs.io/en/latest/apidocs/art.html#art.steps.EvaluateBaseline) - before starting a new project it is good to know with whom we compete.
     2. [CheckLossOnInit](https://actually-robust-training.readthedocs.io/en/latest/apidocs/art.html#art.steps.CheckLossOnInit) - Checking Loss right after network initialization is a very good debug step
-    3. [OverfitOneBatch](https://actually-robust-training.readthedocs.io/en/latest/apidocs/art.html#art.steps.OverfitOneBatch) - If you can't Overfit single batch, it is very unlikely that your network will work any good.
-    4. [Overfit](https://actually-robust-training.readthedocs.io/en/latest/apidocs/art.html#art.steps.Overfit) - By reducing wanted metric on training set you can observe `theoreticall` achievable minimum if this value doesn't satisfy you it is very unlikely it will be better on the test set.
+    3. [OverfitOneBatch](https://actually-robust-training.readthedocs.io/en/latest/apidocs/art.html#art.steps.OverfitOneBatch) - If you can't Overfit a single batch, it is very unlikely that your network will work any good.
+    4. [Overfit](https://actually-robust-training.readthedocs.io/en/latest/apidocs/art.html#art.steps.Overfit) - By reducing the wanted metric on the training set you can observe `theoretically` achievable minimum if this value doesn't satisfy you it is very unlikely it will be better on the test set.
     5. [Regularize](https://actually-robust-training.readthedocs.io/en/latest/apidocs/art.html#art.steps.Regularize) - Usually gap between training and validation score is quite big and we need to introduce regularization techniques to achieve satisfactory validation accuracy.
-    6. [TransferLearning](https://actually-robust-training.readthedocs.io/en/latest/apidocs/art.html#art.steps.TransferLearning) - If you have a pretrained model on a similar task, you can use it to initialize your network. In this step you can perform two types of transfer learning:
+    6. [TransferLearning](https://actually-robust-training.readthedocs.io/en/latest/apidocs/art.html#art.steps.TransferLearning) - If you have a pre-trained model on a similar task, you can use it to initialize your network. In this step, you can perform two types of transfer learning:
         - Freeze - Freeze all layers except the last one and train only the last layer.
         - Finetune - Unfreeze all layers and train the whole network.
-- [**MetricCalculator**](https://actually-robust-training.readthedocs.io/en/latest/apidocs/art.html#art.metrics.MetricCalculator): To make you write less code we implemented `MetricCalculator`, a special object that takes care of metric calculation between all steps. The only thing you have to do is to `register` metrics that you want to compute.
+- [**MetricCalculator**](https://actually-robust-training.readthedocs.io/en/latest/apidocs/art.html#art.metrics.MetricCalculator): To make you write less code we implemented `MetricCalculator`, a special object that takes care of metric calculation between all steps. The only thing you have to do is to `register` the metrics that you want to compute.
 - [**Check**](https://actually-robust-training.readthedocs.io/en/latest/apidocs/art.html#art.checks.Check): For every step you must pass a list of `Check` objects that must be fulfilled for the step to be passed. You may encounter checks like [`CheckScoreExists`](https://actually-robust-training.readthedocs.io/en/latest/apidocs/art.html#art.checks.CheckScoreExists) or [`CheckCloseTo`](https://actually-robust-training.readthedocs.io/en/latest/apidocs/art.html#art.checks.CheckScoreCloseTo). Every check takes at least 3 arguments:
-  - Metric, which value at the end of a step will be checked. This may be e.g `nn.CrossEntropyLoss` object.
-  - Stage, During different steps you'll be interested in performance at either Training or Validation. You must pass information about this too.
-  - value, wanted value of the check
+  - Metric, which value at the end of a step will be checked. This may be the `nn.CrossEntropyLoss` object.
+  - Stage, During different steps you'll be interested in performance at either Training or Validation. You must pass the information about this too.
+  - value, wanted the value of the check
 - [**Art Project**](https://actually-robust-training.readthedocs.io/en/latest/apidocs/art.html#art.project.ArtProject): Every project consists of many steps. You can add them to `ArtProject` which is responsible for running them. `ArtProject` also saves metadata about your steps that you can later see in `Dashboard`. 
-- **Dataset**: Each Project is supposed to deal with one dataset. ART supports every LightningDataModule from PyTorch Lightning, and every torch Dataset with its own dataloader.
-- **Dashboard**: For every project you can run a dashboard that will show you the progress of your project. You can run it with `python -m art.cli run-dashboard` command. You can also run it with `--experiment-folder` switch to pass the path to the folder. For more info, use the `--help` switch.
+- **Dataset**: Each Project is supposed to deal with one dataset. ART supports every LightningDataModule from PyTorch Lightning and every torch Dataset with its dataloader.
+- **Dashboard**: For every project you can run a dashboard that will show you the progress of your project. You can run it with the `python -m art.cli run-dashboard` command. You can also run it with the `--experiment-folder` switch to pass the path to the folder. For more info, use the `--help` switch.
 
 
 ## Contributing
 We welcome contributions to ART! Please check out our [contributing guide](https://github.com/SebChw/art/wiki/Contributing)
+
+
