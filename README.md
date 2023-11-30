@@ -23,6 +23,7 @@ To get the most out of ART, you should have a basic knowledge of (or eagerness t
   - [Project creation](#project-creation)
   - [Dashboard](#dashboard)
   - [Tutorials](#tutorials)
+  - [API Cheatsheet](#api-cheatsheet)
   - [Contributing](#contributing)
 
 ## Installation
