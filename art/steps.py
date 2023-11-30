@@ -94,7 +94,9 @@ class Step(ABC):
                 .strip()
             )
         except Exception:
-            art_logger.exception("Error while getting commit id!\nNote: Every art directory should be a git repository")
+            art_logger.exception(
+                "Error while getting commit id!\nNote: Every art directory should be a git repository"
+            )
 
     def get_full_step_name(self) -> str:
         """
@@ -195,6 +197,7 @@ class ModelStep(Step):
         trainer_kwargs: Dict = {},
         model_kwargs: Dict = {},
         model_modifiers: List[Callable] = [],
+        datamodule_modifiers: List[Callable] = [],
         logger: Optional[Logger] = None,
     ):
         """
@@ -220,6 +223,7 @@ class ModelStep(Step):
         self.model_class = model_class
         self.model_kwargs = model_kwargs
         self.model_modifiers = model_modifiers
+        self.datamodule_modifiers = datamodule_modifiers
         self.logger = logger
         self.trainer_kwargs = trainer_kwargs
 
@@ -255,6 +259,10 @@ class ModelStep(Step):
         if self.metric_calculator is not None:
             self.metric_calculator.to(curr_device)
             self.metric_calculator.compile(skipped_metrics)
+
+        for modifier in self.datamodule_modifiers:
+            modifier(datamodule)
+
         super().__call__(previous_states, datamodule, run_id)
         del self.trainer
         gc.collect()
@@ -559,9 +567,19 @@ class Regularize(ModelStep):
         model: ArtModule,
         logger: Optional[Logger] = None,
         trainer_kwargs: Dict = {},
+        model_kwargs: Dict = {},
+        model_modifiers: List[Callable] = [],
+        datamodule_modifiers: List[Callable] = [],
     ):
         self.trainer_kwargs = trainer_kwargs
-        super().__init__(model, trainer_kwargs, logger=logger)
+        super().__init__(
+            model,
+            trainer_kwargs,
+            model_kwargs,
+            model_modifiers,
+            datamodule_modifiers,
+            logger=logger,
+        )
 
     def do(self, previous_states: Dict):
         """
@@ -575,6 +593,8 @@ class Regularize(ModelStep):
 
     def log_params(self, model):
         self.results["parameters"].update(self.trainer_kwargs)
+        self.results["model_modifiers"].update(self.model_modifiers)
+        self.results["datamodule_modifiers"].update(self.datamodule_modifiers)
         super().log_params(model)
 
 
