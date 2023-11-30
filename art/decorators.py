@@ -2,8 +2,6 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Callable, Dict, List, Optional, Tuple
 
-from torchvision.utils import save_image
-
 from art.loggers import art_logger, supress_stdout
 from art.utils.enums import INPUT, PREDICTION, TARGET
 
@@ -93,6 +91,14 @@ class BatchSaver:
             how_many_batches (int, optional): How many batches to save. Defaults to 10.
             image_key_name (str, optional): under what . Defaults to "input".
         """
+        try:
+            from torchvision.utils import save_image
+        except ImportError:
+            raise ImportError(
+                "You need to install torchvision to use BatchSaver decorator"
+            )
+
+        self.save_image = save_image
         self.time = 0
         self.how_many_batches = how_many_batches
         self.image_key_name = image_key_name
@@ -109,7 +115,7 @@ class BatchSaver:
             img_ = data[self.image_key_name]
             min_, max_ = img_.min(), img_.max()
             img_ = ((img_ - min_) / (max_ - min_)) * 255
-            save_image(img_, self.img_path / f"{self.time}.png")
+            self.save_image(img_, self.img_path / f"{self.time}.png")
         self.time += 1
 
 
@@ -122,7 +128,12 @@ class LogInputStats:
             suppress_stdout (bool, optional): Whether to suppress stdout. Defaults to True.
             custom_logger (_type_, optional): By default art_logger will be used. You can pass your custom logger if you want. Defaults to None.
         """
-        import lovely_tensors as lt
+        try:
+            import lovely_tensors as lt
+        except ImportError:
+            raise ImportError(
+                "You need to install lovely_tensors to use LogInputStats decorator"
+            )
 
         lt.monkey_patch()
         self.logger = art_logger if custom_logger is None else custom_logger

@@ -32,7 +32,6 @@ dependencies = [
   "typer==0.4.2",
   "loguru==0.7.2",
   "PyGithub==2.1.1",
-  "lovely-tensors>=0.1.15"
 ]
 
 [project.optional-dependencies]
