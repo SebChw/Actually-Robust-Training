@@ -18,6 +18,7 @@ from art.loggers import (
     art_logger,
     get_new_log_file_name,
     get_run_id,
+    log_yellow_warning,
     remove_logger,
 )
 from art.metrics import MetricCalculator, SkippedMetric
@@ -376,17 +377,13 @@ class ModelStep(Step):
             self.results["parameters"].update(model_params)
 
         else:
-            art_logger.opt(ansi=True).warning(
-                "<yellow>Art/Lightning Module does not have log_params method. You don't want to regret lack of logs.</yellow>"
-            )
+            log_yellow_warning(f"Art/Lightning Module {msg}")
 
         if hasattr(self.datamodule, "log_params"):
             data_params = self.datamodule.log_params()
             self.results["parameters"].update(data_params)
         else:
-            art_logger.opt(ansi=True).warning(
-                "<yellow>Datamodule does not have log_params method. You don't want to regret lack of logs.</yellow>"
-            )
+            log_yellow_warning(f"Datamodule {msg}")
 
     def reset_trainer(self, logger: Optional[Logger] = None, trainer_kwargs: Dict = {}):
         """
@@ -410,6 +407,16 @@ class ModelStep(Step):
         except:
             self.datamodule.setup(stage=TrainingStage.VALIDATION.value)
             return self.datamodule.val_dataloader()
+
+    def check_ckpt_callback(self, trainer_kwargs: Dict):
+        if self.requires_ckpt_callback:
+            except_msg = f"At stage {self.name} it is very likely to train some usefull model. Please provide checkpoint callback. You can check how to do this here https://pytorch-lightning.readthedocs.io/en/1.5.10/extensions/generated/pytorch_lightning.callbacks.ModelCheckpoint.html"
+            if "callbacks" not in trainer_kwargs:
+                log_yellow_warning(except_msg)
+            for callback in trainer_kwargs["callbacks"]:
+                if isinstance(callback, ModelCheckpoint):
+                    return
+                log_yellow_warning(except_msg)
 
 
 class ExploreData(Step):

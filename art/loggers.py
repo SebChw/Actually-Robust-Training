@@ -49,6 +49,10 @@ def supress_stdout(current_logger: 'Logger') -> 'Logger':
 art_logger = logger
 
 
+def log_yellow_warning(message: str):
+    art_logger.opt(ansi=True).warning(f"<yellow>{message}</yellow>")
+
+
 class NeptuneLoggerAdapter(NeptuneLogger):
     """
     This is a wrapper for LightningLogger for simplifying basic functionalities between different loggers.
