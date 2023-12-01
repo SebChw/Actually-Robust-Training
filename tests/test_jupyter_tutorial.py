@@ -1,9 +1,8 @@
 import os
 
 import nbformat
-from cookiecutter.main import cookiecutter
 from nbconvert.preprocessors import ExecutePreprocessor
-from utils import check_expected_steps_executions, clean_up
+from utils import check_expected_steps_executions, clean_up, download_tutorial
 
 EXPECTED_STEPS_EXECUTIONS = {
     "art_checkpoints/AlreadyExistingSolutionBaseline_Evaluate Baseline/results.json": [
@@ -22,26 +21,6 @@ EXPECTED_STEPS_EXECUTIONS = {
     "art_checkpoints/MNISTModelNormalized_Overfit/results.json": [True],
     "art_checkpoints/MNISTModelNormalized_Regularize/results.json": [True],
 }
-
-
-def download_tutorial():
-    """
-    Downloads the tutorial from the GitHub repository using Cookiecutter.
-    """
-    try:
-        cookiecutter(
-            "https://github.com/SebChw/ART-Templates.git",
-            no_input=True,
-            extra_context={
-                "project_name": "mnist_tutorial",
-                "author": "test",
-                "email": "test",
-            },  # Pass the project_name to the template,
-            checkout="mnist_tutorial_cookiecutter",  # Use the latest version of the template
-        )
-    except Exception as e:
-        print("Error while generating project using Cookiecutter:", str(e))
-        raise e
 
 
 def run_jupyter_notebook():
@@ -83,7 +62,7 @@ def test_tutorial():
     if os.path.isdir("mnist_tutorial"):
         clean_up("mnist_tutorial")
     print("Downloading tutorial...")
-    download_tutorial()
+    download_tutorial(proj_name="mnist_tutorial", branch="mnist_tutorial_cookiecutter")
     print("Running Jupyter notebook...")
     run_jupyter_notebook()
     print("Checking outputs...")

@@ -691,7 +691,7 @@ class Regularize(ModelStep):
 
     def set_successful(self):
         # In case of regularization each run is like a different step.
-        if not self.was_already_tried:
+        if not self.finalized:
             return
         self.results["successful"] = True
 
