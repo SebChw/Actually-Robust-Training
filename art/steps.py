@@ -39,6 +39,7 @@ class Step(ABC):
 
     name = "Data analysis"
     model = NoModelUsed()
+    continue_on_failure = False
 
     def __init__(self):
         """
@@ -195,6 +196,8 @@ class ModelStep(Step):
     """
     A specialized step in the project, representing a model-based step.
     """
+
+    requires_ckpt_callback = True
 
     def __init__(
         self,
@@ -442,6 +445,7 @@ class EvaluateBaseline(ModelStep):
 
     name = "Evaluate Baseline"
     description = "Evaluates a baseline on the dataset"
+    requires_ckpt_callback = False
 
     def __init__(
         self,
@@ -472,6 +476,7 @@ class CheckLossOnInit(ModelStep):
 
     name = "Check Loss On Init"
     description = "Checks loss on init"
+    requires_ckpt_callback = False
 
     def __init__(
         self,
@@ -498,6 +503,7 @@ class OverfitOneBatch(ModelStep):
 
     name = "Overfit One Batch"
     description = "Overfits one batch"
+    requires_ckpt_callback = False
 
     def __init__(
         self,
@@ -579,6 +585,7 @@ class Regularize(ModelStep):
 
     name = "Regularize"
     description = "Regularizes model"
+    continue_on_failure = True
 
     def __init__(
         self,
