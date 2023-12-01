@@ -8,7 +8,7 @@ import torch.nn
 from torch.utils.data import DataLoader
 
 from art.metrics import MetricCalculator
-from art.utils.enums import LOSS, PREDICTION, TARGET
+from art.utils.enums import LOSS, PREDICTION, TARGET, TrainingStage
 
 
 class ArtModule(L.LightningModule, ABC):
@@ -18,6 +18,7 @@ class ArtModule(L.LightningModule, ABC):
         super().__init__()
         self.regularized = True
         self.set_pipelines()
+        self.stage: TrainingStage = TrainingStage.TRAIN
 
     """
     A module for managing the training process and application of various model configurations.
@@ -119,6 +120,7 @@ class ArtModule(L.LightningModule, ABC):
             batch (Union[Dict[str, Any], DataLoader, torch.Tensor]): Batch to validate.
             batch_idx (int): Batch index.
         """
+        self.stage = TrainingStage.VALIDATION
         data = {"batch": batch, "batch_idx": batch_idx}
         for func in self.validation_step_pipeline:
             data = func(data)
@@ -136,6 +138,7 @@ class ArtModule(L.LightningModule, ABC):
         Returns:
             Dict: Data with loss.
         """
+        self.stage = TrainingStage.TRAIN
         data = {"batch": batch, "batch_idx": batch_idx}
         for func in self.train_step_pipeline:
             data = func(data)
@@ -152,6 +155,7 @@ class ArtModule(L.LightningModule, ABC):
             batch (Union[Dict[str, Any], DataLoader, torch.Tensor]): Batch to test.
             batch_idx (int): Batch index.
         """
+        self.stage = TrainingStage.TEST
         data = {"batch": batch, "batch_idx": batch_idx}
         for func in self.validation_step_pipeline:
             data = func(data)
