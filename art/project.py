@@ -1,5 +1,5 @@
 from collections import defaultdict
-from typing import Any, Callable, Dict, List, Optional, Tuple, Union
+from typing import Any, Dict, List, Optional, Union
 
 import lightning as L
 
@@ -165,6 +165,8 @@ class ArtProject:
         """
         if not step.was_run():
             return True
+        if step.check_if_already_tried():
+            return False
         else:
             step_current_hash = step.get_hash()
             step_saved_hash = step.get_latest_run()["hash"]
@@ -249,8 +251,9 @@ class ArtProject:
                     self.check_checks(step, checks)
                 except CheckFailedException as e:
                     art_logger.warning(e)
-                    step.save_to_disk()
-                    break
+                    if not step.continue_on_failure:
+                        step.save_to_disk()
+                        break
 
                 self.fill_step_states(step)
                 step.save_to_disk()
@@ -268,13 +271,17 @@ class ArtProject:
         """
         art_logger.info("Summary: ")
         for step in self.steps:
-            art_logger.info(step["step"])
-            if not step["step"].is_successful():
+            step = step["step"]
+            art_logger.info(step)
+
+            if not step.is_successful() and not step.continue_on_failure:
                 break
+
         if len(self.changed_steps) > 0:
             art_logger.info(
                 f"Code of the following steps was changed: {', '.join(self.changed_steps)}\n Rerun could be needed."
             )
+        art_logger.info("Explore all runs with `python -m art.cli run-dashboard`")
 
     def get_steps(self):
         """
