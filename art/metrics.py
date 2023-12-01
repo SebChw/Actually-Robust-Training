@@ -31,6 +31,17 @@ class SkippedMetric:
         self.stages = stages
 
 
+def build_metric_name(metric: Any, stage: str) -> str:
+    """
+    Builds a name for the metric based on its type and given training stage.
+
+    Args:
+        metric (Any): The metric being calculated.
+        stage (str): The current stage of training.
+    """
+    return f"{metric.__class__.__name__}-{stage}"
+
+
 class MetricCalculator:
     """
     Facilitates the management and application of metrics during different stages of training.
@@ -51,7 +62,7 @@ class MetricCalculator:
         """
         stage = self.experiment.state.get_current_stage()
 
-        return f"{metric.__class__.__name__}-{stage}"
+        return build_metric_name(metric, stage)
 
     def to(self, device: str):
         """
