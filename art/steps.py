@@ -168,9 +168,13 @@ class Step(ABC):
         return self.results["successful"]
 
     @abstractmethod
-    def log_params(
+    def log_model_params(
         self,
     ):
+        pass
+
+    @abstractmethod
+    def log_data_params(self):
         pass
 
     @abstractmethod
@@ -265,6 +269,8 @@ class ModelStep(Step):
             modifier(datamodule)
 
         super().__call__(previous_states, datamodule, run_id)
+        self.log_data_params()
+
         del self.trainer
         gc.collect()
 
@@ -292,7 +298,7 @@ class ModelStep(Step):
             model.set_metric_calculator(self.metric_calculator)
             model.set_pipelines()
 
-        self.log_params(model)
+        self.log_model_params(model)
         return model
 
     def train(self, trainer_kwargs: Dict):
@@ -371,7 +377,9 @@ class ModelStep(Step):
         """
         return TrainingStage.VALIDATION.value
 
-    def log_params(self, model):
+    def log_model_params(self, model):
+        msg = "does not have log_params method. You don't want to regret lack of logs."
+        self.results["parameters"].update(self.trainer_kwargs)
         if hasattr(model, "log_params"):
             model_params = model.log_params()
             self.results["parameters"].update(model_params)
@@ -379,9 +387,12 @@ class ModelStep(Step):
         else:
             log_yellow_warning(f"Art/Lightning Module {msg}")
 
+    def log_data_params(self):
+        msg = "does not have log_params method. You don't want to regret lack of logs."
         if hasattr(self.datamodule, "log_params"):
             data_params = self.datamodule.log_params()
             self.results["parameters"].update(data_params)
+
         else:
             log_yellow_warning(f"Datamodule {msg}")
 
@@ -518,9 +529,9 @@ class OverfitOneBatch(ModelStep):
         """Returns check stage"""
         return TrainingStage.TRAIN.value
 
-    def log_params(self, model):
+    def log_model_params(self, model):
         self.results["parameters"]["number_of_steps"] = self.number_of_steps
-        super().log_params(model)
+        super().log_model_params(model)
 
 
 class Overfit(ModelStep):
@@ -558,9 +569,9 @@ class Overfit(ModelStep):
         """Returns check stage"""
         return TrainingStage.TRAIN.value
 
-    def log_params(self, model):
+    def log_model_params(self, model):
         self.results["parameters"]["max_epochs"] = self.max_epochs
-        super().log_params(model)
+        super().log_model_params(model)
 
 
 class Regularize(ModelStep):
@@ -690,10 +701,6 @@ class TransferLearning(ModelStep):
                 logger=self.trainer.logger, trainer_kwargs=self.unfreezed_trainer_kwargs
             )
             self.train(trainer_kwargs={"datamodule": self.datamodule})
-
-    def log_params(self, model):
-        self.results["parameters"].update(self.trainer_kwargs)
-        super().log_params(model)
 
     def get_check_stage(self):
         """Returns check stage"""
