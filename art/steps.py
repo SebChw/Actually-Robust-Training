@@ -589,7 +589,15 @@ class Regularize(ModelStep):
         model_modifiers: List[Callable] = [],
         datamodule_modifiers: List[Callable] = [],
     ):
-        self.trainer_kwargs = trainer_kwargs
+        """
+        Args:
+            model (ArtModule): model
+            logger (Logger, optional): logger. Defaults to None.
+            trainer_kwargs (Dict, optional): Kwargs passed to lightning Trainer. Defaults to {}.
+            model_kwargs (Dict, optional): Kwargs passed to model. Defaults to {}.
+            model_modifiers (List[Callable], optional): model modifiers. Defaults to [].
+            datamodule_modifiers (List[Callable], optional): datamodule modifiers. Defaults to [].
+        """
         super().__init__(
             model,
             trainer_kwargs,
@@ -598,6 +606,20 @@ class Regularize(ModelStep):
             datamodule_modifiers,
             logger=logger,
         )
+
+        # Internal structure to store regularization parameters
+        self.parameters = {
+            **model_kwargs,
+            "model_modifiers": self.stringify_modifiers(self.model_modifiers),
+            "datamodule_modifiers": self.stringify_modifiers(self.datamodule_modifiers),
+        }
+        # To decide whether to rerun the step
+        self.was_already_tried = False
+        # Regularize parameters will be saved to JSON
+        self.results["parameters"]["regularize"] = self.parameters
+
+    def stringify_modifiers(self, modifiers: List[Callable]):
+        return "_".join(sorted([modifier.__repr__() for modifier in modifiers]))
 
     def do(self, previous_states: Dict):
         """
@@ -609,11 +631,68 @@ class Regularize(ModelStep):
         art_logger.info("Training regularized model")
         self.train(trainer_kwargs={"datamodule": self.datamodule})
 
-    def log_params(self, model):
-        self.results["parameters"].update(self.trainer_kwargs)
-        self.results["model_modifiers"].update(self.model_modifiers)
-        self.results["datamodule_modifiers"].update(self.datamodule_modifiers)
-        super().log_params(model)
+    def update_was_already_tried(self):
+        """This method verify if such Regularize parameters was already tried and updates self.was_already_tried"""
+        if not self.was_run():
+            return
+
+        # Load all previous runs and check if any of them has the same parameters
+        runs = JSONStepSaver().load(self.get_full_step_name())["runs"]
+        for run in runs:
+            if run["parameters"]["regularize"] == self.parameters:
+                self.was_already_tried = True
+                self.results = run
+
+    def check_if_already_tried(self):
+        """The idea of this function is to help the project decide if there is any more reason the step shouldn't be run even though it has failed."""
+        self.update_was_already_tried()
+        return self.was_already_tried
+
+    def __repr__(self) -> str:
+        # Step suceeded now or previously
+        if self.is_successful():
+            return (
+                f"{super().__repr__()}.\nRegularization Parameters: {self.parameters}"
+            )
+        # Step failed
+        else:
+            # once upon a time
+            if self.was_already_tried:
+                return f"Step: {self.name}, Model: {self.model_name}, Skipped as already tried and failed, Regularization Parameters: {self.parameters}\n"
+            # Now
+            elif self.finalized:
+                return f"{super().__repr__()}.\nRegularization Parameters: {self.parameters}"
+            # Step was not run yet -> not succesfull, not previously tried and not finalized
+            else:
+                return f"Step: {self.name}, Model: {self.model_name}, Skipped as other run has suceeded previously, Regularization Parameters: {self.parameters}\n"
+
+    def save_to_disk(self):
+        # We save only if this was the first time we tried this regularization
+        if not self.was_already_tried:
+            super().save_to_disk()
+
+    def get_latest_run(self) -> Dict:
+        """
+        If step was run returns itself, otherwise returns the latest run from the JSONStepSaver.
+
+        In case of regularization we are interested in the latest successful run.
+
+        Returns:
+            Dict: The latest run.
+        """
+        if self.finalized:
+            return self.results
+        runs = JSONStepSaver().load(self.get_full_step_name())["runs"]
+        for run in runs:
+            if run["successful"]:
+                return run
+        return runs[0]
+
+    def set_successful(self):
+        # In case of regularization each run is like a different step.
+        if not self.was_already_tried:
+            return
+        self.results["successful"] = True
 
 
 class Tune(ModelStep):
