@@ -14,8 +14,14 @@ from lightning.pytorch.loggers import Logger
 
 from art.core import ArtModule
 from art.decorators import ModelDecorator, art_decorate
-from art.loggers import (add_logger, art_logger, get_new_log_file_name,
-                         get_run_id, log_yellow_warning, remove_logger)
+from art.loggers import (
+    add_logger,
+    art_logger,
+    get_new_log_file_name,
+    get_run_id,
+    log_yellow_warning,
+    remove_logger,
+)
 from art.metrics import MetricCalculator, SkippedMetric
 from art.utils.enums import TrainingStage
 from art.utils.paths import get_checkpoint_logs_folder_path
@@ -161,12 +167,6 @@ class Step(ABC):
 
     def is_successful(self):
         return self.results["successful"]
-
-    @abstractmethod
-    def log_model_params(
-        self,
-    ):
-        pass
 
     @abstractmethod
     def log_data_params(self):
