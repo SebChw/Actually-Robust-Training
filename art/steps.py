@@ -169,10 +169,6 @@ class Step(ABC):
         return self.results["successful"]
 
     @abstractmethod
-    def log_data_params(self):
-        pass
-
-    @abstractmethod
     def do(self, previous_states: Dict):
         """
         Abstract method to execute the step. Must be implemented by child classes.
