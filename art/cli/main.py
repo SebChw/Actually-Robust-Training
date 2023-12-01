@@ -97,5 +97,14 @@ def bert_transfer_learning_tutorial():
     )
 
 
+@app.command()
+def regularization_tutorial():
+    """Creates a regularize tutorial."""
+    create_project(
+        project_name="regularize_tutorial",
+        branch="regularize_tutorial",
+    )
+
+
 if __name__ == "__main__":
     app()
