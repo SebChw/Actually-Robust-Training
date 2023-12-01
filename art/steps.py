@@ -9,21 +9,15 @@ from typing import Any, Callable, Dict, List, Optional, Union
 import lightning as L
 from lightning import Trainer
 from lightning.pytorch.accelerators import CUDAAccelerator
+from lightning.pytorch.callbacks import ModelCheckpoint
 from lightning.pytorch.loggers import Logger
 
 from art.core import ArtModule
 from art.decorators import ModelDecorator, art_decorate
-from art.loggers import (
-    add_logger,
-    art_logger,
-    get_new_log_file_name,
-    get_run_id,
-    log_yellow_warning,
-    remove_logger,
-)
+from art.loggers import (add_logger, art_logger, get_new_log_file_name,
+                         get_run_id, log_yellow_warning, remove_logger)
 from art.metrics import MetricCalculator, SkippedMetric
 from art.utils.enums import TrainingStage
-from art.utils.exceptions import MissingLogParamsException
 from art.utils.paths import get_checkpoint_logs_folder_path
 from art.utils.savers import JSONStepSaver
 
@@ -190,6 +184,10 @@ class Step(ABC):
 
     def save_to_disk(self):
         JSONStepSaver().save(self, self.get_full_step_name(), "results.json")
+
+    def check_if_already_tried(self):
+        """The idea of this function is to help the project decide if there is any more reason the step shouldn't be run even though it has failed."""
+        return False
 
 
 class ModelStep(Step):
@@ -411,14 +409,14 @@ class ModelStep(Step):
     def get_trainloader(self):
         try:
             return self.datamodule.train_dataloader()
-        except:
+        except Exception:
             self.datamodule.setup(stage=TrainingStage.TRAIN.value)
             return self.datamodule.train_dataloader()
 
     def get_valloader(self):
         try:
             return self.datamodule.val_dataloader()
-        except:
+        except Exception:
             self.datamodule.setup(stage=TrainingStage.VALIDATION.value)
             return self.datamodule.val_dataloader()
 
