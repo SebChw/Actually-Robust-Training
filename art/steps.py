@@ -719,10 +719,6 @@ class Tune(ModelStep):
         # TODO how to solve this?
 
 
-class Squeeze(ModelStep):
-    pass
-
-
 class TransferLearning(ModelStep):
     """This step tries performing proper transfer learning"""
 
