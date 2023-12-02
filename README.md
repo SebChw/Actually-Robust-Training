@@ -151,7 +151,7 @@ python -m art.cli bert-transfer-learning-tutorial
 ```
 3. A tutorial showing how to use ART for regularization
 ```sh
-python -m art.cli regularization_tutorial
+python -m art.cli regularization-tutorial
 ```
 
 ## API Cheatsheet
