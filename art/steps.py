@@ -26,6 +26,7 @@ from art.metrics import MetricCalculator, SkippedMetric
 from art.utils.enums import TrainingStage
 from art.utils.paths import get_checkpoint_logs_folder_path
 from art.utils.savers import JSONStepSaver
+from art.utils.ensemble import ArtEnsemble
 
 
 class NoModelUsed:
@@ -829,3 +830,73 @@ class TransferLearning(ModelStep):
             model.lr = self.fine_tune_lr
 
         self.model_modifiers.append(change_lr)
+
+
+class Ensemble(ModelStep):
+    """This step tries to ensemble models"""
+
+    name = "Ensemble"
+    description = "Ensembles models"
+
+    def __init__(
+        self,
+        model: ArtModule,
+        num_models: int = 5,
+        logger: Optional[Logger] = None,
+        trainer_kwargs: Dict = {},
+        model_kwargs: Dict = {},
+        model_modifiers: List[Callable] = [],
+        datamodule_modifiers: List[Callable] = [],
+    ):
+        """
+        This method initializes the step
+
+        Args:
+            models (List[ArtModule]): models
+            logger (Logger, optional): logger. Defaults to None.
+            trainer_kwargs (Dict, optional): Kwargs passed to lightning Trainer. Defaults to {}.
+            model_kwargs (Dict, optional): Kwargs passed to model. Defaults to {}.
+            model_modifiers (List[Callable], optional): model modifiers. Defaults to [].
+            datamodule_modifiers (List[Callable], optional): datamodule modifiers. Defaults to [].
+        """
+        super().__init__(
+            model,
+            trainer_kwargs,
+            model_kwargs,
+            model_modifiers,
+            datamodule_modifiers,
+            logger=logger,
+        )
+        self.num_models = num_models
+
+    def do(self, previous_states: Dict):
+        """
+        This method trains the model
+
+        Args:
+            previous_states (Dict): previous states
+        """
+        models_paths = []
+        for _ in range(self.num_models):
+            self.reset_trainer(
+                logger=self.trainer.logger, trainer_kwargs=self.trainer_kwargs
+            )
+            self.train(trainer_kwargs={"datamodule": self.datamodule})
+            models_paths.append(self.trainer.checkpoint_callback.best_model_path)
+
+        initialized_models = []
+        for path in models_paths:
+            model = self.model_class.load_from_checkpoint(path)
+            model.eval()
+            initialized_models.append(model)
+
+        self.model = ArtEnsemble(initialized_models)
+        self.validate(trainer_kwargs={"datamodule": self.datamodule})
+
+    def get_check_stage(self):
+        """Returns check stage"""
+        return TrainingStage.VALIDATION.value
+
+    def log_model_params(self, model):
+        self.results["parameters"]["num_models"] = self.num_models
+        super().log_model_params(model)
