@@ -9,6 +9,7 @@ from typing import Any, Callable, Dict, List, Optional, Union
 import lightning as L
 from lightning import Trainer
 from lightning.pytorch.accelerators import CUDAAccelerator
+from lightning.pytorch.callbacks import ModelCheckpoint
 from lightning.pytorch.loggers import Logger
 
 from art.core import ArtModule
@@ -18,11 +19,11 @@ from art.loggers import (
     art_logger,
     get_new_log_file_name,
     get_run_id,
+    log_yellow_warning,
     remove_logger,
 )
 from art.metrics import MetricCalculator, SkippedMetric
 from art.utils.enums import TrainingStage
-from art.utils.exceptions import MissingLogParamsException
 from art.utils.paths import get_checkpoint_logs_folder_path
 from art.utils.savers import JSONStepSaver
 
@@ -38,6 +39,7 @@ class Step(ABC):
 
     name = "Data analysis"
     model = NoModelUsed()
+    continue_on_failure = False
 
     def __init__(self):
         """
@@ -94,7 +96,9 @@ class Step(ABC):
                 .strip()
             )
         except Exception:
-            art_logger.exception("Error while getting commit id!\nNote: Every art directory should be a git repository")
+            art_logger.exception(
+                "Error while getting commit id!\nNote: Every art directory should be a git repository"
+            )
 
     def get_full_step_name(self) -> str:
         """
@@ -165,12 +169,6 @@ class Step(ABC):
         return self.results["successful"]
 
     @abstractmethod
-    def log_params(
-        self,
-    ):
-        pass
-
-    @abstractmethod
     def do(self, previous_states: Dict):
         """
         Abstract method to execute the step. Must be implemented by child classes.
@@ -183,11 +181,17 @@ class Step(ABC):
     def save_to_disk(self):
         JSONStepSaver().save(self, self.get_full_step_name(), "results.json")
 
+    def check_if_already_tried(self):
+        """The idea of this function is to help the project decide if there is any more reason the step shouldn't be run even though it has failed."""
+        return False
+
 
 class ModelStep(Step):
     """
     A specialized step in the project, representing a model-based step.
     """
+
+    requires_ckpt_callback = True
 
     def __init__(
         self,
@@ -195,6 +199,7 @@ class ModelStep(Step):
         trainer_kwargs: Dict = {},
         model_kwargs: Dict = {},
         model_modifiers: List[Callable] = [],
+        datamodule_modifiers: List[Callable] = [],
         logger: Optional[Logger] = None,
     ):
         """
@@ -220,6 +225,7 @@ class ModelStep(Step):
         self.model_class = model_class
         self.model_kwargs = model_kwargs
         self.model_modifiers = model_modifiers
+        self.datamodule_modifiers = datamodule_modifiers
         self.logger = logger
         self.trainer_kwargs = trainer_kwargs
 
@@ -255,7 +261,13 @@ class ModelStep(Step):
         if self.metric_calculator is not None:
             self.metric_calculator.to(curr_device)
             self.metric_calculator.compile(skipped_metrics)
+
+        for modifier in self.datamodule_modifiers:
+            modifier(datamodule)
+
         super().__call__(previous_states, datamodule, run_id)
+        self.log_data_params()
+
         del self.trainer
         gc.collect()
 
@@ -283,7 +295,7 @@ class ModelStep(Step):
             model.set_metric_calculator(self.metric_calculator)
             model.set_pipelines()
 
-        self.log_params(model)
+        self.log_model_params(model)
         return model
 
     def train(self, trainer_kwargs: Dict):
@@ -362,23 +374,24 @@ class ModelStep(Step):
         """
         return TrainingStage.VALIDATION.value
 
-    def log_params(self, model):
+    def log_model_params(self, model):
+        msg = "does not have log_params method. You don't want to regret lack of logs."
+        self.results["parameters"].update(self.trainer_kwargs)
         if hasattr(model, "log_params"):
             model_params = model.log_params()
             self.results["parameters"].update(model_params)
 
         else:
-            art_logger.opt(ansi=True).warning(
-                "<yellow>Art/Lightning Module does not have log_params method. You don't want to regret lack of logs.</yellow>"
-            )
+            log_yellow_warning(f"Art/Lightning Module {msg}")
 
+    def log_data_params(self):
+        msg = "does not have log_params method. You don't want to regret lack of logs."
         if hasattr(self.datamodule, "log_params"):
             data_params = self.datamodule.log_params()
             self.results["parameters"].update(data_params)
+
         else:
-            art_logger.opt(ansi=True).warning(
-                "<yellow>Datamodule does not have log_params method. You don't want to regret lack of logs.</yellow>"
-            )
+            log_yellow_warning(f"Datamodule {msg}")
 
     def reset_trainer(self, logger: Optional[Logger] = None, trainer_kwargs: Dict = {}):
         """
@@ -392,16 +405,26 @@ class ModelStep(Step):
     def get_trainloader(self):
         try:
             return self.datamodule.train_dataloader()
-        except:
+        except Exception:
             self.datamodule.setup(stage=TrainingStage.TRAIN.value)
             return self.datamodule.train_dataloader()
 
     def get_valloader(self):
         try:
             return self.datamodule.val_dataloader()
-        except:
+        except Exception:
             self.datamodule.setup(stage=TrainingStage.VALIDATION.value)
             return self.datamodule.val_dataloader()
+
+    def check_ckpt_callback(self, trainer_kwargs: Dict):
+        if self.requires_ckpt_callback:
+            except_msg = f"At stage {self.name} it is very likely to train some usefull model. Please provide checkpoint callback. You can check how to do this here https://pytorch-lightning.readthedocs.io/en/1.5.10/extensions/generated/pytorch_lightning.callbacks.ModelCheckpoint.html"
+            if "callbacks" not in trainer_kwargs:
+                log_yellow_warning(except_msg)
+            for callback in trainer_kwargs["callbacks"]:
+                if isinstance(callback, ModelCheckpoint):
+                    return
+                log_yellow_warning(except_msg)
 
 
 class ExploreData(Step):
@@ -416,6 +439,7 @@ class EvaluateBaseline(ModelStep):
 
     name = "Evaluate Baseline"
     description = "Evaluates a baseline on the dataset"
+    requires_ckpt_callback = False
 
     def __init__(
         self,
@@ -446,6 +470,7 @@ class CheckLossOnInit(ModelStep):
 
     name = "Check Loss On Init"
     description = "Checks loss on init"
+    requires_ckpt_callback = False
 
     def __init__(
         self,
@@ -472,6 +497,7 @@ class OverfitOneBatch(ModelStep):
 
     name = "Overfit One Batch"
     description = "Overfits one batch"
+    requires_ckpt_callback = False
 
     def __init__(
         self,
@@ -503,9 +529,9 @@ class OverfitOneBatch(ModelStep):
         """Returns check stage"""
         return TrainingStage.TRAIN.value
 
-    def log_params(self, model):
+    def log_model_params(self, model):
         self.results["parameters"]["number_of_steps"] = self.number_of_steps
-        super().log_params(model)
+        super().log_model_params(model)
 
 
 class Overfit(ModelStep):
@@ -543,9 +569,9 @@ class Overfit(ModelStep):
         """Returns check stage"""
         return TrainingStage.TRAIN.value
 
-    def log_params(self, model):
+    def log_model_params(self, model):
         self.results["parameters"]["max_epochs"] = self.max_epochs
-        super().log_params(model)
+        super().log_model_params(model)
 
 
 class Regularize(ModelStep):
@@ -553,15 +579,48 @@ class Regularize(ModelStep):
 
     name = "Regularize"
     description = "Regularizes model"
+    continue_on_failure = True
 
     def __init__(
         self,
         model: ArtModule,
         logger: Optional[Logger] = None,
         trainer_kwargs: Dict = {},
+        model_kwargs: Dict = {},
+        model_modifiers: List[Callable] = [],
+        datamodule_modifiers: List[Callable] = [],
     ):
-        self.trainer_kwargs = trainer_kwargs
-        super().__init__(model, trainer_kwargs, logger=logger)
+        """
+        Args:
+            model (ArtModule): model
+            logger (Logger, optional): logger. Defaults to None.
+            trainer_kwargs (Dict, optional): Kwargs passed to lightning Trainer. Defaults to {}.
+            model_kwargs (Dict, optional): Kwargs passed to model. Defaults to {}.
+            model_modifiers (List[Callable], optional): model modifiers. Defaults to [].
+            datamodule_modifiers (List[Callable], optional): datamodule modifiers. Defaults to [].
+        """
+        super().__init__(
+            model,
+            trainer_kwargs,
+            model_kwargs,
+            model_modifiers,
+            datamodule_modifiers,
+            logger=logger,
+        )
+
+        # Internal structure to store regularization parameters
+        self.parameters = {
+            **model_kwargs,
+            "model_modifiers": self.stringify_modifiers(self.model_modifiers),
+            "datamodule_modifiers": self.stringify_modifiers(self.datamodule_modifiers),
+        }
+        # To decide whether to rerun the step
+        self.was_already_tried = False
+        # Regularize parameters will be saved to JSON
+        self.results["parameters"]["regularize"] = self.parameters
+
+    def stringify_modifiers(self, modifiers: List[Callable]):
+        return "_".join(sorted([modifier.__repr__() for modifier in modifiers]))
 
     def do(self, previous_states: Dict):
         """
@@ -570,14 +629,71 @@ class Regularize(ModelStep):
         Args:
             previous_states (Dict): previous states
         """
-        art_logger.info("Turning on regularization")
-        self.datamodule.turn_on_regularizations()
         art_logger.info("Training regularized model")
         self.train(trainer_kwargs={"datamodule": self.datamodule})
 
-    def log_params(self, model):
-        self.results["parameters"].update(self.trainer_kwargs)
-        super().log_params(model)
+    def update_was_already_tried(self):
+        """This method verify if such Regularize parameters was already tried and updates self.was_already_tried"""
+        if not self.was_run():
+            return
+
+        # Load all previous runs and check if any of them has the same parameters
+        runs = JSONStepSaver().load(self.get_full_step_name())["runs"]
+        for run in runs:
+            if run["parameters"]["regularize"] == self.parameters:
+                self.was_already_tried = True
+                self.results = run
+
+    def check_if_already_tried(self):
+        """The idea of this function is to help the project decide if there is any more reason the step shouldn't be run even though it has failed."""
+        self.update_was_already_tried()
+        return self.was_already_tried
+
+    def __repr__(self) -> str:
+        # Step suceeded now or previously
+        if self.is_successful():
+            return (
+                f"{super().__repr__()}.\nRegularization Parameters: {self.parameters}"
+            )
+        # Step failed
+        else:
+            # once upon a time
+            if self.was_already_tried:
+                return f"Step: {self.name}, Model: {self.model_name}, Skipped as already tried and failed, Regularization Parameters: {self.parameters}\n"
+            # Now
+            elif self.finalized:
+                return f"{super().__repr__()}.\nRegularization Parameters: {self.parameters}"
+            # Step was not run yet -> not succesfull, not previously tried and not finalized
+            else:
+                return f"Step: {self.name}, Model: {self.model_name}, Skipped as other run has suceeded previously, Regularization Parameters: {self.parameters}\n"
+
+    def save_to_disk(self):
+        # We save only if this was the first time we tried this regularization
+        if not self.was_already_tried:
+            super().save_to_disk()
+
+    def get_latest_run(self) -> Dict:
+        """
+        If step was run returns itself, otherwise returns the latest run from the JSONStepSaver.
+
+        In case of regularization we are interested in the latest successful run.
+
+        Returns:
+            Dict: The latest run.
+        """
+        if self.finalized:
+            return self.results
+        runs = JSONStepSaver().load(self.get_full_step_name())["runs"]
+        for run in runs:
+            if run["successful"]:
+                return run
+        return runs[0]
+
+    def set_successful(self):
+        # In case of regularization each run is like a different step.
+        if not self.finalized:
+            return
+        self.results["successful"] = True
 
 
 class Tune(ModelStep):
@@ -665,10 +781,6 @@ class TransferLearning(ModelStep):
                 logger=self.trainer.logger, trainer_kwargs=self.unfreezed_trainer_kwargs
             )
             self.train(trainer_kwargs={"datamodule": self.datamodule})
-
-    def log_params(self, model):
-        self.results["parameters"].update(self.trainer_kwargs)
-        super().log_params(model)
 
     def get_check_stage(self):
         """Returns check stage"""

@@ -8,17 +8,16 @@ art_checkpoints/Data analysis/class_images/class_6.png
 art_checkpoints/Data analysis/class_images/class_7.png
 art_checkpoints/Data analysis/class_images/class_8.png
 art_checkpoints/Data analysis/class_images/class_9.png
-augmentations_0.png
-augmentations_1.png
-augmentations_2.png
-augmentations_3.png
-augmentations_4.png
-augmentations_5.png
-augmentations_6.png
-augmentations_7.png
-augmentations_8.png
-augmentations_9.png
-debug_art.log
+debug_images/0.png
+debug_images/1.png
+debug_images/2.png
+debug_images/3.png
+debug_images/4.png
+debug_images/5.png
+debug_images/6.png
+debug_images/7.png
+debug_images/8.png
+debug_images/9.png
 art_checkpoints/AlreadyExistingSolutionBaseline_Evaluate Baseline/results.json
 art_checkpoints/Data analysis/results.json
 art_checkpoints/HeuristicBaseline_Evaluate Baseline/results.json
