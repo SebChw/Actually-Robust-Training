@@ -105,6 +105,14 @@ def regularization_tutorial():
         branch="regularize_tutorial",
     )
 
+@app.command()
+def cv_transfer_learning_tutorial():
+    """Creates a cv transfer learning tutorial."""
+    create_project(
+        project_name="cv_transfer_learning_tutorial",
+        branch="cv_transfer_learning_tutorial",
+    )
+
 
 if __name__ == "__main__":
     app()
