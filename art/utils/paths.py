@@ -1,7 +1,8 @@
 from pathlib import Path
 
 CHECKPOINTS_PATH = Path("art_checkpoints")
-EXPERIMENT_LOG_DIR = CHECKPOINTS_PATH / "experiment" / "logs"
+EXPERIMENT_DIR_PATH = CHECKPOINTS_PATH / "experiment"
+EXPERIMENT_LOG_DIR = EXPERIMENT_DIR_PATH / "logs"
 
 
 def get_checkpoint_step_dir_path(full_step_name) -> Path:
