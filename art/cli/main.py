@@ -78,8 +78,8 @@ def create_project(
 
 @app.command()
 def get_started():
-    """Create a project named 'mnist_tutorial' using the 'mnist_tutorial_cookiecutter' branch."""
-    create_project(project_name="mnist_tutorial", branch="mnist_tutorial_cookiecutter")
+    """Create a project named 'mnist_tutorial' using the 'mnist_tutorial' branch."""
+    create_project(project_name="mnist_tutorial", branch="mnist_tutorial")
 
 
 @app.command()
