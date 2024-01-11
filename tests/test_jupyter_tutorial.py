@@ -62,7 +62,7 @@ def test_tutorial():
     if os.path.isdir("mnist_tutorial"):
         clean_up("mnist_tutorial")
     print("Downloading tutorial...")
-    download_tutorial(proj_name="mnist_tutorial", branch="mnist_tutorial_cookiecutter")
+    download_tutorial(proj_name="mnist_tutorial", branch="mnist_tutorial")
     print("Running Jupyter notebook...")
     run_jupyter_notebook()
     print("Checking outputs...")
