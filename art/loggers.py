@@ -217,7 +217,7 @@ class WandbLoggerAdapter(WandbLogger):
         """
         if isinstance(tags, str):
             tags = [tags]
-        # self.wandb.run.tags += tags
+        self.wandb.run.tags += tags
 
 
 class TensorBoardLoggerAdapter(TensorBoardLogger):
