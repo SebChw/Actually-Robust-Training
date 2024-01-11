@@ -17,7 +17,7 @@ To get the most out of ART, you should have a basic knowledge of (or eagerness t
 - PyTorch Lightning: https://lightning.ai/docs/pytorch/stable/levels/core_skills.html
 
 **Table of contents:**
-- [ART - Actually Robust Training framework](#art---actually-robust-training-framework)
+- [ART - Actually Robust Training Framework](#art---actually-robust-training-framework)
   - [Installation](#installation)
   - [Quickstart](#quickstart)
   - [Project creation](#project-creation)
@@ -143,13 +143,17 @@ After running all cells run the dashboard with:
 ```sh
 python -m art.cli run-dashboard
 ```
+2. Second showcase tutorial on how to use ART for transfer learning in CV classification task.
+```sh
+python -m art.cli cv-transfer-learning-tutorial
+```
 
-2. A tutorial showing how to use ART for transfer learning in an NLP task.
+3. A tutorial showing how to use ART for transfer learning in an NLP task.
 ```sh
 python -m art.cli bert-transfer-learning-tutorial
-
 ```
-3. A tutorial showing how to use ART for regularization
+
+4. A tutorial showing how to use ART for regularization
 ```sh
 python -m art.cli regularization_tutorial
 ```
