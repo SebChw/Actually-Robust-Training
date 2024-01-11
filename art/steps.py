@@ -503,9 +503,11 @@ class OverfitOneBatch(ModelStep):
         self,
         model: ArtModule,
         number_of_steps: int = 50,
+        model_kwargs: Dict = {},
+        logger: Optional[Logger] = None,
     ):
         self.number_of_steps = number_of_steps
-        super().__init__(model, {"overfit_batches": 1, "max_epochs": number_of_steps})
+        super().__init__(model, {"overfit_batches": 1, "max_epochs": number_of_steps}, logger=logger, model_kwargs=model_kwargs)
 
     def do(self, previous_states: Dict):
         """
@@ -543,12 +545,14 @@ class Overfit(ModelStep):
     def __init__(
         self,
         model: ArtModule,
-        logger: Optional[Logger] = None,
         max_epochs: int = 1,
+        model_kwargs: Dict = {},
+        trainer_kwargs: Dict = {},
+        logger: Optional[Logger] = None,
     ):
         self.max_epochs = max_epochs
 
-        super().__init__(model, {"max_epochs": max_epochs}, logger=logger)
+        super().__init__(model, {"max_epochs": max_epochs}, logger=logger, model_kwargs=model_kwargs)
 
     def do(self, previous_states: Dict):
         """
