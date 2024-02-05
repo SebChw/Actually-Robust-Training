@@ -78,8 +78,8 @@ def create_project(
 
 @app.command()
 def get_started():
-    """Create a project named 'mnist_tutorial' using the 'mnist_tutorial_cookiecutter' branch."""
-    create_project(project_name="mnist_tutorial", branch="mnist_tutorial_cookiecutter")
+    """Create a project named 'mnist_tutorial' using the 'mnist_tutorial' branch."""
+    create_project(project_name="mnist_tutorial", branch="mnist_tutorial")
 
 
 @app.command()
@@ -94,6 +94,15 @@ def bert_transfer_learning_tutorial():
     create_project(
         project_name="bert_transfer_learning_tutorial",
         branch="bert_transfer_learning_tutorial",
+    )
+
+
+@app.command()
+def regularization_tutorial():
+    """Creates a regularize tutorial."""
+    create_project(
+        project_name="regularize_tutorial",
+        branch="regularize_tutorial",
     )
 
 

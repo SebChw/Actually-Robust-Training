@@ -8,7 +8,7 @@ import torch.nn
 from torch.utils.data import DataLoader
 
 from art.metrics import MetricCalculator
-from art.utils.enums import LOSS, PREDICTION, TARGET
+from art.utils.enums import LOSS, PREDICTION, TARGET, TrainingStage
 
 
 class ArtModule(L.LightningModule, ABC):
@@ -17,7 +17,8 @@ class ArtModule(L.LightningModule, ABC):
     ):
         super().__init__()
         self.regularized = True
-        self.reset_pipelines()
+        self.set_pipelines()
+        self.stage: TrainingStage = TrainingStage.TRAIN
 
     """
     A module for managing the training process and application of various model configurations.
@@ -42,7 +43,7 @@ class ArtModule(L.LightningModule, ABC):
         if not hasattr(self, "metric_calculator"):
             raise ValueError("You need to set metric calculator first!")
 
-    def reset_pipelines(self):
+    def set_pipelines(self):
         """
         Reset pipelines for training, validation, and testing.
         """
@@ -59,40 +60,6 @@ class ArtModule(L.LightningModule, ABC):
             self.compute_loss,
         ]
         self.ml_train_pipeline = [self.ml_parse_data, self.baseline_train]
-
-    def turn_on_model_regularizations(self):
-        """
-        Turn on model regularizations.
-        """
-        if not self.regularized:
-            for param in self.parameters():
-                name, obj = param
-                if isinstance(obj, torch.nn.Dropout):
-                    obj.p = self.unregularized_params[name]
-
-            self.configure_optimizers = self.original_configure_optimizers
-
-            self.regularized = True
-
-    def turn_off_model_reguralizations(self):
-        """
-        Turn off model regularizations.
-        """
-        if self.regularized:
-            self.unregularized_params = {}
-            for param in self.parameters():
-                name, obj = param
-                if isinstance(obj, torch.nn.Dropout):
-                    self.unregularized_params[name] = obj.p
-                    obj.p = 0
-
-            # Simple Adam, no fancy optimizers at this stage
-            self.original_configure_optimizers = self.configure_optimizers
-            self.configure_optimizers = lambda self: torch.optim.Adam(
-                self.parameters(), lr=3e-4
-            )
-
-            self.regularized = False
 
     def parse_data(self, data: Dict):
         """
@@ -153,6 +120,7 @@ class ArtModule(L.LightningModule, ABC):
             batch (Union[Dict[str, Any], DataLoader, torch.Tensor]): Batch to validate.
             batch_idx (int): Batch index.
         """
+        self.stage = TrainingStage.VALIDATION
         data = {"batch": batch, "batch_idx": batch_idx}
         for func in self.validation_step_pipeline:
             data = func(data)
@@ -170,6 +138,7 @@ class ArtModule(L.LightningModule, ABC):
         Returns:
             Dict: Data with loss.
         """
+        self.stage = TrainingStage.TRAIN
         data = {"batch": batch, "batch_idx": batch_idx}
         for func in self.train_step_pipeline:
             data = func(data)
@@ -186,6 +155,7 @@ class ArtModule(L.LightningModule, ABC):
             batch (Union[Dict[str, Any], DataLoader, torch.Tensor]): Batch to test.
             batch_idx (int): Batch index.
         """
+        self.stage = TrainingStage.TEST
         data = {"batch": batch, "batch_idx": batch_idx}
         for func in self.validation_step_pipeline:
             data = func(data)
