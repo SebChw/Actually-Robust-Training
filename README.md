@@ -154,6 +154,8 @@ python -m art.cli bert-transfer-learning-tutorial
 python -m art.cli regularization-tutorial
 ```
 
+The source code of tutorials and ART template is available at the separate branches of [ART-Templates repo](https://github.com/SebChw/ART-Templates)
+
 ## API Cheatsheet
 - [**ArtModule**](https://actually-robust-training.readthedocs.io/en/latest/apidocs/art.html#art.core.ArtModule): While exploring different models, ART provides a unified way to define and train models. ART uses `ArtModule` that inherits from PyTorch Lightning's LightningModule. ArtModules are designed to be easily configurable and to support different model architectures.
 - [**Step**](https://actually-robust-training.readthedocs.io/en/latest/apidocs/art.html#art.steps.Step): Unitary process that takes you closer to your final goal - good Deep Learning model. **In this tutorial we present you steps that were inspired by Andrej Karpathy's** [Recipe for Training Neural Networks](http://karpathy.github.io/2019/04/25/recipe/):
