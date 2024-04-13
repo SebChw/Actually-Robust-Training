@@ -1,10 +1,14 @@
 <p align="center"><img src="docs/art.png" alt="image" width="200" height="auto"></p>
 
-# ART - Actually Robust Training Framework
-
-![Tests](https://github.com/SebChw/art/actions/workflows/tests.yml/badge.svg)
-![Docs](
-https://readthedocs.org/projects/actually-robust-training/badge/?version=latest&style=flat)
+<p align="center">
+    <b>ART - Actually Robust Training</b>
+    <br>
+    <em>Robust, explainable, and easy to debug deep learning experiments.</em>
+</p>
+<p align="center">
+<img src="https://github.com/SebChw/art/actions/workflows/tests.yml/badge.svg" alt="Tests">
+<img src="https://readthedocs.org/projects/actually-robust-training/badge/?version=latest&style=flat" alt="Docs">
+</p>
 
 ----
 
@@ -17,14 +21,13 @@ To get the most out of ART, you should have a basic knowledge of (or eagerness t
 - PyTorch Lightning: https://lightning.ai/docs/pytorch/stable/levels/core_skills.html
 
 **Table of contents:**
-- [ART - Actually Robust Training framework](#art---actually-robust-training-framework)
-  - [Installation](#installation)
-  - [Quickstart](#quickstart)
-  - [Project creation](#project-creation)
-  - [Dashboard](#dashboard)
-  - [Tutorials](#tutorials)
-  - [API Cheatsheet](#api-cheatsheet)
-  - [Contributing](#contributing)
+- [Installation](#installation)
+- [Quickstart](#quickstart)
+- [Project creation](#project-creation)
+- [Dashboard](#dashboard)
+- [Tutorials](#tutorials)
+- [API Cheatsheet](#api-cheatsheet)
+- [Contributing](#contributing)
 
 ## Installation
 To get started, install ART package using:

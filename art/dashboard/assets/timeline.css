@@ -1,5 +1,11 @@
 .mantine-Timeline-itemBullet {
 
-    background-color: red;
-    border: 2px solid #7a1912;
+    background-color: #FF0000;
+    border: 2px solid #DC3230;
+}
+
+.mantine-Timeline-itemBullet[data-active="true"] {
+
+    background-color: #00B050;
+    border: 2px solid #009E73;
 }
