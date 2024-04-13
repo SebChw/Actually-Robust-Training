@@ -53,16 +53,17 @@ def get_navbar():
                     dbc.Row(
                         [
                             dbc.Col(
-                                html.Img(
-                                    src=get_asset_url("pallet.jpg"), height="60ex"
-                                ),
+                                html.Img(src=get_asset_url("art.png"), height="60ex"),
                                 width=3,
                             ),
                             dbc.Col(
                                 html.Div(
                                     "Actually Robust Training",
                                     className="text-xl-center fs-5 fw-bold",
-                                    style={"color": "#a87332"},
+                                    style={
+                                        "color": "#000000",
+                                        "font-family": "Calibri",
+                                    },
                                 ),
                                 width=9,
                                 align="center",
@@ -72,7 +73,12 @@ def get_navbar():
                         align="left",
                     )
                 ),
-                dbc.Button("Help", id="open", n_clicks=0),
+                dbc.Button(
+                    "Help",
+                    id="open",
+                    n_clicks=0,
+                    style={"background-color": "#00B050", "border-color": "#009E73"},
+                ),
                 dbc.Modal(
                     [
                         dbc.ModalHeader(
@@ -119,6 +125,9 @@ def get_layout(ordered_steps: List[str], timeline: dmc.Timeline) -> dbc.Containe
                                 filter_action="native",
                                 sort_action="native",
                                 sort_mode="multi",
+                                style_cell={
+                                    "font-family": "Calibri",
+                                },
                             ),
                         ],
                         style=RADIUS_AROUND_STYLE | PAD_STYLE,

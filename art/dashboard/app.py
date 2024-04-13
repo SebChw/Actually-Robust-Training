@@ -54,13 +54,13 @@ def updateTable(
             "if": {
                 "filter_query": "{successful} = 1",
             },
-            "backgroundColor": "rgba(0,255,0,0.2)",
+            "backgroundColor": "rgba(210,235,222,1)",
         },
         {
             "if": {
                 "filter_query": "{successful} = 0",
             },
-            "backgroundColor": "rgba(255,0,0,0.2)",
+            "backgroundColor": "rgba(247,197,205,1)",
         },
     ]
 
@@ -70,8 +70,12 @@ def updateTable(
         + ["timestamp"]
     )
     columnDefs = [{"name": i, "id": i} for i in ordered_names]
+
+    formatted_df = step_runs_df.applymap(
+        lambda x: "{:.4f}".format(x) if isinstance(x, (int, float)) else x
+    )
     return (
-        step_runs_df.to_dict("records"),
+        formatted_df.to_dict("records"),
         columnDefs,
         conditional,
     )
@@ -153,7 +157,12 @@ def update_figure(
         y_attr = x_attr
 
     return px.scatter(
-        step_runs_df, x=x_attr, y=y_attr, size="size", hover_data=hover_parameters_names
+        step_runs_df,
+        x=x_attr,
+        y=y_attr,
+        size="size",
+        hover_data=hover_parameters_names,
+        template="ggplot2",
     )
 
 
