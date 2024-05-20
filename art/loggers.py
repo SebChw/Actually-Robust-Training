@@ -7,8 +7,10 @@ from pathlib import Path
 from typing import TYPE_CHECKING, List, Optional, Union
 
 import numpy as np
-from lightning.pytorch.loggers import NeptuneLogger, WandbLogger
+from lightning.pytorch.loggers import NeptuneLogger, WandbLogger, TensorBoardLogger
 from loguru import logger
+
+from art.utils.paths import EXPERIMENT_DIR_PATH
 
 if TYPE_CHECKING:
     from loguru import Logger
@@ -214,3 +216,50 @@ class WandbLoggerAdapter(WandbLogger):
         if isinstance(tags, str):
             tags = [tags]
         self.wandb.run.tags += tags
+
+
+class TensorBoardLoggerAdapter(TensorBoardLogger):
+    """
+    This is a wrapper for LightningLogger for simplifying basic functionalities between different loggers.
+    """
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, save_dir=str(EXPERIMENT_DIR_PATH/"tensorboard"), **kwargs)
+
+    def log_config(self, configFile: str):
+        """
+        Logs a config file to TensorBoard.
+
+        Args:
+            configFile (str): Path to config file.
+        """
+        self.experiment.add_text("config", open(configFile, "r").read())
+
+    def log_img(self, image, path: str = "image"):
+        """
+        Logs an image to TensorBoard.
+
+        Args:
+            image (np.ndarray): Image to log.
+            path (str, optional): Path to log image to. Defaults to "image".
+        """
+        self.experiment.add_image(path, image)
+
+    def log_figure(self, figure, path: str = "figure"):
+        """
+        Logs a figure to TensorBoard.
+
+        Args:
+            figure (Any): Figure to log.
+            path (str, optional): Path to log figure to. Defaults to "figure".
+        """
+        self.experiment.add_figure(path, figure)
+
+    def add_tags(self, tags: Union[List[str], str]):
+        """
+        Adds tags to the TensorBoard run.
+
+        Args:
+            tags (Union[List[str], str]): Tag or list of tags to add.
+        """
+        pass
